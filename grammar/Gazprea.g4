@@ -114,9 +114,9 @@ expr:
     | expr op=('*' | '/' | '%' | '**') expr                                    # BinaryOp
     | expr op=('+' | '-') expr                                                 # BinaryOp
     | expr 'by' expr                                                           # By
-    | expr op=('>' | '<' | '<=' | '>=') expr                                   # Comparisson
-    | expr op=('==' | '!=') expr                                               # Comparisson
-    | expr 'and' expr                                                          # LogicalOp
+    | expr op=('>' | '<' | '<=' | '>=') expr                                   # Comparison
+    | expr op=('==' | '!=') expr                                               # Comparison
+    | expr op='and' expr                                                       # LogicalOp
     | expr op=('or' | 'xor') expr                                              # LogicalOp
     | <assoc=right> expr '||' expr                                             # Concatenation
     | '[' Identifier IN geneartorDomainVariable '|' expression ']'             # Generator
