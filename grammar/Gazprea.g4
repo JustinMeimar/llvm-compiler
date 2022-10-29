@@ -94,7 +94,7 @@ functionDeclarationDefinition: FUNCTION Identifier '(' formalParameterList? ')' 
 procedureDeclarationDefinition: PROCEDURE Identifier '(' formalParameterList? ')' procedureDeclarationReturn ';' ;
 functionDeclarationReturn: RETURNS type (('=' expression) | block)? ;
 procedureDeclarationReturn: (RETURNS type)? block? ;
-callProcedure: CALL Identifier '(' expressionList? ')' ;
+callProcedure: CALL Identifier '(' expressionList? ')' ';';
 
 // Conditional
 conditionalStatement: IF '('? expression ')'? (statement | block) elseIfStatement* elseStatement? ;
@@ -212,11 +212,8 @@ Identifier: [a-zA-Z_][a-zA-Z0-9_]* ;
 // 
 // Integer and Real
 IntegerConstant : DigitSequence;
-RealConstant: FractionalConstant ExponentPart?;
-fragment FractionalConstant:
-    DigitSequence? '.' DigitSequence
-    |   DigitSequence '.'
-    ;
+RealConstant:
+    (DigitSequence? '.' DigitSequence | DigitSequence '.' ) { this.getInputStream().LA(1) != '.' }? ExponentPart?;
 fragment ExponentPart: 'e' Sign? DigitSequence ;
 fragment Sign: [+-] ;
 fragment DigitSequence: Digit+ ;
