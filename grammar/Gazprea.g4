@@ -239,8 +239,9 @@ fragment SChar
     |   EscapeSequence
     ;
 fragment EscapeSequence: '\\' ['"0abnrt\\] ;
-
-// Skip whitespace and comments
-WS : [ \t\r\n]+ -> skip ;
+//
+// Comment
 LineComment : '//' ~[\r\n]* -> skip ;
 BlockComment: '/*' .*? '*/' -> skip ;
+// Skip whitespace
+WS : [ \t\r\n]+ -> skip ;
