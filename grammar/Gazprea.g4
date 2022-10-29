@@ -32,7 +32,12 @@ tokens {
     TUPLE_LITERAL_TOKEN,
     SCALAR_TYPE_TOKEN,
     VECTOR_TYPE_TOKEN,
-    TUPLE_TYPE_TOKEN
+    TUPLE_TYPE_TOKEN,
+    TYPE_TOKEN,
+    CAST_TOKEN,
+    VECTOR_SIZE_DECLARATION_LIST_TOKEN,
+    TUPLE_TYPE_DECLARATION_ATOM,
+    TUPLE_TYPE_DECLARATION_LIST
 }
 
 compilationUnit: statement* EOF;
@@ -57,12 +62,13 @@ statement: varDeclarationStatement
 // Type and Type Qualifier
 vectorSizeDeclarationAtom: '*' | expression ;
 vectorSizeDeclarationList: vectorSizeDeclarationAtom (',' vectorSizeDeclarationAtom)? ;
+tupleTypeDeclarationAtom: nonTupleType Identifier? ;
+tupleTypeDeclarationList: tupleTypeDeclarationAtom (',' tupleTypeDeclarationAtom)* ;
 
-vectorMatrixCompatibleScalarType: BOOLEAN | CHARACTER | INTEGER | REAL ;
-scalarType: vectorMatrixCompatibleScalarType | STRING | INTERVAL | (INTEGER INTERVAL);
-vectorType: vectorMatrixCompatibleScalarType '[' vectorSizeDeclarationList ']' ;
+scalarType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | (INTEGER INTERVAL);
+vectorType: scalarType '[' vectorSizeDeclarationList ']' ;
 nonTupleType: scalarType | vectorType ;
-tupleType: TUPLE '(' nonTupleType Identifier? (',' nonTupleType Identifier?)* ')' ;
+tupleType: TUPLE '(' tupleTypeDeclarationList ')' ;
 type: scalarType | vectorType | tupleType ;
 
 typeQualifier: VAR | CONST ;
@@ -76,7 +82,7 @@ varDeclarationStatement:
     | typeQualifier? vectorType Identifier ('=' expression)? ';'   # VectorVarDeclaration
     | typeQualifier? tupleType Identifier ('=' expression)? ';'    # TupleVarDeclaration
     ;
-assignmentStatement: expression '=' expression ';' ;
+assignmentStatement: Identifier '=' expression ';' ;
 
 // Function and Procedure
 expressionList: expression (',' expression)* ;
@@ -188,7 +194,7 @@ XOR : 'xor' ;
 //
 PLUS: '+' ;
 MINUS: '-' ;
-MUL: '*' ;
+ASTERISK: '*' ;
 DIV: '/' ;
 MODULO: '%' ;
 DOTPRODUCT: '**' ;

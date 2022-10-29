@@ -14,57 +14,99 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitVectorSizeDeclarationAtom(GazpreaParser::VectorSizeDeclarationAtomContext *ctx) {
-        return 0;
+        if (ctx->getStart()->getText() == "*") {
+            return std::make_shared<AST>(GazpreaParser::ASTERISK);
+        }
+        return visit(ctx->expression());
     }
 
     std::any ASTBuilder::visitVectorSizeDeclarationList(GazpreaParser::VectorSizeDeclarationListContext *ctx) {
-        return 0;
-    }
-
-    std::any ASTBuilder::visitVectorMatrixCompatibleScalarType(GazpreaParser::VectorMatrixCompatibleScalarTypeContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::VECTOR_SIZE_DECLARATION_LIST_TOKEN);
+        for (auto vectorSizeDeclarationAtom : ctx->vectorSizeDeclarationAtom()) {
+            t->addChild(visit(vectorSizeDeclarationAtom));
+        }
+        return t;
     }
 
     std::any ASTBuilder::visitScalarType(GazpreaParser::ScalarTypeContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::SCALAR_TYPE_TOKEN);
+        t->addChild(ctx->getStart());
+        return t;
     }
 
     std::any ASTBuilder::visitVectorType(GazpreaParser::VectorTypeContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::VECTOR_TYPE_TOKEN);
+        t->addChild(visit(ctx->scalarType()));
+        t->addChild(visit(ctx->vectorSizeDeclarationList()));
+        return t;
     }
 
     std::any ASTBuilder::visitNonTupleType(GazpreaParser::NonTupleTypeContext *ctx) {
-        return 0;
+        if (ctx->scalarType()) {
+            return visit(ctx->scalarType());
+        }
+        return visit(ctx->vectorType());
     }
 
     std::any ASTBuilder::visitTupleType(GazpreaParser::TupleTypeContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::TUPLE_TYPE_TOKEN);
+        t->addChild(visit(ctx->tupleTypeDeclarationList()));
+        return t;
     }
 
     std::any ASTBuilder::visitType(GazpreaParser::TypeContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::TYPE_TOKEN);
+        if (ctx->scalarType()) {
+            t->addChild(visit(ctx->scalarType()));
+        } else if (ctx->vectorType()) {
+            t->addChild(visit(ctx->vectorType()));
+        } else {
+            t->addChild(visit(ctx->tupleType()));
+        }
+        return t;
     }
 
     std::any ASTBuilder::visitTypeQualifier(GazpreaParser::TypeQualifierContext *ctx) {
         std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::TYPE_QUALIFIER_TOKEN);
-        t->addChild(ctx->getStart()->getText());
+        t->addChild(ctx->getStart());
         return t;
     }
 
     std::any ASTBuilder::visitScalarVarDeclaration(GazpreaParser::ScalarVarDeclarationContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::SCALAR_VAR_DECLARATION_TOKEN);
+        t->addChild(visit(ctx->scalarType()));
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
+        if (ctx->expression()) {
+            t->addChild(visit(ctx->expression()));
+        }
+        return t;
     }
 
     std::any ASTBuilder::visitVectorVarDeclaration(GazpreaParser::VectorVarDeclarationContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::VECTOR_VAR_DECLARATION_TOKEN);
+        t->addChild(visit(ctx->vectorType()));
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
+        if (ctx->expression()) {
+            t->addChild(visit(ctx->expression()));
+        }
+        return t;
     }
 
     std::any ASTBuilder::visitTupleVarDeclaration(GazpreaParser::TupleVarDeclarationContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::TUPLE_VAR_DECLARATION_TOKEN);
+        t->addChild(visit(ctx->tupleType()));
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
+        if (ctx->expression()) {
+            t->addChild(visit(ctx->expression()));
+        }
+        return t;
     }
 
     std::any ASTBuilder::visitAssignmentStatement(GazpreaParser::AssignmentStatementContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::ASSIGNMENT_TOKEN);
+        t->addChild(ctx->Identifier()->getSymbol());
+        t->addChild(ctx->expression());
+        return t;
     }
 
     std::any ASTBuilder::visitExpressionList(GazpreaParser::ExpressionListContext *ctx) {
@@ -309,8 +351,8 @@ namespace gazprea {
             case GazpreaParser::MINUS:
                 t = std::make_shared<AST>(GazpreaParser::MINUS);
                 break;
-            case GazpreaParser::MUL:
-                t = std::make_shared<AST>(GazpreaParser::MUL);
+            case GazpreaParser::ASTERISK:
+                t = std::make_shared<AST>(GazpreaParser::ASTERISK);
                 break;
             case GazpreaParser::DIV:
                 t = std::make_shared<AST>(GazpreaParser::DIV);
@@ -373,6 +415,36 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitTypedefStatement(GazpreaParser::TypedefStatementContext *ctx) {
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::TYPEDEF);
+        t->addChild(visit(ctx->type()));
+        t->addChild(ctx->Identifier()->getSymbol());
+    }
+
+    std::any ASTBuilder::visitProcedureReturn(GazpreaParser::ProcedureReturnContext *ctx) {
         return 0;
+    }
+
+    std::any ASTBuilder::visitCast(GazpreaParser::CastContext *ctx) {
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::CAST_TOKEN);
+        t->addChild(visit(ctx->type()));
+        t->addChild(visit(ctx->expression()));
+        return t;
+    }
+
+    std::any ASTBuilder::visitTupleTypeDeclarationAtom(GazpreaParser::TupleTypeDeclarationAtomContext *ctx) {
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::TUPLE_TYPE_DECLARATION_ATOM);
+        t->addChild(ctx->nonTupleType());
+        if (ctx->Identifier()) {
+            t->addChild(ctx->Identifier()->getSymbol());
+        }
+        return t;
+    }
+
+    std::any ASTBuilder::visitTupleTypeDeclarationList(GazpreaParser::TupleTypeDeclarationListContext *ctx) {
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::TUPLE_TYPE_DECLARATION_LIST);
+        for (auto tupleTypeDeclarationAtom : ctx->tupleTypeDeclarationAtom()) {
+            t->addChild(visit(tupleTypeDeclarationAtom));
+        }
+        return t;
     }
 }

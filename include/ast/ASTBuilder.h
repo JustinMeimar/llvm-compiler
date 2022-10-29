@@ -16,8 +16,6 @@ public:
 
   virtual std::any visitVectorSizeDeclarationList(GazpreaParser::VectorSizeDeclarationListContext *ctx) override; 
 
-  virtual std::any visitVectorMatrixCompatibleScalarType(GazpreaParser::VectorMatrixCompatibleScalarTypeContext *ctx) override; 
-
   virtual std::any visitScalarType(GazpreaParser::ScalarTypeContext *ctx) override; 
 
   virtual std::any visitVectorType(GazpreaParser::VectorTypeContext *ctx) override; 
@@ -115,6 +113,14 @@ public:
   virtual std::any visitFilterPredicate(GazpreaParser::FilterPredicateContext *ctx) override; 
 
   virtual std::any visitTypedefStatement(GazpreaParser::TypedefStatementContext *ctx) override; 
+
+  virtual std::any visitProcedureReturn(GazpreaParser::ProcedureReturnContext *ctx) override;
+
+  virtual std::any visitCast(GazpreaParser::CastContext *ctx) override;
+
+  virtual std::any visitTupleTypeDeclarationAtom(GazpreaParser::TupleTypeDeclarationAtomContext *ctx) override;
+
+  virtual std::any visitTupleTypeDeclarationList(GazpreaParser::TupleTypeDeclarationListContext *ctx) override;
 
 };
 
