@@ -7,6 +7,7 @@
 #include "tree/ParseTreeWalker.h"
 
 #include "ASTBuilder.h"
+#include "AST.h"
 
 #include <iostream>
 #include <fstream>
@@ -27,12 +28,12 @@ int main(int argc, char **argv) {
 
   // Get the root of the parse tree. Use your base rule name.
   antlr4::tree::ParseTree *tree = parser.compilationUnit();
-
-  std::cout << tree->toStringTree() << std::endl;
   
   //Build AST
   gazprea::ASTBuilder builder;
-  builder.visit(tree);
+  std::shared_ptr<AST> ast = std::any_cast<std::shared_ptr<AST>>(builder.visit(tree));
+
+  std::cout << ast->toStringTree() << std::endl;
 
   return 0;
 }
