@@ -104,7 +104,7 @@ namespace gazprea {
 
     std::any ASTBuilder::visitAssignmentStatement(GazpreaParser::AssignmentStatementContext *ctx) {
         std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::ASSIGNMENT_TOKEN);
-        t->addChild(ctx->Identifier()->getSymbol());
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
         t->addChild(visit(ctx->expression()));
         return t;
     }
@@ -118,16 +118,26 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitFormalParameter(GazpreaParser::FormalParameterContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::FORMAL_PARAMETER_TOKEN);
+        if (ctx->typeQualifier()) {
+            t->addChild(visit(ctx->typeQualifier()));
+        }
+        t->addChild(visit(ctx->type()));
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
+        return t;
     }
 
     std::any ASTBuilder::visitFormalParameterList(GazpreaParser::FormalParameterListContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::FORMAL_PARAMETER_LIST_TOKEN);
+        for (auto formalParameter : ctx->formalParameter()) {
+            t->addChild(visit(formalParameter));
+        }
+        return t;
     }
 
     std::any ASTBuilder::visitFunctionDeclarationDefinition(GazpreaParser::FunctionDeclarationDefinitionContext *ctx) {
         std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::FUNCTION);
-        t->addChild(ctx->Identifier()->getSymbol());
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
         if (ctx->formalParameterList()) {
             t->addChild(visit(ctx->formalParameterList()));
         }
@@ -137,7 +147,7 @@ namespace gazprea {
 
     std::any ASTBuilder::visitProcedureDeclarationDefinition(GazpreaParser::ProcedureDeclarationDefinitionContext *ctx) {
         std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::FUNCTION);
-        t->addChild(ctx->Identifier()->getSymbol());
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
         if (ctx->formalParameterList()) {
             t->addChild(visit(ctx->formalParameterList()));
         }
@@ -147,7 +157,7 @@ namespace gazprea {
 
     std::any ASTBuilder::visitCallProcedure(GazpreaParser::CallProcedureContext *ctx) {
         std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::CALL_PROCEDURE_STATEMENT);
-        t->addChild(ctx->Identifier()->getSymbol());
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
         t->addChild(visit(ctx->expressionList()));
         return t;
     }
@@ -224,7 +234,7 @@ namespace gazprea {
 
     std::any ASTBuilder::visitIteratorLoopStatement(GazpreaParser::IteratorLoopStatementContext *ctx) {
         std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::ITERATOR_LOOP_TOKEN);
-        t->addChild(ctx->Identifier()->getSymbol());
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
         t->addChild(visit(ctx->expression()));
         if (ctx->statement()) {
             t->addChild(visit(ctx->statement()));
@@ -281,7 +291,7 @@ namespace gazprea {
 
     std::any ASTBuilder::visitCallProcedureFunctionInExpression(GazpreaParser::CallProcedureFunctionInExpressionContext *ctx) {
         std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::CALL_PROCEDURE_FUNCTION_IN_EXPRESSION);
-        t->addChild(ctx->Identifier()->getSymbol());
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
         if (ctx->expressionList()) {
             t->addChild(visit(ctx->expressionList()));
         }
@@ -320,7 +330,11 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitFilter(GazpreaParser::FilterContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::FILTER_TOKEN);
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
+        t->addChild(visit(ctx->expression()));
+        t->addChild(visit(ctx->filterPredicate()));
+        return t;
     }
 
     std::any ASTBuilder::visitStringLiteralAtom(GazpreaParser::StringLiteralAtomContext *ctx) {
@@ -342,7 +356,10 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitGenerator(GazpreaParser::GeneratorContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::GENERATOR_TOKEN);
+        t->addChild(visit(ctx->generatorDomainVariableList()));
+        t->addChild(visit(ctx->expression()));
+        return t;
     }
 
     std::any ASTBuilder::visitIdentityAtom(GazpreaParser::IdentityAtomContext *ctx) {
@@ -420,18 +437,33 @@ namespace gazprea {
         return t;
     }
 
-    std::any ASTBuilder::visitGeneartorDomainVariable(GazpreaParser::GeneartorDomainVariableContext *ctx) {
-        return 0;
+    std::any ASTBuilder::visitGeneratorDomainVariable(GazpreaParser::GeneratorDomainVariableContext *ctx) {
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::GENERATOR_DOMAIN_VARIABLE_TOKEN);
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
+        t->addChild(ctx->expression());
+        return t;
+    }
+
+    std::any ASTBuilder::visitGeneratorDomainVariableList(GazpreaParser::GeneratorDomainVariableListContext *ctx) {
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::GENERATOR_DOMAIN_VARIABLE_LIST_TOKEN);
+        for (auto generatorDomainVariable : ctx->generatorDomainVariable()) {
+            t->addChild(visit(generatorDomainVariable));
+        }
+        return t;
     }
 
     std::any ASTBuilder::visitFilterPredicate(GazpreaParser::FilterPredicateContext *ctx) {
-        return 0;
+        std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::FILTER_PREDICATE_TOKEN);
+        for (auto expression : ctx->expression()) {
+            t->addChild(visit(expression));
+        }
+        return t;
     }
 
     std::any ASTBuilder::visitTypedefStatement(GazpreaParser::TypedefStatementContext *ctx) {
         std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::TYPEDEF);
         t->addChild(visit(ctx->type()));
-        t->addChild(ctx->Identifier()->getSymbol());
+        t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
         return t;
     }
 
@@ -468,7 +500,7 @@ namespace gazprea {
         std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::TUPLE_TYPE_DECLARATION_ATOM);
         t->addChild(visit(ctx->nonTupleType()));
         if (ctx->Identifier()) {
-            t->addChild(ctx->Identifier()->getSymbol());
+            t->addChild(std::make_shared<AST>(ctx->Identifier()->getSymbol()));
         }
         return t;
     }

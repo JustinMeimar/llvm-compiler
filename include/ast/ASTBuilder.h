@@ -108,7 +108,9 @@ public:
 
   virtual std::any visitIndexing(GazpreaParser::IndexingContext *ctx) override; 
 
-  virtual std::any visitGeneartorDomainVariable(GazpreaParser::GeneartorDomainVariableContext *ctx) override; 
+  virtual std::any visitGeneratorDomainVariable(GazpreaParser::GeneratorDomainVariableContext *ctx) override;
+
+  virtual std::any visitGeneratorDomainVariableList(GazpreaParser::GeneratorDomainVariableListContext *ctx) override;
 
   virtual std::any visitFilterPredicate(GazpreaParser::FilterPredicateContext *ctx) override; 
 

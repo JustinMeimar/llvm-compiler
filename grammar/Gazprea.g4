@@ -15,12 +15,12 @@ tokens {
     INPUT_STREAM_TOKEN,
     OUTPUT_STREAM_TOKEN,
     GENERATOR_TOKEN,
-    GENERATOR_DOMAIN_VARIABLE,
+    GENERATOR_DOMAIN_VARIABLE_TOKEN,
+    GENERATOR_DOMAIN_VARIABLE_LIST_TOKEN,
     FILTER_TOKEN,
     FILTER_PREDICATE_TOKEN,
     EXPR_TOKEN,
     BLOCK_TOKEN,
-    PARENTHESIS_TOKEN,
     INDEXING_TOKEN,
     TUPLE_ACCESS_TOKEN,
     TYPE_QUALIFIER_TOKEN,
@@ -39,7 +39,9 @@ tokens {
     TUPLE_TYPE_DECLARATION_ATOM,
     TUPLE_TYPE_DECLARATION_LIST,
     FUNCTION_DECLARATION_RETURN_TOKEN,
-    PROCEDURE_DECLARATION_RETURN_TOKEN
+    PROCEDURE_DECLARATION_RETURN_TOKEN,
+    FORMAL_PARAMETER_TOKEN,
+    FORMAL_PARAMETER_LIST_TOKEN
 }
 
 compilationUnit: statement* EOF;
@@ -140,7 +142,7 @@ expr:
     | expr op='and' expr                                                       # BinaryOp
     | expr op=('or' | 'xor') expr                                              # BinaryOp
     | <assoc=right> expr '||' expr                                             # Concatenation
-    | '[' Identifier IN geneartorDomainVariable '|' expression ']'             # Generator
+    | '[' generatorDomainVariableList '|' expression ']'                       # Generator
     | '[' Identifier IN expression '&' filterPredicate ']'                     # Filter
     | Identifier                                                               # IdentifierAtom
     | IntegerConstant                                                          # IntegerAtom
@@ -151,7 +153,8 @@ expr:
     ;
 //
 // Generator and Filter
-geneartorDomainVariable: expression (',' Identifier IN expression)? ;
+generatorDomainVariable: Identifier IN expression ;
+generatorDomainVariableList: generatorDomainVariable (',' generatorDomainVariable)? ;
 filterPredicate: expression (',' expression)* ;
 // 
 // Reserve Keywords
@@ -233,8 +236,9 @@ fragment SChar
     |   EscapeSequence
     ;
 fragment EscapeSequence: '\\' ['"0abnrt\\] ;
-
-// Skip whitespace and comments
-WS : [ \t\r\n]+ -> skip ;
+//
+// Comment
 LineComment : '//' ~[\r\n]* -> skip ;
 BlockComment: '/*' .*? '*/' -> skip ;
+// Skip whitespace
+WS : [ \t\r\n]+ -> skip ;
