@@ -7,3 +7,13 @@ gen/
 # Ignore CLion files
 cmake-build*/
 .idea/
+
+grammar/.antlr/
+build/
+.vscode/
+
+# Ignore everything in tests/ folder except a few folders and files.
+tests/*
+!tests/input/
+!tests/output/
+!tests/GazpreaConfig.json
