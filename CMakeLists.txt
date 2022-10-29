@@ -36,6 +36,7 @@ include("${CMAKE_SOURCE_DIR}/cmake/antlr_generate.cmake")
 
 # Include project headers.
 include_directories("${CMAKE_SOURCE_DIR}/include")
+include_directories("${CMAKE_SOURCE_DIR}/include/ast")
 
 # Build the source directory.
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src")

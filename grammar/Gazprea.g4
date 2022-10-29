@@ -111,14 +111,14 @@ expr:
     | expr '[' expr ']'                                                        # Indexing
     | expr '..' expr                                                           # Interval
     | <assoc=right> op=('+' | '-' | 'not') expr                                # Unary
-    | <assoc=right> expr '^' expr                                              # BinaryOp
+    | <assoc=right> expr op='^' expr                                           # BinaryOp
     | expr op=('*' | '/' | '%' | '**') expr                                    # BinaryOp
     | expr op=('+' | '-') expr                                                 # BinaryOp
     | expr 'by' expr                                                           # By
-    | expr op=('>' | '<' | '<=' | '>=') expr                                   # Comparison
-    | expr op=('==' | '!=') expr                                               # Comparison
-    | expr op='and' expr                                                       # LogicalOp
-    | expr op=('or' | 'xor') expr                                              # LogicalOp
+    | expr op=('>' | '<' | '<=' | '>=') expr                                   # BinaryOp
+    | expr op=('==' | '!=') expr                                               # BinaryOp
+    | expr op='and' expr                                                       # BinaryOp
+    | expr op=('or' | 'xor') expr                                              # BinaryOp
     | <assoc=right> expr '||' expr                                             # Concatenation
     | '[' Identifier IN geneartorDomainVariable '|' expression ']'             # Generator
     | '[' Identifier IN expression '&' filterPredicate ']'                     # Filter
@@ -129,7 +129,7 @@ expr:
     | StringLiteral                                                            # StringLiteralAtom
     | IDENTITY                                                                 # IdentityAtom
     ;
-// 
+//
 // Generator and Filter
 geneartorDomainVariable: expression (',' Identifier IN expression)? ;
 filterPredicate: expression (',' expression)* ;
@@ -156,7 +156,7 @@ INTERVAL: 'interval' ;
 LENGTH : 'length' ;
 LOOP : 'loop' ;
 NOT : 'not' ;
-NONE : 'null' ;
+NULL_TOKEN : 'null' ;
 OR : 'or' ;
 PROCEDURE : 'procedure' ;
 REAL : 'real' ;
