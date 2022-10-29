@@ -216,7 +216,7 @@ Identifier: [a-zA-Z_][a-zA-Z0-9_]* ;
 // Integer and Real
 IntegerConstant : DigitSequence;
 RealConstant:
-    (DigitSequence? '.' DigitSequence | DigitSequence '.' ) { this.getInputStream().LA(1) != '.' }? ExponentPart?;
+    (DigitSequence? '.' DigitSequence | DigitSequence '.' ) { this->getInputStream()->LA(1) != '.' }? ExponentPart?;
 fragment ExponentPart: 'e' Sign? DigitSequence ;
 fragment Sign: [+-] ;
 fragment DigitSequence: Digit+ ;
