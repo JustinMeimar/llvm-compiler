@@ -114,7 +114,9 @@ public:
 
   virtual std::any visitTypedefStatement(GazpreaParser::TypedefStatementContext *ctx) override; 
 
-  virtual std::any visitProcedureReturn(GazpreaParser::ProcedureReturnContext *ctx) override;
+  virtual std::any visitProcedureDeclarationReturn(GazpreaParser::ProcedureDeclarationReturnContext *ctx) override;
+
+  virtual std::any visitFunctionDeclarationReturn(GazpreaParser::FunctionDeclarationReturnContext *ctx) override;
 
   virtual std::any visitCast(GazpreaParser::CastContext *ctx) override;
 

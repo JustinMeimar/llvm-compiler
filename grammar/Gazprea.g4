@@ -37,7 +37,9 @@ tokens {
     CAST_TOKEN,
     VECTOR_SIZE_DECLARATION_LIST_TOKEN,
     TUPLE_TYPE_DECLARATION_ATOM,
-    TUPLE_TYPE_DECLARATION_LIST
+    TUPLE_TYPE_DECLARATION_LIST,
+    FUNCTION_DECLARATION_RETURN_TOKEN,
+    PROCEDURE_DECLARATION_RETURN_TOKEN
 }
 
 compilationUnit: statement* EOF;
@@ -88,9 +90,10 @@ assignmentStatement: Identifier '=' expression ';' ;
 expressionList: expression (',' expression)* ;
 formalParameter: typeQualifier? type Identifier ;
 formalParameterList: formalParameter (',' formalParameter)* ;
-functionDeclarationDefinition: FUNCTION Identifier '(' formalParameterList ')' RETURNS type (('=' expression) | block)? ';' ;
-procedureDeclarationDefinition: FUNCTION Identifier '(' formalParameterList ')' procedureReturn? ';' ;
-procedureReturn: RETURNS type block? ;
+functionDeclarationDefinition: FUNCTION Identifier '(' formalParameterList? ')' functionDeclarationReturn ';' ;
+procedureDeclarationDefinition: PROCEDURE Identifier '(' formalParameterList? ')' procedureDeclarationReturn ';' ;
+functionDeclarationReturn: RETURNS type (('=' expression) | block)? ;
+procedureDeclarationReturn: (RETURNS type)? block? ;
 callProcedure: CALL Identifier '(' expressionList? ')' ;
 
 // Conditional
@@ -120,7 +123,7 @@ block: '{' statement* '}' ;
 // Expression
 expression: expr ;
 expr: 
-    Identifier '(' expressionList ')'                                          # CallProcedureFunctionInExpression
+    Identifier '(' expressionList? ')'                                         # CallProcedureFunctionInExpression
     | AS '<' type '>' '(' expression ')'                                       # Cast
     | '(' expressionList ')'                                                   # TupleLiteral
     | expr '.' expr                                                            # TupleAccess
