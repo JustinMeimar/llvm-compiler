@@ -110,14 +110,14 @@ expr:
     | expr '[' expr ']'                                                        # Indexing
     | expr '..' expr                                                           # Interval
     | <assoc=right> op=('+' | '-' | 'not') expr                                # Unary
-    | <assoc=right> expr '^' expr                                              # Exponent
-    | expr op=('*' | '/' | '%' | '**') expr                                    # MulDiv
-    | expr op=('+' | '-') expr                                                 # AddSub
+    | <assoc=right> expr '^' expr                                              # BinaryOp
+    | expr op=('*' | '/' | '%' | '**') expr                                    # BinaryOp
+    | expr op=('+' | '-') expr                                                 # BinaryOp
     | expr 'by' expr                                                           # By
-    | expr op=('>' | '<' | '<=' | '>=') expr                                   # LargerSmallerLargerEqualSmallerEqual
-    | expr op=('==' | '!=') expr                                               # IsEqualIsNotEqual
-    | expr 'and' expr                                                          # And
-    | expr op=('or' | 'xor') expr                                              # OrXOR
+    | expr op=('>' | '<' | '<=' | '>=') expr                                   # Comparisson
+    | expr op=('==' | '!=') expr                                               # Comparisson
+    | expr 'and' expr                                                          # LogicalOp
+    | expr op=('or' | 'xor') expr                                              # LogicalOp
     | <assoc=right> expr '||' expr                                             # Concatenation
     | '[' Identifier IN geneartorDomainVariable '|' expression ']'             # Generator
     | '[' Identifier IN expression '&' filterPredicate ']'                     # Filter
