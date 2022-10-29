@@ -73,8 +73,8 @@ assignmentStatement: expression '=' expression ';' ;
 expressionList: expression (',' expression)* ;
 formalParameter: typeQualifier type Identifier ;
 formalParameterList: formalParameter (',' formalParameter)* ;
-functionDeclarationDefinition: FUNCTION Identifier(formalParameterList) RETURNS type (('=' expression) | block)? ';' ;
-procedureDeclarationDefinition: FUNCTION Identifier(formalParameterList) RETURNS type block? ';' ;
+functionDeclarationDefinition: FUNCTION Identifier '(' formalParameterList ')' RETURNS type (('=' expression) | block)? ';' ;
+procedureDeclarationDefinition: FUNCTION Identifier '(' formalParameterList ')' RETURNS type block? ';' ;
 callProcedure: CALL Identifier '(' expressionList ')' ;
 
 // Conditional
@@ -110,11 +110,11 @@ expr:
     | '(' expr ')'                                                             # Parenthesis
     | expr '[' expr ']'                                                        # Indexing
     | expr '..' expr                                                           # Interval
-    | <assoc=right> op=('+' | '-' | 'not') expr                                # Unary
+    | <assoc=right> op=('+' | '-' | 'not') expr                                # UnaryOp
     | <assoc=right> expr op='^' expr                                           # BinaryOp
     | expr op=('*' | '/' | '%' | '**') expr                                    # BinaryOp
     | expr op=('+' | '-') expr                                                 # BinaryOp
-    | expr 'by' expr                                                           # By
+    | expr 'by' expr                                                           # BinaryOp
     | expr op=('>' | '<' | '<=' | '>=') expr                                   # BinaryOp
     | expr op=('==' | '!=') expr                                               # BinaryOp
     | expr op='and' expr                                                       # BinaryOp
@@ -123,8 +123,8 @@ expr:
     | '[' Identifier IN geneartorDomainVariable '|' expression ']'             # Generator
     | '[' Identifier IN expression '&' filterPredicate ']'                     # Filter
     | Identifier                                                               # IdentifierAtom
-    | IntegerConstant                                                          # NoUnaryIntegerAtom
-    | RealConstant                                                             # NoUnaryRealAtom
+    | IntegerConstant                                                          # IntegerAtom
+    | RealConstant                                                             # RealAtom
     | CharacterConstant                                                        # CharacterAtom
     | StringLiteral                                                            # StringLiteralAtom
     | IDENTITY                                                                 # IdentityAtom
