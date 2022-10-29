@@ -145,7 +145,7 @@ std::any ASTBuilder::visitTupleAccess(GazpreaParser::TupleAccessContext *ctx){
     return 0;
 } 
 
-std::any ASTBuilder::visitNoUnaryRealAtom(GazpreaParser::NoUnaryRealAtomContext *ctx){
+std::any ASTBuilder::visitRealAtom(GazpreaParser::RealAtomContext *ctx){
     return 0;
 } 
 
@@ -153,11 +153,11 @@ std::any ASTBuilder::visitCallProcedureFunctionInExpression(GazpreaParser::CallP
     return 0;
 } 
 
-std::any ASTBuilder::visitNoUnaryIntegerAtom(GazpreaParser::NoUnaryIntegerAtomContext *ctx){
+std::any ASTBuilder::visitIntegerAtom(GazpreaParser::IntegerAtomContext *ctx){
     return 0;
 } 
 
-std::any ASTBuilder::visitUnary(GazpreaParser::UnaryContext *ctx){
+std::any ASTBuilder::visitUnaryOp(GazpreaParser::UnaryOpContext *ctx){
     return 0;
 } 
 
@@ -174,10 +174,6 @@ std::any ASTBuilder::visitFilter(GazpreaParser::FilterContext *ctx){
 } 
 
 std::any ASTBuilder::visitStringLiteralAtom(GazpreaParser::StringLiteralAtomContext *ctx){
-    return 0;
-} 
-
-std::any ASTBuilder::visitBy(GazpreaParser::ByContext *ctx){
     return 0;
 } 
 

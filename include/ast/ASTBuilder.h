@@ -79,13 +79,13 @@ public:
 
   virtual std::any visitTupleAccess(GazpreaParser::TupleAccessContext *ctx) override; 
 
-  virtual std::any visitNoUnaryRealAtom(GazpreaParser::NoUnaryRealAtomContext *ctx) override; 
+  virtual std::any visitRealAtom(GazpreaParser::RealAtomContext *ctx) override; 
 
   virtual std::any visitCallProcedureFunctionInExpression(GazpreaParser::CallProcedureFunctionInExpressionContext *ctx) override; 
 
-  virtual std::any visitNoUnaryIntegerAtom(GazpreaParser::NoUnaryIntegerAtomContext *ctx) override; 
+  virtual std::any visitIntegerAtom(GazpreaParser::IntegerAtomContext *ctx) override; 
 
-  virtual std::any visitUnary(GazpreaParser::UnaryContext *ctx) override; 
+  virtual std::any visitUnaryOp(GazpreaParser::UnaryOpContext *ctx) override; 
 
   virtual std::any visitParenthesis(GazpreaParser::ParenthesisContext *ctx) override; 
 
@@ -94,8 +94,6 @@ public:
   virtual std::any visitFilter(GazpreaParser::FilterContext *ctx) override; 
 
   virtual std::any visitStringLiteralAtom(GazpreaParser::StringLiteralAtomContext *ctx) override; 
-
-  virtual std::any visitBy(GazpreaParser::ByContext *ctx) override; 
 
   virtual std::any visitTupleLiteral(GazpreaParser::TupleLiteralContext *ctx) override; 
 
