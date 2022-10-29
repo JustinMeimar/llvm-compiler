@@ -55,7 +55,7 @@ vectorSizeDeclarationAtom: '*' | expression ;
 vectorSizeDeclarationList: vectorSizeDeclarationAtom (',' vectorSizeDeclarationAtom)? ;
 
 vectorMatrixCompatibleScalarType: BOOLEAN | CHARACTER | INTEGER | REAL ;
-scalarType: vectorMatrixCompatibleScalarType STRING | INTERVAL | (INTEGER INTERVAL);
+scalarType: vectorMatrixCompatibleScalarType | STRING | INTERVAL | (INTEGER INTERVAL);
 vectorType: vectorMatrixCompatibleScalarType '[' vectorSizeDeclarationList ']' ;
 nonTupleType: scalarType | vectorType ;
 tupleType: TUPLE '(' nonTupleType Identifier? (',' nonTupleType Identifier?)* ')' ;
@@ -73,11 +73,12 @@ assignmentStatement: expression '=' expression ';' ;
 
 // Function and Procedure
 expressionList: expression (',' expression)* ;
-formalParameter: typeQualifier type Identifier ;
+formalParameter: typeQualifier? type Identifier ;
 formalParameterList: formalParameter (',' formalParameter)* ;
 functionDeclarationDefinition: FUNCTION Identifier '(' formalParameterList ')' RETURNS type (('=' expression) | block)? ';' ;
-procedureDeclarationDefinition: FUNCTION Identifier '(' formalParameterList ')' RETURNS type block? ';' ;
-callProcedure: CALL Identifier '(' expressionList ')' ;
+procedureDeclarationDefinition: FUNCTION Identifier '(' formalParameterList ')' procedureReturn? ';' ;
+procedureReturn: RETURNS type block? ;
+callProcedure: CALL Identifier '(' expressionList? ')' ;
 
 // Conditional
 conditionalStatement: IF '('? expression ')'? (statement | block) elseIfStatement* elseStatement? ;

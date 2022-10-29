@@ -27,10 +27,12 @@ int main(int argc, char **argv) {
 
   // Get the root of the parse tree. Use your base rule name.
   antlr4::tree::ParseTree *tree = parser.compilationUnit();
+
+  std::cout << tree->toStringTree() << std::endl;
   
-  //Build AST
-  gazprea::ASTBuilder builder;
-  builder.visit(tree);
+  // //Build AST
+  // gazprea::ASTBuilder builder;
+  // builder.visit(tree);
 
   return 0;
 }
