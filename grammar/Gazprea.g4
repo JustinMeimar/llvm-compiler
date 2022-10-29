@@ -32,6 +32,7 @@ tokens {
 
 compilationUnit: statement* EOF;
 
+// statement: 'test';
 statement: varDeclarationStatement
         | assignmentStatement
         | conditionalStatement
@@ -80,26 +81,26 @@ callProcedure: CALL Identifier '(' expressionList ')' ;
 conditionalStatement: IF '('? expression ')'? (statement | block) elseIfStatement* elseStatement? ;
 elseIfStatement: ELSE IF '('? expression ')'? (statement | block) ;
 elseStatement: ELSE (statement | block) ;
-
+// 
 // Loop
 infiniteLoopStatement: LOOP (statement | block) ;
 prePredicatedLoopStatement: LOOP WHILE expression (statement | block) ;
 postPredicatedLoopStatement: LOOP (statement | block) WHILE expression ;
 iteratorLoopStatement: LOOP Identifier IN expression (statement | block) ;
-
+// 
 // Break and Continue
 breakStatement: BREAK ';' ;
 continueStatement: CONTINUE ';' ;
-
+// 
 // Stream
 streamStatement:
     expression '->' STD_OUTPUT ';'      # OutputStream
     | expression '<-' STD_INPUT ';'     # InputStream
     ;
-
+// 
 // Block
 block: '{' statement* '}' ;
-
+// 
 // Expression
 expression: expr ;
 expr: 
@@ -128,11 +129,11 @@ expr:
     | StringLiteral                                                            # StringLiteralAtom
     | IDENTITY                                                                 # IdentityAtom
     ;
-
+// 
 // Generator and Filter
 geneartorDomainVariable: expression (',' Identifier IN expression)? ;
 filterPredicate: expression (',' expression)* ;
-
+// 
 // Reserve Keywords
 AND : 'and' ;
 AS : 'as' ;
@@ -155,7 +156,7 @@ INTERVAL: 'interval' ;
 LENGTH : 'length' ;
 LOOP : 'loop' ;
 NOT : 'not' ;
-NULL : 'null' ;
+NONE : 'null' ;
 OR : 'or' ;
 PROCEDURE : 'procedure' ;
 REAL : 'real' ;
@@ -173,9 +174,9 @@ TYPEDEF: 'typedef' ;
 VAR : 'var' ;
 WHILE : 'while' ;
 XOR : 'xor' ;
-
+// 
 Identifier: [a-zA-Z_][a-zA-Z0-9_]* ;
-
+// 
 // Integer and Real
 IntegerConstant : DigitSequence;
 RealConstant: FractionalConstant ExponentPart?;
@@ -187,14 +188,14 @@ fragment ExponentPart: 'e' Sign? DigitSequence ;
 fragment Sign: [+-] ;
 fragment DigitSequence: Digit+ ;
 fragment Digit: [0-9] ;
-
+// 
 // String and Char
 CharacterConstant: '\'' CChar '\'' ;
 fragment CChar
     :   ~[']
     |   EscapeSequence
     ;
-
+// 
 StringLiteral: '"' SCharSequence? '"' ;
 fragment SCharSequence: SChar+ ;
 fragment SChar
