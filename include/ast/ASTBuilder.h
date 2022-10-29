@@ -114,6 +114,8 @@ public:
 
   virtual std::any visitFilterPredicate(GazpreaParser::FilterPredicateContext *ctx) override; 
 
+  virtual std::any visitTypedefStatement(GazpreaParser::TypedefStatementContext *ctx) override; 
+
 };
 
 }  // namespace gazprea
