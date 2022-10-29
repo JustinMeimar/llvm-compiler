@@ -1,5 +1,6 @@
 #pragma once
 #include "GazpreaBaseVisitor.h"
+#include "AST.h"
 
 namespace gazprea {
 
@@ -10,8 +11,6 @@ public:
   ~ASTBuilder();
 
   virtual std::any visitCompilationUnit(GazpreaParser::CompilationUnitContext *ctx) override; 
-
-  virtual std::any visitStatement(GazpreaParser::StatementContext *ctx) override; 
 
   virtual std::any visitVectorSizeDeclarationAtom(GazpreaParser::VectorSizeDeclarationAtomContext *ctx) override; 
 

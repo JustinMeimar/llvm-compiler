@@ -23,11 +23,13 @@ tokens {
     PARENTHESIS_TOKEN,
     INDEXING_TOKEN,
     TUPLE_ACCESS_TOKEN,
-    INTERVAL_TOKEN,
     TYPE_QUALIFIER_TOKEN,
     UNARY_TOKEN,
     CALL_PROCEDURE_STATEMENT,
-    CALL_PROCEDURE_FUNCTION_IN_EXPRESSION
+    CALL_PROCEDURE_FUNCTION_IN_EXPRESSION,
+    STRING_CONCAT_TOKEN,
+    EXPRESSION_LIST_TOKEN,
+    TUPLE_LITERAL_TOKEN
 }
 
 compilationUnit: statement* EOF;
@@ -114,7 +116,7 @@ expr:
     | <assoc=right> expr op='^' expr                                           # BinaryOp
     | expr op=('*' | '/' | '%' | '**') expr                                    # BinaryOp
     | expr op=('+' | '-') expr                                                 # BinaryOp
-    | expr 'by' expr                                                           # BinaryOp
+    | expr op='by' expr                                                        # BinaryOp
     | expr op=('>' | '<' | '<=' | '>=') expr                                   # BinaryOp
     | expr op=('==' | '!=') expr                                               # BinaryOp
     | expr op='and' expr                                                       # BinaryOp
@@ -174,6 +176,19 @@ TYPEDEF: 'typedef' ;
 VAR : 'var' ;
 WHILE : 'while' ;
 XOR : 'xor' ;
+//
+PLUS: '+' ;
+MINUS: '-' ;
+MUL: '*' ;
+DIV: '/' ;
+MODULO: '%' ;
+DOTPRODUCT: '**' ;
+LESSTHAN: '<' ;
+GREATERTHAN: '>' ;
+LESSTHANOREQUAL: '<=' ;
+GREATERTHANOREQUAL: '>=' ;
+ISEQUAL: '==' ;
+ISNOTEQUAL: '!=' ;
 // 
 Identifier: [a-zA-Z_][a-zA-Z0-9_]* ;
 // 
