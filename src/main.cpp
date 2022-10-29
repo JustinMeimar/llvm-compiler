@@ -30,9 +30,9 @@ int main(int argc, char **argv) {
 
   std::cout << tree->toStringTree() << std::endl;
   
-  // //Build AST
-  // gazprea::ASTBuilder builder;
-  // builder.visit(tree);
+  //Build AST
+  gazprea::ASTBuilder builder;
+  builder.visit(tree);
 
   return 0;
 }
