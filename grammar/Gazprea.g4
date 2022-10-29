@@ -29,7 +29,10 @@ tokens {
     CALL_PROCEDURE_FUNCTION_IN_EXPRESSION,
     STRING_CONCAT_TOKEN,
     EXPRESSION_LIST_TOKEN,
-    TUPLE_LITERAL_TOKEN
+    TUPLE_LITERAL_TOKEN,
+    SCALAR_TYPE_TOKEN,
+    VECTOR_TYPE_TOKEN,
+    TUPLE_TYPE_TOKEN
 }
 
 compilationUnit: statement* EOF;
@@ -48,6 +51,7 @@ statement: varDeclarationStatement
         | functionDeclarationDefinition
         | procedureDeclarationDefinition
         | callProcedure
+        | typedefStatement
         ;
 
 // Type and Type Qualifier
@@ -62,6 +66,9 @@ tupleType: TUPLE '(' nonTupleType Identifier? (',' nonTupleType Identifier?)* ')
 type: scalarType | vectorType | tupleType ;
 
 typeQualifier: VAR | CONST ;
+
+// typedef
+typedefStatement: TYPEDEF type Identifier ';' ;
 
 // Variable Declaration and Assignment
 varDeclarationStatement:
@@ -108,6 +115,7 @@ block: '{' statement* '}' ;
 expression: expr ;
 expr: 
     Identifier '(' expressionList ')'                                          # CallProcedureFunctionInExpression
+    | AS '<' type '>' '(' expression ')'                                       # Cast
     | '(' expressionList ')'                                                   # TupleLiteral
     | expr '.' expr                                                            # TupleAccess
     | '(' expr ')'                                                             # Parenthesis
