@@ -80,7 +80,7 @@ singleTermType:
      ;
 
 typeQualifier: VAR | CONST ;
-unqualifiedType: singleTermType? singleTermType;
+unqualifiedType: singleTermType singleTermType?;
 anyType:
     typeQualifier? unqualifiedType  # ExplcitType
     | typeQualifier                 # InferredType
@@ -100,7 +100,7 @@ formalParameter: anyType Identifier ;
 formalParameterList: formalParameter (',' formalParameter)* ;
 
 subroutineBody : ';'      # FunctionEmptyBody
-        | '=' expr ';'  # FunctionExprBody
+        | '=' expression ';'  # FunctionExprBody
         | block         # FunctionBlockBody
         ;
 subroutineDeclDef: (PROCEDURE | FUNCTION) Identifier '(' formalParameterList? ')' (RETURNS unqualifiedType)? subroutineBody;
