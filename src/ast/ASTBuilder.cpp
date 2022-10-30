@@ -132,20 +132,22 @@ namespace gazprea {
             t->addChild(visit(ctx->formalParameterList()));
         } 
         t->addChild(visit(ctx->unqualifiedType()));
-        
+        if (ctx->subroutineBody()) {
+            t->addChild(visit(ctx->subroutineBody()));
+        }
         return t;
     }
 
     std::any ASTBuilder::visitFunctionEmptyBody(GazpreaParser::FunctionEmptyBodyContext *ctx){
-
+        return std::make_shared<AST>(GazpreaParser::EMPTY_SUBROUTINE_BODY_TOKEN); 
     }
 
     std::any ASTBuilder::visitFunctionExprBody(GazpreaParser::FunctionExprBodyContext *ctx){
-
+        return visit(ctx->expr());
     }
 
     std::any ASTBuilder::visitFunctionBlockBody(GazpreaParser::FunctionBlockBodyContext *ctx){
-
+        return visit(ctx->block()); 
     }
 
     std::any ASTBuilder::visitReturnStatement(GazpreaParser::ReturnStatementContext *ctx){
