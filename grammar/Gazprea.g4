@@ -59,10 +59,7 @@ statement: varDeclarationStatement
         | continueStatement
         | iteratorLoopStatement
         | streamStatement
-        | functionDefinition
-        | functionDeclaration
-        | procedureDeclaration
-        | procedureDefinition
+        | functionDeclDef
         | returnStatement
         | callProcedure
         | typedefStatement
@@ -100,13 +97,13 @@ expressionList: expression (',' expression)* ;
 formalParameter: typeQualifier? type Identifier ;
 formalParameterList: formalParameter (',' formalParameter)* ;
 
-functionDeclaration: FUNCTION Identifier '(' formalParameterList? ')' RETURNS type ';' ;
-functionDefinition: FUNCTION Identifier '(' formalParameterList? ')' RETURNS type block;
+functionBody : ';'      # FunctionEmptyBody
+        | '=' expr ';'  # FunctionExprBody
+        | block         # FunctionBlockBody
+        ;
+functionDeclDef: (PROCEDURE | FUNCTION) Identifier '(' formalParameterList? ')' (RETURNS type)? functionBody;
 
-procedureDeclaration: PROCEDURE Identifier '(' formalParameterList? ')' RETURNS type ';' ;
-procedureDefinition: PROCEDURE Identifier '(' formalParameterList? ')' RETURNS type block;
-
-returnStatement: RETURN expr ';';
+returnStatement: RETURN expression ';';
 
 callProcedure: CALL Identifier '(' expressionList? ')' ';';
 
@@ -156,19 +153,17 @@ expr:
     | expr op=('or' | 'xor') expr                                              # BinaryOp
     | <assoc=right> expr '||' expr                                             # Concatenation
     | '[' generatorDomainVariableList '|' expression ']'                       # Generator
-    | '[' Identifier IN expression '&' filterPredicate ']'                     # Filter
+    | '[' Identifier IN expression '&' expressionList ']'                     # Filter
     | Identifier                                                               # IdentifierAtom
     | IntegerConstant                                                          # IntegerAtom
     | RealConstant                                                             # RealAtom
     | CharacterConstant                                                        # CharacterAtom
     | StringLiteral                                                            # StringLiteralAtom
-    | IDENTITY                                                                 # IdentityAtom
     ;
 //
 // Generator and Filter
 generatorDomainVariable: Identifier IN expression ;
 generatorDomainVariableList: generatorDomainVariable (',' generatorDomainVariable)? ;
-filterPredicate: expression (',' expression)* ;
 // 
 // Reserve Keywords
 AND : 'and' ;
