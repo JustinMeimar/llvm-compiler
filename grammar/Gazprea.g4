@@ -42,6 +42,7 @@ tokens {
     TUPLE_TYPE_DECLARATION_LIST,
     FUNCTION_DECLARATION_RETURN_TOKEN,
     PROCEDURE_DECLARATION_RETURN_TOKEN,
+    EMPTY_SUBROUTINE_BODY_TOKEN,
     FORMAL_PARAMETER_TOKEN,
     FORMAL_PARAMETER_LIST_TOKEN
 }
@@ -99,9 +100,9 @@ expressionList: expression (',' expression)* ;
 formalParameter: anyType Identifier ;
 formalParameterList: formalParameter (',' formalParameter)* ;
 
-subroutineBody : ';'      # FunctionEmptyBody
-        | '=' expression ';'  # FunctionExprBody
-        | block         # FunctionBlockBody
+subroutineBody : ';'            # FunctionEmptyBody
+        | '=' expression ';'    # FunctionExprBody
+        | block                 # FunctionBlockBody
         ;
 subroutineDeclDef: (PROCEDURE | FUNCTION) Identifier '(' formalParameterList? ')' (RETURNS unqualifiedType)? subroutineBody;
 
