@@ -99,7 +99,7 @@ expressionList: expression (',' expression)* ;
 formalParameter: anyType Identifier ;
 formalParameterList: formalParameter (',' formalParameter)* ;
 
-subroutineBody : ';'      # FunctionEmptyBody
+subroutineBody : ';'    # FunctionEmptyBody
         | '=' expr ';'  # FunctionExprBody
         | block         # FunctionBlockBody
         ;

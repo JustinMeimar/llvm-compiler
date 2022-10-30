@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
   gazprea::ASTBuilder builder;
   std::shared_ptr<AST> ast = std::any_cast<std::shared_ptr<AST>>(builder.visit(tree));
 
-  std::cout << ast->toStringTree() << std::endl;
+  // std::cout << ast->toStringTree() << std::endl;
 
   return 0;
 }

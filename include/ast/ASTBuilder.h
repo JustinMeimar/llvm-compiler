@@ -9,7 +9,7 @@ public:
 
   ASTBuilder();
   ~ASTBuilder();
-
+  
   virtual std::any visitCompilationUnit(GazpreaParser::CompilationUnitContext *ctx) override;
 
   virtual std::any visitVectorSizeDeclarationAtom(GazpreaParser::VectorSizeDeclarationAtomContext *ctx) override;
@@ -20,27 +20,25 @@ public:
 
   virtual std::any visitTupleTypeDeclarationList(GazpreaParser::TupleTypeDeclarationListContext *ctx) override;
 
-  virtual std::any visitScalarType(GazpreaParser::ScalarTypeContext *ctx) override;
+  virtual std::any visitSingleTokenType(GazpreaParser::SingleTokenTypeContext *ctx) override;
 
-  virtual std::any visitVectorType(GazpreaParser::VectorTypeContext *ctx) override;
-
-  virtual std::any visitNonTupleType(GazpreaParser::NonTupleTypeContext *ctx) override;
+  virtual std::any visitVectorMatrixType(GazpreaParser::VectorMatrixTypeContext *ctx) override;
 
   virtual std::any visitTupleType(GazpreaParser::TupleTypeContext *ctx) override;
 
-  virtual std::any visitType(GazpreaParser::TypeContext *ctx) override;
+  virtual std::any visitSingleTokenTypeAtom(GazpreaParser::SingleTokenTypeAtomContext *ctx) override;
 
   virtual std::any visitTypeQualifier(GazpreaParser::TypeQualifierContext *ctx) override;
 
+  virtual std::any visitUnqualifiedType(GazpreaParser::UnqualifiedTypeContext *ctx) override;
+
+  virtual std::any visitExplcitType(GazpreaParser::ExplcitTypeContext *ctx) override;
+
+  virtual std::any visitInferredType(GazpreaParser::InferredTypeContext *ctx) override;
+
   virtual std::any visitTypedefStatement(GazpreaParser::TypedefStatementContext *ctx) override;
 
-  virtual std::any visitScalarVarDeclaration(GazpreaParser::ScalarVarDeclarationContext *ctx) override;
-
-  virtual std::any visitVectorVarDeclaration(GazpreaParser::VectorVarDeclarationContext *ctx) override;
-
-  virtual std::any visitTupleVarDeclaration(GazpreaParser::TupleVarDeclarationContext *ctx) override;
-
-  virtual std::any visitTypeDefVarDeclaration(GazpreaParser::TypeDefVarDeclarationContext *ctx) override;
+  virtual std::any visitVarDeclarationStatement(GazpreaParser::VarDeclarationStatementContext *ctx) override;
 
   virtual std::any visitAssignmentStatement(GazpreaParser::AssignmentStatementContext *ctx) override;
 
@@ -50,13 +48,13 @@ public:
 
   virtual std::any visitFormalParameterList(GazpreaParser::FormalParameterListContext *ctx) override;
 
-  virtual std::any visitFunctionDeclaration(GazpreaParser::FunctionDeclarationContext *ctx) override;
+  virtual std::any visitFunctionEmptyBody(GazpreaParser::FunctionEmptyBodyContext *ctx) override;
 
-  virtual std::any visitFunctionDefinition(GazpreaParser::FunctionDefinitionContext *ctx) override;
+  virtual std::any visitFunctionExprBody(GazpreaParser::FunctionExprBodyContext *ctx) override;
 
-  virtual std::any visitProcedureDeclaration(GazpreaParser::ProcedureDeclarationContext *ctx) override;
+  virtual std::any visitFunctionBlockBody(GazpreaParser::FunctionBlockBodyContext *ctx) override;
 
-  virtual std::any visitProcedureDefinition(GazpreaParser::ProcedureDefinitionContext *ctx) override;
+  virtual std::any visitSubroutineDeclDef(GazpreaParser::SubroutineDeclDefContext *ctx) override;
 
   virtual std::any visitReturnStatement(GazpreaParser::ReturnStatementContext *ctx) override;
 
@@ -118,20 +116,15 @@ public:
 
   virtual std::any visitGenerator(GazpreaParser::GeneratorContext *ctx) override;
 
-  virtual std::any visitIdentityAtom(GazpreaParser::IdentityAtomContext *ctx) override;
-
   virtual std::any visitInterval(GazpreaParser::IntervalContext *ctx) override;
 
   virtual std::any visitBinaryOp(GazpreaParser::BinaryOpContext *ctx) override;
 
   virtual std::any visitIndexing(GazpreaParser::IndexingContext *ctx) override;
 
-  virtual std::any visitGeneratorDomainVariable(GazpreaParser::GeneratorDomainVariableContext *ctx) override;
+  virtual std::any visitDomainExpression(GazpreaParser::DomainExpressionContext *ctx) override;
 
-  virtual std::any visitGeneratorDomainVariableList(GazpreaParser::GeneratorDomainVariableListContext *ctx) override;
-
-  virtual std::any visitFilterPredicate(GazpreaParser::FilterPredicateContext *ctx) override;
-  
+  virtual std::any visitGeneratorDomainVariableList(GazpreaParser::GeneratorDomainVariableListContext *ctx) override; 
 
 };
 
