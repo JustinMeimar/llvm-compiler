@@ -74,7 +74,7 @@ vectorSizeDeclarationList: vectorSizeDeclarationAtom (',' vectorSizeDeclarationA
 tupleTypeDeclarationAtom: nonTupleType Identifier? ;
 tupleTypeDeclarationList: tupleTypeDeclarationAtom (',' tupleTypeDeclarationAtom)* ;
 
-scalarType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | (INTEGER INTERVAL);
+scalarType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | (INTEGER INTERVAL);
 vectorType: scalarType '[' vectorSizeDeclarationList ']' ;
 nonTupleType: scalarType | vectorType ;
 tupleType: TUPLE '(' tupleTypeDeclarationList ')' ;
@@ -127,8 +127,8 @@ continueStatement: CONTINUE ';' ;
 // 
 // Stream
 streamStatement:
-    expression '->' STD_OUTPUT ';'      # OutputStream
-    | expression '<-' STD_INPUT ';'     # InputStream
+    expression '->' Identifier ';'      # OutputStream
+    | expression '<-' Identifier ';'     # InputStream
     ;
 // 
 // Block
@@ -178,33 +178,22 @@ BREAK : 'break' ;
 BY: 'by' ;
 CALL : 'call' ;
 CHARACTER : 'character' ;
-COLUMNS : 'columns' ;
 CONST : 'const' ;
 CONTINUE : 'continue' ;
 ELSE : 'else' ;
-FALSE : 'false' ;
 FUNCTION: 'function' ;
-IDENTITY : 'identity' ;
 IF: 'if' ;
 IN: 'in' ;
 INTEGER: 'integer' ;
 INTERVAL: 'interval' ;
-LENGTH : 'length' ;
 LOOP : 'loop' ;
 NOT : 'not' ;
-NULL_TOKEN : 'null' ;
 OR : 'or' ;
 PROCEDURE : 'procedure' ;
 REAL : 'real' ;
 RETURN : 'return' ;
 RETURNS : 'returns' ;
-REVERSE : 'reverse' ;
-ROWS: 'rows' ;
-STD_INPUT : 'std_input' ;
-STD_OUTPUT : 'std_output' ;
-STREAM_STATE : 'stream_state' ;
 STRING : 'string' ;
-TRUE : 'true' ;
 TUPLE : 'tuple' ;
 TYPEDEF: 'typedef' ;
 VAR : 'var' ;
@@ -229,16 +218,17 @@ Identifier: [a-zA-Z_][a-zA-Z0-9_]* ;
 // Integer and Real
 IntegerConstant : DigitSequence;
 RealConstant:
-    (DigitSequence? '.' DigitSequence | DigitSequence '.' ) { this->getInputStream()->LA(1) != '.' }? ExponentPart?;
+    (DigitSequence? '.' DigitSequence | DigitSequence '.' ) { this->getInputStream()->LA(1) != '.' }? ExponentPart?
+    | DigitSequence ExponentPart;
 fragment ExponentPart: 'e' Sign? DigitSequence ;
 fragment Sign: [+-] ;
 fragment DigitSequence: Digit+ ;
 fragment Digit: [0-9] ;
-// 
+//
 // String and Char
 CharacterConstant: '\'' CChar '\'' ;
 fragment CChar
-    :   ~[']
+    :   ~['\\]
     |   EscapeSequence
     ;
 //
