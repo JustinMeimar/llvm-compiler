@@ -63,6 +63,7 @@ statement: varDeclarationStatement
         | returnStatement
         | callProcedure
         | typedefStatement
+        | block
         ;
 
 // Type and Type Qualifier
@@ -75,7 +76,7 @@ singleTokenType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | Iden
 singleTermType:
      singleTokenType '[' vectorSizeDeclarationList ']'  # VectorMatrixType
      | TUPLE '(' tupleTypeDeclarationList ')'           # TupleType
-     | singleTokenType                                  # SingleTokenTypeAsSingleTermType
+     | singleTokenType                                  # SingleTokenTypeAtom
      ;
 
 typeQualifier: VAR | CONST ;
@@ -109,15 +110,15 @@ returnStatement: RETURN expression ';';
 callProcedure: CALL Identifier '(' expressionList? ')' ';';
 
 // Conditional
-conditionalStatement: IF '('? expression ')'? (statement | block) elseIfStatement* elseStatement? ;
-elseIfStatement: ELSE IF '('? expression ')'? (statement | block) ;
-elseStatement: ELSE (statement | block) ;
+conditionalStatement: IF expression statement elseIfStatement* elseStatement? ;
+elseIfStatement: ELSE IF expression statement ;
+elseStatement: ELSE statement ;
 // 
 // Loop
-infiniteLoopStatement: LOOP (statement | block) ;
-prePredicatedLoopStatement: LOOP WHILE expression (statement | block) ;
-postPredicatedLoopStatement: LOOP (statement | block) WHILE expression ';' ;
-iteratorLoopStatement: LOOP Identifier IN expression (statement | block) ;
+infiniteLoopStatement: LOOP statement ;
+prePredicatedLoopStatement: LOOP WHILE expression statement ;
+postPredicatedLoopStatement: LOOP statement WHILE expression ';' ;
+iteratorLoopStatement: LOOP Identifier IN expression statement ;
 // 
 // Break and Continue
 breakStatement: BREAK ';' ;
@@ -136,9 +137,9 @@ block: '{' statement* '}' ;
 expression: expr ;
 expr: 
     Identifier '(' expressionList? ')'                                         # CallProcedureFunctionInExpression
-    | AS '<' unqualifiedType '>' '(' expression ')'                                       # Cast
+    | AS '<' unqualifiedType '>' '(' expression ')'                            # Cast
     | '(' expressionList ')'                                                   # TupleLiteral
-    | expr '.' expr                                                            # TupleAccess
+    | expr DOT expr                                                            # TupleAccess
     | '(' expr ')'                                                             # Parenthesis
     | '[' expressionList? ']'                                                  # VectorLiteral
     | expr '[' expr ']'                                                        # Indexing
@@ -196,6 +197,7 @@ VAR : 'var' ;
 WHILE : 'while' ;
 XOR : 'xor' ;
 //
+DOT: '.';  // Tuple access comes before real recognition
 PLUS: '+' ;
 MINUS: '-' ;
 ASTERISK: '*' ;
