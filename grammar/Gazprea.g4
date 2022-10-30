@@ -4,6 +4,7 @@ tokens {
     SCALAR_VAR_DECLARATION_TOKEN,
     VECTOR_VAR_DECLARATION_TOKEN,
     TUPLE_VAR_DECLARATION_TOKEN,
+    TYPEDEF_VAR_DECLARATION_TOKEN,
     ASSIGNMENT_TOKEN,
     CONDITIONAL_TOKEN,
     ELSEIF_TOKEN,
@@ -30,6 +31,7 @@ tokens {
     STRING_CONCAT_TOKEN,
     EXPRESSION_LIST_TOKEN,
     TUPLE_LITERAL_TOKEN,
+    VECTOR_LITERAL_TOKEN,
     SCALAR_TYPE_TOKEN,
     VECTOR_TYPE_TOKEN,
     TUPLE_TYPE_TOKEN,
@@ -57,8 +59,11 @@ statement: varDeclarationStatement
         | continueStatement
         | iteratorLoopStatement
         | streamStatement
-        | functionDeclarationDefinition
-        | procedureDeclarationDefinition
+        | functionDefinition
+        | functionDeclaration
+        | procedureDeclaration
+        | procedureDefinition
+        | returnStatement
         | callProcedure
         | typedefStatement
         ;
@@ -73,7 +78,8 @@ scalarType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | (INTEGER 
 vectorType: scalarType '[' vectorSizeDeclarationList ']' ;
 nonTupleType: scalarType | vectorType ;
 tupleType: TUPLE '(' tupleTypeDeclarationList ')' ;
-type: scalarType | vectorType | tupleType ;
+typeDefType: Identifier;
+type: scalarType | vectorType | tupleType | typeDefType ;
 
 typeQualifier: VAR | CONST ;
 
@@ -82,9 +88,10 @@ typedefStatement: TYPEDEF type Identifier ';' ;
 
 // Variable Declaration and Assignment
 varDeclarationStatement:
-    typeQualifier? scalarType Identifier ('=' expression)? ';'     # ScalarVarDeclaration
-    | typeQualifier? vectorType Identifier ('=' expression)? ';'   # VectorVarDeclaration
-    | typeQualifier? tupleType Identifier ('=' expression)? ';'    # TupleVarDeclaration
+    typeQualifier? scalarType Identifier ('=' expression)? ';'      # ScalarVarDeclaration
+    | typeQualifier? vectorType Identifier ('=' expression)? ';'    # VectorVarDeclaration
+    | typeQualifier? tupleType Identifier ('=' expression)? ';'     # TupleVarDeclaration
+    | typeQualifier? Identifier Identifier ('=' expression)? ';'    # TypeDefVarDeclaration
     ;
 assignmentStatement: Identifier '=' expression ';' ;
 
@@ -92,10 +99,15 @@ assignmentStatement: Identifier '=' expression ';' ;
 expressionList: expression (',' expression)* ;
 formalParameter: typeQualifier? type Identifier ;
 formalParameterList: formalParameter (',' formalParameter)* ;
-functionDeclarationDefinition: FUNCTION Identifier '(' formalParameterList? ')' functionDeclarationReturn ';' ;
-procedureDeclarationDefinition: PROCEDURE Identifier '(' formalParameterList? ')' procedureDeclarationReturn ';' ;
-functionDeclarationReturn: RETURNS type (('=' expression) | block)? ;
-procedureDeclarationReturn: (RETURNS type)? block? ;
+
+functionDeclaration: FUNCTION Identifier '(' formalParameterList? ')' RETURNS type ';' ;
+functionDefinition: FUNCTION Identifier '(' formalParameterList? ')' RETURNS type block;
+
+procedureDeclaration: PROCEDURE Identifier '(' formalParameterList? ')' RETURNS type ';' ;
+procedureDefinition: PROCEDURE Identifier '(' formalParameterList? ')' RETURNS type block;
+
+returnStatement: RETURN expr ';';
+
 callProcedure: CALL Identifier '(' expressionList? ')' ';';
 
 // Conditional
@@ -130,6 +142,7 @@ expr:
     | '(' expressionList ')'                                                   # TupleLiteral
     | expr '.' expr                                                            # TupleAccess
     | '(' expr ')'                                                             # Parenthesis
+    | '[' expressionList? ']'                                                  # VectorLiteral
     | expr '[' expr ']'                                                        # Indexing
     | expr '..' expr                                                           # Interval
     | <assoc=right> op=('+' | '-' | 'not') expr                                # UnaryOp
@@ -228,7 +241,7 @@ fragment CChar
     :   ~[']
     |   EscapeSequence
     ;
-// 
+//
 StringLiteral: '"' SCharSequence? '"' ;
 fragment SCharSequence: SChar+ ;
 fragment SChar
