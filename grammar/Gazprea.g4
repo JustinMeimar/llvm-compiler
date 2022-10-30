@@ -92,7 +92,7 @@ typedefStatement: TYPEDEF unqualifiedType Identifier ';' ;  // can not include c
 // Variable Declaration and Assignment
 varDeclarationStatement:
     anyType Identifier ('=' expression)? ';' ;
-assignmentStatement: Identifier '=' expression ';' ;
+assignmentStatement: expressionList '=' expression ';' ;
 
 // Function and Procedure
 expressionList: expression (',' expression)* ;
@@ -118,7 +118,7 @@ elseStatement: ELSE statement ;
 infiniteLoopStatement: LOOP statement ;
 prePredicatedLoopStatement: LOOP WHILE expression statement ;
 postPredicatedLoopStatement: LOOP statement WHILE expression ';' ;
-iteratorLoopStatement: LOOP Identifier IN expression statement ;
+iteratorLoopStatement: LOOP domainExpression (',' domainExpression)* statement ;
 // 
 // Break and Continue
 breakStatement: BREAK ';' ;
@@ -164,8 +164,8 @@ expr:
     ;
 //
 // Generator and Filter
-generatorDomainVariable: Identifier IN expression ;
-generatorDomainVariableList: generatorDomainVariable (',' generatorDomainVariable)? ;
+domainExpression: Identifier IN expression ;
+generatorDomainVariableList: domainExpression (',' domainExpression)? ;
 // 
 // Reserve Keywords
 AND : 'and' ;
