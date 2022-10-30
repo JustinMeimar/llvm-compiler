@@ -59,7 +59,7 @@ statement: varDeclarationStatement
         | continueStatement
         | iteratorLoopStatement
         | streamStatement
-        | functionDeclDef
+        | subroutineDeclDef
         | returnStatement
         | callProcedure
         | typedefStatement
@@ -68,40 +68,41 @@ statement: varDeclarationStatement
 // Type and Type Qualifier
 vectorSizeDeclarationAtom: '*' | expression ;
 vectorSizeDeclarationList: vectorSizeDeclarationAtom (',' vectorSizeDeclarationAtom)? ;
-tupleTypeDeclarationAtom: nonTupleType Identifier? ;
+tupleTypeDeclarationAtom: unqualifiedType Identifier? ;  // can be integer interval so can't use single term type
 tupleTypeDeclarationList: tupleTypeDeclarationAtom (',' tupleTypeDeclarationAtom)* ;
 
-scalarType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | (INTEGER INTERVAL);
-vectorType: scalarType '[' vectorSizeDeclarationList ']' ;
-nonTupleType: scalarType | vectorType ;
-tupleType: TUPLE '(' tupleTypeDeclarationList ')' ;
-typeDefType: Identifier;
-type: scalarType | vectorType | tupleType | typeDefType ;
+singleTokenType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | Identifier;  // type represented by one token
+singleTermType:
+     singleTokenType '[' vectorSizeDeclarationList ']'  # VectorMatrixType
+     | TUPLE '(' tupleTypeDeclarationList ')'           # TupleType
+     | singleTokenType                                  # SingleTokenTypeAsSingleTermType
+     ;
 
 typeQualifier: VAR | CONST ;
+unqualifiedType: singleTermType? singleTermType;
+anyType:
+    typeQualifier? unqualifiedType  # ExplcitType
+    | typeQualifier                 # InferredType
+    ;
 
 // typedef
-typedefStatement: TYPEDEF type Identifier ';' ;
+typedefStatement: TYPEDEF unqualifiedType Identifier ';' ;  // can not include const/var
 
 // Variable Declaration and Assignment
 varDeclarationStatement:
-    typeQualifier? scalarType Identifier ('=' expression)? ';'      # ScalarVarDeclaration
-    | typeQualifier? vectorType Identifier ('=' expression)? ';'    # VectorVarDeclaration
-    | typeQualifier? tupleType Identifier ('=' expression)? ';'     # TupleVarDeclaration
-    | typeQualifier? Identifier Identifier ('=' expression)? ';'    # TypeDefVarDeclaration
-    ;
+    anyType Identifier ('=' expression)? ';' ;
 assignmentStatement: Identifier '=' expression ';' ;
 
 // Function and Procedure
 expressionList: expression (',' expression)* ;
-formalParameter: typeQualifier? type Identifier ;
+formalParameter: anyType Identifier ;
 formalParameterList: formalParameter (',' formalParameter)* ;
 
-functionBody : ';'      # FunctionEmptyBody
+subroutineBody : ';'      # FunctionEmptyBody
         | '=' expr ';'  # FunctionExprBody
         | block         # FunctionBlockBody
         ;
-functionDeclDef: (PROCEDURE | FUNCTION) Identifier '(' formalParameterList? ')' (RETURNS type)? functionBody;
+subroutineDeclDef: (PROCEDURE | FUNCTION) Identifier '(' formalParameterList? ')' (RETURNS unqualifiedType)? subroutineBody;
 
 returnStatement: RETURN expression ';';
 
@@ -115,7 +116,7 @@ elseStatement: ELSE (statement | block) ;
 // Loop
 infiniteLoopStatement: LOOP (statement | block) ;
 prePredicatedLoopStatement: LOOP WHILE expression (statement | block) ;
-postPredicatedLoopStatement: LOOP (statement | block) WHILE expression ;
+postPredicatedLoopStatement: LOOP (statement | block) WHILE expression ';' ;
 iteratorLoopStatement: LOOP Identifier IN expression (statement | block) ;
 // 
 // Break and Continue
@@ -135,7 +136,7 @@ block: '{' statement* '}' ;
 expression: expr ;
 expr: 
     Identifier '(' expressionList? ')'                                         # CallProcedureFunctionInExpression
-    | AS '<' type '>' '(' expression ')'                                       # Cast
+    | AS '<' unqualifiedType '>' '(' expression ')'                                       # Cast
     | '(' expressionList ')'                                                   # TupleLiteral
     | expr '.' expr                                                            # TupleAccess
     | '(' expr ')'                                                             # Parenthesis
@@ -153,7 +154,7 @@ expr:
     | expr op=('or' | 'xor') expr                                              # BinaryOp
     | <assoc=right> expr '||' expr                                             # Concatenation
     | '[' generatorDomainVariableList '|' expression ']'                       # Generator
-    | '[' Identifier IN expression '&' expressionList ']'                     # Filter
+    | '[' Identifier IN expression '&' expressionList ']'                      # Filter
     | Identifier                                                               # IdentifierAtom
     | IntegerConstant                                                          # IntegerAtom
     | RealConstant                                                             # RealAtom
