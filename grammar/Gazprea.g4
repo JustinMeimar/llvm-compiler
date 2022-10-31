@@ -70,10 +70,10 @@ statement: varDeclarationStatement
 // Type and Type Qualifier
 vectorSizeDeclarationAtom: '*' | expression ;
 vectorSizeDeclarationList: vectorSizeDeclarationAtom (',' vectorSizeDeclarationAtom)? ;
-tupleTypeDeclarationAtom: unqualifiedType Identifier? ;  // can be integer interval so can't use single term type
+tupleTypeDeclarationAtom: unqualifiedType identifier? ;  // can be integer interval so can't use single term type
 tupleTypeDeclarationList: tupleTypeDeclarationAtom (',' tupleTypeDeclarationAtom)* ;
 
-singleTokenType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | Identifier;  // type represented by one token
+singleTokenType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | identifier;  // type represented by one token
 singleTermType:
      singleTokenType '[' vectorSizeDeclarationList ']'  # VectorMatrixType
      | TUPLE '(' tupleTypeDeclarationList ')'           # TupleType
@@ -88,56 +88,61 @@ anyType:
     ;
 
 // typedef
-typedefStatement: TYPEDEF unqualifiedType Identifier ';' ;  // can not include const/var
+typedefStatement: TYPEDEF unqualifiedType identifier ';' ;  // can not include const/var
 
 // Variable Declaration and Assignment
 varDeclarationStatement:
-    anyType Identifier ('=' expression)? ';' ;
+    anyType identifier ('=' expression)? ';' ;
 assignmentStatement: expressionList '=' expression ';' ;
 
 // Function and Procedure
 expressionList: expression (',' expression)* ;
-formalParameter: anyType Identifier ;
+formalParameter: anyType identifier ;
 formalParameterList: formalParameter (',' formalParameter)* ;
 
 subroutineBody : ';'            # FunctionEmptyBody
         | '=' expression ';'    # FunctionExprBody
         | block                 # FunctionBlockBody
         ;
-subroutineDeclDef: (PROCEDURE | FUNCTION) Identifier '(' formalParameterList? ')' (RETURNS unqualifiedType)? subroutineBody;
+subroutineDeclDef: (PROCEDURE | FUNCTION) identifier '(' formalParameterList? ')' (RETURNS unqualifiedType)? subroutineBody;
 
 returnStatement: RETURN expression ';';
 
-callProcedure: CALL Identifier '(' expressionList? ')' ';';
+callProcedure: CALL identifier '(' expressionList? ')' ';';
 
 // Conditional
 conditionalStatement: IF expression statement elseIfStatement* elseStatement? ;
 elseIfStatement: ELSE IF expression statement ;
 elseStatement: ELSE statement ;
-// 
+//
 // Loop
 infiniteLoopStatement: LOOP statement ;
 prePredicatedLoopStatement: LOOP WHILE expression statement ;
 postPredicatedLoopStatement: LOOP statement WHILE expression ';' ;
 iteratorLoopStatement: LOOP domainExpression (',' domainExpression)* statement ;
-// 
+//
 // Break and Continue
 breakStatement: BREAK ';' ;
 continueStatement: CONTINUE ';' ;
-// 
+//
 // Stream
 streamStatement:
-    expression '->' Identifier ';'      # OutputStream
-    | expression '<-' Identifier ';'     # InputStream
+    expression '->' identifier ';'      # OutputStream
+    | expression '<-' identifier ';'     # InputStream
     ;
-// 
+//
 // Block
 block: '{' statement* '}' ;
-// 
+//
 // Expression
+identifier: E_IdentifierToken | IdentifierToken;
 expression: expr ;
-expr: 
-    Identifier '(' expressionList? ')'                                         # CallProcedureFunctionInExpression
+realConstantExponent: SignedExponentPart | E_IdentifierToken;
+realConstant:  // recognizes a real literal
+    (IntegerConstant? '.' IntegerConstant | IntegerConstant '.' ) realConstantExponent?
+    | IntegerConstant realConstantExponent;
+expr:
+    identifier '(' expressionList? ')'                                         # CallProcedureFunctionInExpression
     | AS '<' unqualifiedType '>' '(' expression ')'                            # Cast
     | '(' expressionList ')'                                                   # TupleLiteral
     | expr DOT expr                                                            # TupleAccess
@@ -156,18 +161,18 @@ expr:
     | expr op=('or' | 'xor') expr                                              # BinaryOp
     | <assoc=right> expr '||' expr                                             # Concatenation
     | '[' generatorDomainVariableList '|' expression ']'                       # Generator
-    | '[' Identifier IN expression '&' expressionList ']'                      # Filter
-    | Identifier                                                               # IdentifierAtom
+    | '[' identifier IN expression '&' expressionList ']'                      # Filter
+    | identifier                                                               # IdentifierAtom
     | IntegerConstant                                                          # IntegerAtom
-    | RealConstant                                                             # RealAtom
+    | realConstant                                                             # RealAtom
     | CharacterConstant                                                        # CharacterAtom
     | StringLiteral                                                            # StringLiteralAtom
     ;
 //
 // Generator and Filter
-domainExpression: Identifier IN expression ;
+domainExpression: identifier IN expression ;
 generatorDomainVariableList: domainExpression (',' domainExpression)? ;
-// 
+//
 // Reserve Keywords
 AND : 'and' ;
 AS : 'as' ;
@@ -211,15 +216,12 @@ LESSTHANOREQUAL: '<=' ;
 GREATERTHANOREQUAL: '>=' ;
 ISEQUAL: '==' ;
 ISNOTEQUAL: '!=' ;
-// 
-Identifier: [a-zA-Z_][a-zA-Z0-9_]* ;
-// 
-// Integer and Real
+//
+// Identifier, Integer and Exponent
+SignedExponentPart: 'e' Sign DigitSequence;
+E_IdentifierToken: 'e' DigitSequence;
+IdentifierToken: [a-zA-Z_][a-zA-Z0-9_]* ;
 IntegerConstant : DigitSequence;
-RealConstant:
-    (DigitSequence? '.' DigitSequence | DigitSequence '.' ) { this->getInputStream()->LA(1) != '.' }? ExponentPart?
-    | DigitSequence ExponentPart;
-fragment ExponentPart: 'e' Sign? DigitSequence ;
 fragment Sign: [+-] ;
 fragment DigitSequence: Digit+ ;
 fragment Digit: [0-9] ;
