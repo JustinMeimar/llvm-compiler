@@ -54,6 +54,20 @@ tokens {
     REAL_CONSTANT_TOKEN
 }
 
+@parser::members {
+    bool noSpaceAhead() {
+        return true;
+
+        antlr4::CommonTokenStream * ins = (antlr4::CommonTokenStream *)getInputStream();
+        int index = ins->index();
+
+        if (index == 0) return true;
+
+        antlr4::Token *prevToken = ins->get(index - 1);
+        return prevToken->getChannel() != 1;
+    }
+}
+
 compilationUnit: statement* EOF;
 
 // statement: 'test';
@@ -99,8 +113,7 @@ anyType:
 typedefStatement: TYPEDEF unqualifiedType identifier ';' ;  // can not include const/var
 
 // Variable Declaration and Assignment
-varDeclarationStatement:
-    anyType identifier ('=' expression)? ';' ;
+varDeclarationStatement: anyType identifier ('=' expression)? ';' ;
 assignmentStatement: expressionList '=' expression ';' ;
 
 // Function and Procedure
@@ -144,21 +157,23 @@ block: '{' statement* '}' ;
 //
 // realConstant
 identifier: 'e' | E_IdentifierToken | IdentifierToken;
-signedExponentPart: 'e' ('+' | '-') IntegerConstant;
+signedExponentPart: 'e' {noSpaceAhead()}? ('+' | '-') {noSpaceAhead()}? IntegerConstant;
 realConstantExponent: signedExponentPart | E_IdentifierToken;
-realConstant:  // recognizes a real literal
-    IntegerConstant? '.' IntegerConstant realConstantExponent?
-    | IntegerConstant '.' realConstantExponent?
-    | IntegerConstant realConstantExponent
+// recognizes a real literal
+realConstant:
+    (IntegerConstant {noSpaceAhead()}?)?  DOT {noSpaceAhead()}? IntegerConstant ({noSpaceAhead()}? realConstantExponent)?
+    | IntegerConstant {noSpaceAhead()}? DOT ({noSpaceAhead()}? realConstantExponent)?
+    | IntegerConstant {noSpaceAhead()}? realConstantExponent
     ;
 //
 // Expression
 expression: expr ;
+tupleExpressionList: expression (',' expression)+ ;
 tupleAccessIndex: IntegerConstant | identifier;
 expr:
     identifier '(' expressionList? ')'                                         # CallProcedureFunctionInExpression
     | AS '<' unqualifiedType '>' '(' expression ')'                            # Cast
-    | '(' expressionList ')'                                                   # TupleLiteral
+    | '(' tupleExpressionList ')'                                              # TupleLiteral
     | expr op=DOT tupleAccessIndex                                             # TupleAccess
     | '(' expr ')'                                                             # Parenthesis
     | '[' expressionList? ']'                                                  # VectorLiteral
@@ -218,7 +233,7 @@ VAR : 'var' ;
 WHILE : 'while' ;
 XOR : 'xor' ;
 //
-DOT: '.';  // Tuple access comes before real recognition
+DOT: '.';
 PLUS: '+' ;
 MINUS: '-' ;
 ASTERISK: '*' ;
@@ -258,4 +273,4 @@ fragment EscapeSequence: '\\' ['"0abnrt\\] ;
 LineComment : '//' ~[\r\n]* -> skip ;
 BlockComment: '/*' .*? '*/' -> skip ;
 // Skip whitespace
-WS : [ \t\r\n]+ -> skip ;
+WS : [ \t\r\n]+ -> channel(1);

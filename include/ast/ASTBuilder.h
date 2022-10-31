@@ -44,6 +44,8 @@ public:
 
   virtual std::any visitExpressionList(GazpreaParser::ExpressionListContext *ctx) override;
 
+  virtual std::any visitTupleExpressionList(GazpreaParser::TupleExpressionListContext *ctx) override;
+
   virtual std::any visitFormalParameter(GazpreaParser::FormalParameterContext *ctx) override;
 
   virtual std::any visitFormalParameterList(GazpreaParser::FormalParameterListContext *ctx) override;

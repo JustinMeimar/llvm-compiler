@@ -105,6 +105,14 @@ namespace gazprea {
         return t;
     }
 
+    std::any ASTBuilder::visitTupleExpressionList(GazpreaParser::TupleExpressionListContext *ctx) {
+        auto t = std::make_shared<AST>(GazpreaParser::EXPRESSION_LIST_TOKEN);  // no need to treat this differently than expression list
+        for (auto expression: ctx->expression()) {
+            t->addChild(visit(expression));
+        }
+        return t;
+    }
+
     std::any ASTBuilder::visitFormalParameter(GazpreaParser::FormalParameterContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::FORMAL_PARAMETER_TOKEN);
         t->addChild(visit(ctx->anyType()));
@@ -320,7 +328,7 @@ namespace gazprea {
 
     std::any ASTBuilder::visitTupleLiteral(GazpreaParser::TupleLiteralContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::TUPLE_LITERAL_TOKEN);
-        t->addChild(visit(ctx->expressionList()));
+        t->addChild(visit(ctx->tupleExpressionList()));
         return t;
     }
 
