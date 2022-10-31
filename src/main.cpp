@@ -19,9 +19,9 @@
 void setParserReportAllErrors(gazprea::GazpreaParser &parser) {
     std::shared_ptr<antlr4::BailErrorStrategy> handler = std::make_shared<antlr4::BailErrorStrategy>();
     parser.setErrorHandler(handler);
-    auto * listener = new antlr4::DiagnosticErrorListener();
-    parser.addErrorListener(listener);
-    parser.getInterpreter<antlr4::atn::ParserATNSimulator>()->setPredictionMode(antlr4::atn::PredictionMode::LL_EXACT_AMBIG_DETECTION);
+//    auto * listener = new antlr4::DiagnosticErrorListener();
+//    parser.addErrorListener(listener);
+//    parser.getInterpreter<antlr4::atn::ParserATNSimulator>()->setPredictionMode(antlr4::atn::PredictionMode::LL_EXACT_AMBIG_DETECTION);
 }
 
 int main(int argc, char **argv) {
@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
   gazprea::DefWalk defwalk;
   defwalk.visit(ast);
 
-  // std::cout << tree->toStringTree(&parser, true) << std::endl;
+  // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
   // std::cout << ast->toStringTree() << std::endl;
 
   return 0;

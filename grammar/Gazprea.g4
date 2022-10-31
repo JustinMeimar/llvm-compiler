@@ -55,15 +55,14 @@ tokens {
 }
 
 @parser::members {
-    bool noSpaceAhead() {
-        return true;
-
+    bool noSpaceAhead(int i) {
         antlr4::CommonTokenStream * ins = (antlr4::CommonTokenStream *)getInputStream();
         int index = ins->index();
 
-        if (index == 0) return true;
+        if (index + 1 < 0 || index + i >= (int)ins->size())
+            return true;
 
-        antlr4::Token *prevToken = ins->get(index - 1);
+        antlr4::Token *prevToken = ins->get(index + i);
         return prevToken->getChannel() != 1;
     }
 }
@@ -157,24 +156,29 @@ block: '{' statement* '}' ;
 //
 // realConstant
 identifier: 'e' | E_IdentifierToken | IdentifierToken;
-signedExponentPart: 'e' {noSpaceAhead()}? ('+' | '-') {noSpaceAhead()}? IntegerConstant;
+signedExponentPart: {noSpaceAhead(1) && noSpaceAhead(3)}? 'e' ('+' | '-') IntegerConstant;
 realConstantExponent: signedExponentPart | E_IdentifierToken;
 // recognizes a real literal
 realConstant:
-    (IntegerConstant {noSpaceAhead()}?)?  DOT {noSpaceAhead()}? IntegerConstant ({noSpaceAhead()}? realConstantExponent)?
-    | IntegerConstant {noSpaceAhead()}? DOT ({noSpaceAhead()}? realConstantExponent)?
-    | IntegerConstant {noSpaceAhead()}? realConstantExponent
+    {noSpaceAhead(1) && noSpaceAhead(2) && noSpaceAhead(3)}? IntegerConstant DOT IntegerConstant realConstantExponent  // 0.0e0
+    | {noSpaceAhead(1) && noSpaceAhead(2)}? DOT IntegerConstant realConstantExponent  // .0e0
+    | {noSpaceAhead(1) && noSpaceAhead(2)}? IntegerConstant DOT realConstantExponent  // 0.e0
+    | {noSpaceAhead(1)}? IntegerConstant realConstantExponent  // 0e0
+    | {noSpaceAhead(1) && noSpaceAhead(2)}? IntegerConstant DOT IntegerConstant  // 0.0
+    | {noSpaceAhead(1)}? DOT IntegerConstant  // .0
+    | {noSpaceAhead(1)}? IntegerConstant DOT  // 0.
     ;
 //
 // Expression
 expression: expr ;
 tupleExpressionList: expression (',' expression)+ ;
-tupleAccessIndex: IntegerConstant | identifier;
+tupleAccessIndex: {noSpaceAhead(-1) && noSpaceAhead(1)}? DOT (IntegerConstant | identifier);
 expr:
     identifier '(' expressionList? ')'                                         # CallProcedureFunctionInExpression
     | AS '<' unqualifiedType '>' '(' expression ')'                            # Cast
     | '(' tupleExpressionList ')'                                              # TupleLiteral
-    | expr op=DOT tupleAccessIndex                                             # TupleAccess
+    | realConstant                                                             # RealAtom  // before tuple access
+    | expr tupleAccessIndex                                                    # TupleAccess
     | '(' expr ')'                                                             # Parenthesis
     | '[' expressionList? ']'                                                  # VectorLiteral
     | expr '[' expr ']'                                                        # Indexing
@@ -193,7 +197,6 @@ expr:
     | '[' identifier IN expression '&' expressionList ']'                      # Filter
     | identifier                                                               # IdentifierAtom
     | IntegerConstant                                                          # IntegerAtom
-    | realConstant                                                             # RealAtom
     | CharacterConstant                                                        # CharacterAtom
     | StringLiteral                                                            # StringLiteralAtom
     ;
