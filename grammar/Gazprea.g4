@@ -146,11 +146,12 @@ realConstant:  // recognizes a real literal
 //
 // Expression
 expression: expr ;
+tupleAccessIndex: IntegerConstant | identifier;
 expr:
     identifier '(' expressionList? ')'                                         # CallProcedureFunctionInExpression
     | AS '<' unqualifiedType '>' '(' expression ')'                            # Cast
     | '(' expressionList ')'                                                   # TupleLiteral
-    | expr DOT expr                                                            # TupleAccess
+    | expr op=DOT tupleAccessIndex                                             # TupleAccess
     | '(' expr ')'                                                             # Parenthesis
     | '[' expressionList? ']'                                                  # VectorLiteral
     | expr '[' expr ']'                                                        # Indexing
