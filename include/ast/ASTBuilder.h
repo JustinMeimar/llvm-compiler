@@ -90,8 +90,6 @@ public:
 
   virtual std::any visitTupleAccess(GazpreaParser::TupleAccessContext *ctx) override;
 
-  virtual std::any visitRealAtom(GazpreaParser::RealAtomContext *ctx) override;
-
   virtual std::any visitUnaryOp(GazpreaParser::UnaryOpContext *ctx) override;
 
   virtual std::any visitCallProcedureFunctionInExpression(GazpreaParser::CallProcedureFunctionInExpressionContext *ctx) override;
@@ -110,8 +108,6 @@ public:
 
   virtual std::any visitTupleLiteral(GazpreaParser::TupleLiteralContext *ctx) override;
 
-  virtual std::any visitIdentifierAtom(GazpreaParser::IdentifierAtomContext *ctx) override;
-
   virtual std::any visitCharacterAtom(GazpreaParser::CharacterAtomContext *ctx) override;
 
   virtual std::any visitGenerator(GazpreaParser::GeneratorContext *ctx) override;
@@ -124,7 +120,11 @@ public:
 
   virtual std::any visitDomainExpression(GazpreaParser::DomainExpressionContext *ctx) override;
 
-  virtual std::any visitGeneratorDomainVariableList(GazpreaParser::GeneratorDomainVariableListContext *ctx) override; 
+  virtual std::any visitGeneratorDomainVariableList(GazpreaParser::GeneratorDomainVariableListContext *ctx) override;
+
+  virtual std::any visitIdentifier(GazpreaParser::IdentifierContext *ctx) override;
+
+  virtual std::any visitRealConstant(GazpreaParser::RealConstantContext *ctx) override;
 
 };
 
