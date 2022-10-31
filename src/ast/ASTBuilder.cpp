@@ -455,6 +455,13 @@ namespace gazprea {
         return t;
     }
 
+    std::any ASTBuilder::visitTupleAccessIndex(GazpreaParser::TupleAccessIndexContext *ctx) {
+        if (ctx->IntegerConstant()) {
+            return std::make_shared<AST>(ctx->IntegerConstant()->getSymbol());
+        }
+        return visit(ctx->identifier());
+    }
+
     std::any ASTBuilder::visitIdentifier(GazpreaParser::IdentifierContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::IDENTIFIER_TOKEN);
         t->addChild(std::make_shared<AST>(ctx->getStart()));
