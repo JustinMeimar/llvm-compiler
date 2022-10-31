@@ -134,13 +134,18 @@ streamStatement:
 // Block
 block: '{' statement* '}' ;
 //
-// Expression
-identifier: E_IdentifierToken | IdentifierToken;
-expression: expr ;
-realConstantExponent: SignedExponentPart | E_IdentifierToken;
+// realConstant
+identifier: 'e' | E_IdentifierToken | IdentifierToken;
+signedExponentPart: 'e' ('+' | '-') IntegerConstant;
+realConstantExponent: signedExponentPart | E_IdentifierToken;
 realConstant:  // recognizes a real literal
-    (IntegerConstant? '.' IntegerConstant | IntegerConstant '.' ) realConstantExponent?
-    | IntegerConstant realConstantExponent;
+    IntegerConstant? '.' IntegerConstant realConstantExponent?
+    | IntegerConstant '.' realConstantExponent?
+    | IntegerConstant realConstantExponent
+    ;
+//
+// Expression
+expression: expr ;
 expr:
     identifier '(' expressionList? ')'                                         # CallProcedureFunctionInExpression
     | AS '<' unqualifiedType '>' '(' expression ')'                            # Cast
@@ -183,6 +188,7 @@ CALL : 'call' ;
 CHARACTER : 'character' ;
 CONST : 'const' ;
 CONTINUE : 'continue' ;
+E_TOKEN : 'e';
 ELSE : 'else' ;
 FUNCTION: 'function' ;
 IF: 'if' ;
@@ -218,11 +224,9 @@ ISEQUAL: '==' ;
 ISNOTEQUAL: '!=' ;
 //
 // Identifier, Integer and Exponent
-SignedExponentPart: 'e' Sign DigitSequence;
 E_IdentifierToken: 'e' DigitSequence;
 IdentifierToken: [a-zA-Z_][a-zA-Z0-9_]* ;
 IntegerConstant : DigitSequence;
-fragment Sign: [+-] ;
 fragment DigitSequence: Digit+ ;
 fragment Digit: [0-9] ;
 //
