@@ -70,7 +70,8 @@ statement: varDeclarationStatement
 // Type and Type Qualifier
 vectorSizeDeclarationAtom: '*' | expression ;
 vectorSizeDeclarationList: vectorSizeDeclarationAtom (',' vectorSizeDeclarationAtom)? ;
-tupleTypeDeclarationAtom: unqualifiedType identifier? ;  // can be integer interval so can't use single term type
+
+tupleTypeDeclarationAtom: singleTermType (singleTermType (singleTermType)?)?;  // for tuple(a b) it's impossible to distinguish if b is a type or an id, parse them together
 tupleTypeDeclarationList: tupleTypeDeclarationAtom (',' tupleTypeDeclarationAtom)* ;
 
 singleTokenType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | identifier;  // type represented by one token
