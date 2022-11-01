@@ -128,13 +128,15 @@ namespace gazprea {
             t = std::make_shared<AST>(GazpreaParser::FUNCTION);
         }
         t->addChild(visit(ctx->identifier()));
-        if (ctx->formalParameterList()) {
+        if (ctx->formalParameterList()) { // may be no args
             t->addChild(visit(ctx->formalParameterList()));
         }
         if (ctx->unqualifiedType()) {
             t->addChild(visit(ctx->unqualifiedType()));
         }
-        t->addChild(visit(ctx->subroutineBody()));
+        if (ctx->subroutineBody()) { // only if def
+            t->addChild(visit(ctx->subroutineBody()));
+        }
         return t;
     }
 
@@ -470,7 +472,7 @@ namespace gazprea {
 
     std::any ASTBuilder::visitRealConstant(GazpreaParser::RealConstantContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::REAL_CONSTANT_TOKEN);
-        // TODO
+        t->addChild(ctx->getText()); //deal with FP conversion later
         return t;
     }
 }
