@@ -471,8 +471,14 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitRealConstant(GazpreaParser::RealConstantContext *ctx) {
-        auto t = std::make_shared<AST>(GazpreaParser::REAL_CONSTANT_TOKEN);
-        t->addChild(ctx->getText()); //deal with FP conversion later
+        auto t = std::make_shared<AST>(GazpreaParser::REAL_CONSTANT_TOKEN); 
+        try {
+            float x = std::stof(ctx->getText()); 
+            t->addChild(std::make_shared<AST>(x));
+        } catch (const std::exception& e) {
+            std::cout << e.what(); 
+        }
+
         return t;
     }
 }

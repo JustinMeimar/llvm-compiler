@@ -5,6 +5,8 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/AST.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/ASTBuilder.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ast/DefWalk.cpp"
+    
 )
 
 # Build our executable from the source files.
