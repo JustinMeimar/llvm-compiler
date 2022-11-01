@@ -6,8 +6,9 @@
 #include "tree/ParseTree.h"
 #include "tree/ParseTreeWalker.h"
 
-#include "ASTBuilder.h"
 #include "AST.h"
+#include "ASTBuilder.h"
+#include "DefWalk.h"
 
 #include "DiagnosticErrorListener.h"
 #include "BailErrorStrategy.h"
@@ -46,6 +47,10 @@ int main(int argc, char **argv) {
   gazprea::ASTBuilder builder;
   std::shared_ptr<AST> ast = std::any_cast<std::shared_ptr<AST>>(builder.visit(tree));
 
+  gazprea::DefWalk defwalk;
+  defwalk.visit(ast);
+
+  // std::cout << tree->toStringTree(&parser, true) << std::endl;
   // std::cout << ast->toStringTree() << std::endl;
 
   return 0;
