@@ -34,7 +34,8 @@ namespace gazprea {
             t->addChild(visit(ctx->typeQualifier()));
         }
         t->addChild(visit(ctx->unqualifiedType()));
-        return visitChildren(ctx);
+        
+        return t;
     }
 
     std::any ASTBuilder::visitInferredType(GazpreaParser::InferredTypeContext *ctx){
@@ -45,7 +46,12 @@ namespace gazprea {
 
     std::any ASTBuilder::visitTypeQualifier(GazpreaParser::TypeQualifierContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::TYPE_QUALIFIER_TOKEN);
-        t->addChild(ctx->getStart());
+        if (ctx->VAR()) {
+            t->addChild(std::make_shared<AST>(GazpreaParser::VAR));
+        }
+        else if (ctx->CONST()) {
+            t->addChild(std::make_shared<AST>(GazpreaParser::CONST));
+        }        
         return t;
     }
 
@@ -143,7 +149,7 @@ namespace gazprea {
             t->addChild(visit(ctx->unqualifiedType()));
         }
         if (ctx->subroutineBody()) { // only if def
-            t->addChild(visit(ctx->subroutineBody()));
+            t->addChild(visit(ctx->subroutineBody())); 
         }
         return t;
     }
