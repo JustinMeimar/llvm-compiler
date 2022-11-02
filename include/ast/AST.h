@@ -10,6 +10,7 @@ class AST { // Homogeneous AST node type
 public:
     std::shared_ptr<antlr4::Token> token;       // From which token did we create node?
     std::vector<std::shared_ptr<AST>> children; // normalized list of children
+    float floatValue;
 
     AST(); // for making nil-rooted nodes
     AST(antlr4::Token* token);
