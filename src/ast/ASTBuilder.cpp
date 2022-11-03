@@ -186,7 +186,7 @@ namespace gazprea {
     std::any ASTBuilder::visitConditionalStatement(GazpreaParser::ConditionalStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::CONDITIONAL_STATEMENT_TOKEN);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->statement()));
+        t->addChild(visit(ctx->exprPrecededStatement()));
         for (auto elseIfStatement : ctx->elseIfStatement()) {
             t->addChild(visit(elseIfStatement));
         }
@@ -199,7 +199,7 @@ namespace gazprea {
     std::any ASTBuilder::visitElseIfStatement(GazpreaParser::ElseIfStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::ELSEIF_TOKEN);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->statement()));
+        t->addChild(visit(ctx->exprPrecededStatement()));
         return t;
     }
 
@@ -218,7 +218,7 @@ namespace gazprea {
     std::any ASTBuilder::visitPrePredicatedLoopStatement(GazpreaParser::PrePredicatedLoopStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::PRE_PREDICATE_LOOP_TOKEN);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->statement()));
+        t->addChild(visit(ctx->exprPrecededStatement()));
         return t;
     }
 
@@ -234,7 +234,7 @@ namespace gazprea {
         for (auto domainExpression : ctx->domainExpression()) {
             t->addChild(visit(domainExpression));
         }
-        t->addChild(visit(ctx->statement()));
+        t->addChild(visit(ctx->exprPrecededStatement()));
         return t;
     }
 
@@ -277,7 +277,6 @@ namespace gazprea {
     std::any ASTBuilder::visitTupleAccess(GazpreaParser::TupleAccessContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::TUPLE_ACCESS_TOKEN);
         t->addChild(visit(ctx->expr()));
-        t->addChild(visit(ctx->tupleAccessIndex()));
         return t;
     }
 
@@ -469,13 +468,6 @@ namespace gazprea {
             t->addChild(visit(domainExpression));
         }
         return t;
-    }
-
-    std::any ASTBuilder::visitTupleAccessIndex(GazpreaParser::TupleAccessIndexContext *ctx) {
-        if (ctx->IntegerConstant()) {
-            return std::make_shared<AST>(ctx->IntegerConstant()->getSymbol());
-        }
-        return visit(ctx->identifier());
     }
 
     std::any ASTBuilder::visitIdentifier(GazpreaParser::IdentifierContext *ctx) {

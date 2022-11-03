@@ -128,8 +128,6 @@ public:
 
   virtual std::any visitRealConstant(GazpreaParser::RealConstantContext *ctx) override;
 
-  virtual std::any visitTupleAccessIndex(GazpreaParser::TupleAccessIndexContext *ctx) override;
-
 };
 
 }  // namespace gazprea

@@ -55,9 +55,17 @@ tokens {
     STATEMENT_TOKEN
 }
 
-compilationUnit: (WS? (block | statement))* WS? EOF;
+compilationUnit: (wS? statement)* wS? EOF;
 
-statement: varDeclarationStatement
+statement:
+    nonBlockStatement
+    | block
+    ;
+exprPrecededStatement:
+    wS nonBlockStatement
+    | wS? block
+    ;
+nonBlockStatement: varDeclarationStatement
                | assignmentStatement
                | conditionalStatement
                | infiniteLoopStatement
@@ -75,70 +83,70 @@ statement: varDeclarationStatement
 
 // Type and Type Qualifier
 vectorSizeDeclarationAtom: '*' | expression ;
-vectorSizeDeclarationList: vectorSizeDeclarationAtom (WS? ',' WS? vectorSizeDeclarationAtom)? ;
+vectorSizeDeclarationList: vectorSizeDeclarationAtom (wS? ',' wS? vectorSizeDeclarationAtom)? ;
 
-tupleTypeDeclarationAtom: singleTermType (WS? singleTermType (WS? singleTermType)?)?;  // for tuple(a b) it's impossible to distinguish if b is a type or an id, parse them together
-tupleTypeDeclarationList: tupleTypeDeclarationAtom (WS? ',' WS? tupleTypeDeclarationAtom)* ;
+tupleTypeDeclarationAtom: singleTermType (wS? singleTermType (wS? singleTermType)?)?;  // for tuple(a b) it's impossible to distinguish if b is a type or an id, parse them together
+tupleTypeDeclarationList: tupleTypeDeclarationAtom (wS? ',' wS? tupleTypeDeclarationAtom)* ;
 
 singleTokenType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | identifier;  // type represented by one token
 singleTermType:
-     singleTokenType WS? '[' WS? vectorSizeDeclarationList WS? ']'  # VectorMatrixType
-     | TUPLE WS? '(' WS? tupleTypeDeclarationList WS? ')'           # TupleType
+     singleTokenType wS? '[' wS? vectorSizeDeclarationList wS? ']'  # VectorMatrixType
+     | TUPLE wS? '(' wS? tupleTypeDeclarationList wS? ')'           # TupleType
      | singleTokenType                                  # SingleTokenTypeAtom
      ;
 
 typeQualifier: VAR | CONST ;
-unqualifiedType: singleTermType (WS? singleTermType)?;
+unqualifiedType: singleTermType (wS? singleTermType)?;
 qualifiedType:
-    (typeQualifier WS?)? unqualifiedType  # ExplcitType
+    (typeQualifier wS?)? unqualifiedType  # ExplcitType
     | typeQualifier                 # InferredType
     ;
 
 // typedef
-typedefStatement: TYPEDEF WS? unqualifiedType WS? identifier WS? ';' ;  // can not include const/var
+typedefStatement: TYPEDEF wS? unqualifiedType wS? identifier wS? ';' ;  // can not include const/var
 
 // Variable Declaration and Assignment
-varDeclarationStatement: qualifiedType WS? identifier (WS? '=' WS? expression)? WS? ';' ;
-assignmentStatement: expressionList WS? '=' WS? expression WS? ';' ;
+varDeclarationStatement: qualifiedType wS? identifier (wS? '=' wS? expression)? wS? ';' ;
+assignmentStatement: expressionList wS? '=' wS? expression wS? ';' ;
 
 // Function and Procedure
-expressionList: expression (WS? ',' WS? expression)* ;
-formalParameter: qualifiedType WS? identifier ;
-formalParameterList: formalParameter (WS? ',' WS? formalParameter)* ;
+expressionList: expression (wS? ',' wS? expression)* ;
+formalParameter: qualifiedType wS? identifier ;
+formalParameterList: formalParameter (wS? ',' wS? formalParameter)* ;
 
 subroutineBody : ';'            # FunctionEmptyBody
-        | '=' WS? expression WS? ';'    # FunctionExprBody
+        | '=' wS? expression wS? ';'    # FunctionExprBody
         | block                 # FunctionBlockBody
         ;
-subroutineDeclDef: (PROCEDURE | FUNCTION) WS? identifier WS?
-        '(' (WS? formalParameterList)? WS? ')' (WS? RETURNS WS? unqualifiedType)? WS? subroutineBody;
+subroutineDeclDef: (PROCEDURE | FUNCTION) wS? identifier wS?
+        '(' (wS? formalParameterList)? wS? ')' (wS? RETURNS wS? unqualifiedType)? wS? subroutineBody;
 
-returnStatement: RETURN WS? expression WS? ';';
+returnStatement: RETURN wS? expression wS? ';';
 
-callProcedure: CALL WS? identifier WS? '(' (WS? expressionList)? WS? ')' WS? ';';
+callProcedure: CALL wS? identifier wS? '(' (wS? expressionList)? wS? ')' wS? ';';
 // Conditional
-conditionalStatement: IF WS? expression (WS? block | WS statement) (WS? elseIfStatement)* (WS? elseStatement)? ;
-elseIfStatement: ELSE WS? IF WS? expression (WS? block | WS statement) ;
-elseStatement: ELSE WS? (block | statement) ;
+conditionalStatement: IF wS? expression exprPrecededStatement (wS? elseIfStatement)* (wS? elseStatement)? ;
+elseIfStatement: ELSE wS? IF wS? expression exprPrecededStatement ;
+elseStatement: ELSE wS? statement ;
 //
 // Loop
-infiniteLoopStatement: LOOP WS? (block | statement) ;
-prePredicatedLoopStatement: LOOP WS? WHILE WS? expression (WS? block | WS statement) ;
-postPredicatedLoopStatement: LOOP WS? (block | statement) WS? WHILE WS? expression WS? ';' ;
-iteratorLoopStatement: LOOP WS? domainExpression (WS? ',' WS? domainExpression)* (WS? block | WS statement) ;
+infiniteLoopStatement: LOOP wS? statement ;
+prePredicatedLoopStatement: LOOP wS? WHILE wS? expression exprPrecededStatement ;
+postPredicatedLoopStatement: LOOP wS? statement wS? WHILE wS? expression wS? ';' ;
+iteratorLoopStatement: LOOP wS? domainExpression (wS? ',' wS? domainExpression)* exprPrecededStatement ;
 //
 // Break and Continue
-breakStatement: BREAK WS? ';' ;
-continueStatement: CONTINUE WS? ';' ;
+breakStatement: BREAK wS? ';' ;
+continueStatement: CONTINUE wS? ';' ;
 //
 // Stream
 streamStatement:
-    expression WS? '->' WS? identifier WS? ';'      # OutputStream
-    | expression WS? '<-' WS? identifier WS? ';'     # InputStream
+    expression wS? '->' wS? identifier wS? ';'          # OutputStream
+    | expression wS? '<-' wS? identifier wS? ';'        # InputStream
     ;
 //
 // Block
-block: '{' (WS? (block | statement))* WS? '}' ;
+block: '{' (wS? statement)* wS? '}' ;
 //
 // realConstant
 identifier: 'e' | E_IdentifierToken | IdentifierToken;
@@ -152,39 +160,42 @@ realConstant:
     ;
 //
 // Expression
-tupleExpressionList: expression (WS? ',' WS? expression)+ ;
+tupleExpressionList: expression (wS? ',' wS? expression)+;
 expression: expr ;
 expr:
-    identifier WS? '(' (WS? expressionList)? WS? ')'                                         # CallProcedureFunctionInExpression
-    | AS WS? '<' WS? unqualifiedType WS? '>' WS? '(' WS? expression WS? ')'                            # Cast
-    | '(' WS? tupleExpressionList WS? ')'                                              # TupleLiteral
-    | realConstant                                                             # RealAtom  // before tuple access
-    | expr DOT (IntegerConstant | identifier)                                                  # TupleAccess
-    | '(' WS? expr WS? ')'                                                             # Parenthesis
-    | '[' (WS? expressionList)? WS? ']'                                                  # VectorLiteral
-    | expr WS? '[' WS? expr WS? ']'                                                        # Indexing
-    | expr WS? '..' WS? expr                                                           # Interval
-    | <assoc=right> op=('+' | '-' | 'not') WS? expr                                # UnaryOp
-    | <assoc=right> expr WS? op='^' WS? expr                                           # BinaryOp
-    | expr WS? op=('*' | '/' | '%' | '**') WS? expr                                    # BinaryOp
-    | expr WS? op=('+' | '-') WS? expr                                                 # BinaryOp
-    | expr WS? op='by' WS? expr                                                        # BinaryOp
-    | expr WS? op=('>' | '<' | '<=' | '>=') WS? expr                                   # BinaryOp
-    | expr WS? op=('==' | '!=') WS? expr                                               # BinaryOp
-    | expr WS? op='and' WS? expr                                                       # BinaryOp
-    | expr WS? op=('or' | 'xor') WS? expr                                              # BinaryOp
-    | <assoc=right> expr WS? '||' WS? expr                                             # Concatenation
-    | '[' WS? generatorDomainVariableList WS? '|' WS? expression WS? ']'                       # Generator
-    | '[' WS? identifier WS? IN WS? expression WS? '&' WS? expressionList WS? ']'                      # Filter
-    | identifier                                                               # IdentifierAtom
-    | IntegerConstant                                                          # IntegerAtom
-    | CharacterConstant                                                        # CharacterAtom
-    | StringLiteral                                                            # StringLiteralAtom
+    identifier wS? '(' (wS? expressionList)? wS? ')'                                # CallProcedureFunctionInExpression
+    | AS wS? '<' wS? unqualifiedType wS? '>' wS? '(' wS? expression wS? ')'         # Cast
+    | '(' wS? tupleExpressionList wS? ')'                                           # TupleLiteral
+    | realConstant                                                                  # RealAtom  // before tuple access
+    | expr DOT (IntegerConstant | identifier)                                       # TupleAccess
+    | '(' wS? expr wS? ')'                                                          # Parenthesis
+    | '[' (wS? expressionList)? wS? ']'                                             # VectorLiteral
+    | expr wS? '[' wS? expr wS? ']'                                                 # Indexing
+    | expr wS? '..' wS? expr                                                        # Interval
+    | <assoc=right> op=('+' | '-' | 'not') wS? expr                                 # UnaryOp
+    | <assoc=right> expr wS? op='^' wS? expr                                        # BinaryOp
+    | expr wS? op=('*' | '/' | '%' | '**') wS? expr                                 # BinaryOp
+    | expr wS? op=('+' | '-') wS? expr                                              # BinaryOp
+    | expr wS? op='by' wS? expr                                                     # BinaryOp
+    | expr wS? op=('>' | '<' | '<=' | '>=') wS? expr                                # BinaryOp
+    | expr wS? op=('==' | '!=') wS? expr                                            # BinaryOp
+    | expr wS? op='and' wS? expr                                                    # BinaryOp
+    | expr wS? op=('or' | 'xor') wS? expr                                           # BinaryOp
+    | <assoc=right> expr wS? '||' wS? expr                                          # Concatenation
+    | '[' wS? generatorDomainVariableList wS? '|' wS? expression wS? ']'            # Generator
+    | '[' wS? identifier wS? IN wS? expression wS? '&' wS? expressionList wS? ']'   # Filter
+    | identifier                                                                    # IdentifierAtom
+    | IntegerConstant                                                               # IntegerAtom
+    | CharacterConstant                                                             # CharacterAtom
+    | StringLiteral                                                                 # StringLiteralAtom
     ;
 //
 // Generator and Filter
-domainExpression: identifier WS? IN WS? expression ;
-generatorDomainVariableList: domainExpression (WS? ',' WS? domainExpression)? ;
+domainExpression: identifier wS? IN wS? expression ;
+generatorDomainVariableList: domainExpression (wS? ',' wS? domainExpression)? ;
+//
+// White spaces
+wS: SPACE+;
 //
 // Reserve Keywords
 AND : 'and' ;
@@ -257,4 +268,4 @@ fragment EscapeSequence: '\\' ['"0abnrt\\] ;
 LineComment : '//' ~[\r\n]* -> skip ;
 BlockComment: '/*' .*? '*/' -> skip ;
 // Skip whitespace
-WS : [ \t\r\n]+;
+SPACE : [ \t\r\n]+;
