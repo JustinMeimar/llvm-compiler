@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
   defwalk.visit(ast);
 
   // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
-  // std::cout << "ast:\n" << ast->toStringTree() << std::endl;
+  std::cout << "ast:\n" << ast->toStringTree(&parser) << std::endl;
 
   return 0;
 }

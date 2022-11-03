@@ -1,6 +1,8 @@
 #pragma once
 
 #include "antlr4-runtime.h"
+#include "GazpreaParser.h"
+#include "GazpreaLexer.h"
 
 #include <vector>
 #include <string>
@@ -8,27 +10,30 @@
 
 class AST { // Homogeneous AST node type
 public:
-    std::shared_ptr<antlr4::Token> token;       // From which token did we create node?
-    std::vector<std::shared_ptr<AST>> children; // normalized list of children
-    float floatValue;
+    const static size_t NIL_TYPE = 65535;
+    static std::shared_ptr<AST> createNil();
 
-    AST(); // for making nil-rooted nodes
-    AST(antlr4::Token* token);
+    antlr4::tree::ParseTree *parseTree;       // From which parse tree node did we create node?
+    size_t nodeType;                            // type of the AST node
+    std::vector<std::shared_ptr<AST>> children; // normalized list of children
+
+    explicit AST(antlr4::tree::ParseTree *parseTree);
     /** Create node from token type; used mainly for imaginary tokens */
-    AST(size_t tokenType);
+    explicit AST(size_t tokenType);
+    AST(size_t tokenType, antlr4::tree::ParseTree *parseTree);
 
     /** External visitors execute the same action for all nodes
      *  with same node type while walking. */
     size_t getNodeType();
     
     void addChild(std::any t);
-    void addChild(std::shared_ptr<AST> t);
+    void addChild(const std::shared_ptr<AST>& t);
     bool isNil();
 
     /** Compute string for single node */
-    std::string toString();
+    std::string toString(gazprea::GazpreaParser *parser);
     /** Compute string for a whole tree not just a node */
-    std::string toStringTree();
+    std::string toStringTree(gazprea::GazpreaParser *parser);
 
     virtual ~AST();
 };
