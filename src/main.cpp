@@ -6,8 +6,23 @@
 #include "tree/ParseTree.h"
 #include "tree/ParseTreeWalker.h"
 
+#include "AST.h"
+#include "ASTBuilder.h"
+#include "DefWalk.h"
+
+#include "DiagnosticErrorListener.h"
+#include "BailErrorStrategy.h"
+
 #include <iostream>
 #include <fstream>
+
+void setParserReportAllErrors(gazprea::GazpreaParser &parser) {
+    std::shared_ptr<antlr4::BailErrorStrategy> handler = std::make_shared<antlr4::BailErrorStrategy>();
+    parser.setErrorHandler(handler);
+//    auto * listener = new antlr4::DiagnosticErrorListener();
+//    parser.addErrorListener(listener);
+//    parser.getInterpreter<antlr4::atn::ParserATNSimulator>()->setPredictionMode(antlr4::atn::PredictionMode::LL_EXACT_AMBIG_DETECTION);
+}
 
 int main(int argc, char **argv) {
   if (argc < 3) {
@@ -23,24 +38,20 @@ int main(int argc, char **argv) {
   antlr4::CommonTokenStream tokens(&lexer);
   gazprea::GazpreaParser parser(&tokens);
 
+  setParserReportAllErrors(parser);
+
   // Get the root of the parse tree. Use your base rule name.
-  antlr4::tree::ParseTree *tree = parser.file();
+  antlr4::tree::ParseTree *tree = parser.compilationUnit();
+  
+  //Build AST
+  gazprea::ASTBuilder builder;
+  std::shared_ptr<AST> ast = std::any_cast<std::shared_ptr<AST>>(builder.visit(tree));
 
-  // HOW TO USE A LISTENER
-  // Make the listener
-  // MyListener listener;
-  // Walk the tree
-  // antlr4::tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
+  gazprea::DefWalk defwalk;
+  defwalk.visit(ast);
 
-  // HOW TO USE A VISITOR
-  // Make the visitor
-  // MyVisitor visitor;
-  // Visit the tree
-  // visitor.visit(tree);
-
-  // HOW TO WRITE OUT.
-  // std::ofstream out(argv[2]);
-  // out << "This is out...\n";
+  // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
+  std::cout << "ast:\n" << ast->toStringTree(&parser) << std::endl;
 
   return 0;
 }
