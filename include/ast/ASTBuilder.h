@@ -26,8 +26,6 @@ public:
 
   virtual std::any visitTupleType(GazpreaParser::TupleTypeContext *ctx) override;
 
-  virtual std::any visitSingleTokenTypeAtom(GazpreaParser::SingleTokenTypeAtomContext *ctx) override;
-
   virtual std::any visitTypeQualifier(GazpreaParser::TypeQualifierContext *ctx) override;
 
   virtual std::any visitUnqualifiedType(GazpreaParser::UnqualifiedTypeContext *ctx) override;
@@ -46,15 +44,15 @@ public:
 
   virtual std::any visitTupleExpressionList(GazpreaParser::TupleExpressionListContext *ctx) override;
 
-  virtual std::any visitFormalParameter(GazpreaParser::FormalParameterContext *ctx) override;
+  virtual std::any visitFormalParameterAtom(GazpreaParser::FormalParameterAtomContext *ctx) override;
 
   virtual std::any visitFormalParameterList(GazpreaParser::FormalParameterListContext *ctx) override;
 
-  virtual std::any visitFunctionEmptyBody(GazpreaParser::FunctionEmptyBodyContext *ctx) override;
+  virtual std::any visitSubroutineEmptyBody(GazpreaParser::SubroutineEmptyBodyContext *ctx) override;
 
-  virtual std::any visitFunctionExprBody(GazpreaParser::FunctionExprBodyContext *ctx) override;
+  virtual std::any visitSubroutineExprBody(GazpreaParser::SubroutineExprBodyContext *ctx) override;
 
-  virtual std::any visitFunctionBlockBody(GazpreaParser::FunctionBlockBodyContext *ctx) override;
+  virtual std::any visitSubroutineBlockBody(GazpreaParser::SubroutineBlockBodyContext *ctx) override;
 
   virtual std::any visitSubroutineDeclDef(GazpreaParser::SubroutineDeclDefContext *ctx) override;
 

@@ -9,7 +9,7 @@ void DefWalk::visit(std::shared_ptr<AST> t) {
     if(!t->isNil()){
         switch(t->getNodeType()){
             //Statements & Intermediate Tokens
-            case GazpreaParser::TYPEDEF_VAR_DECLARATION_TOKEN: visitVarDeclarationStatement(t); break;
+            case GazpreaParser::VAR_DECLARATION_TOKEN: visitVarDeclarationStatement(t); break;
             case GazpreaParser::INFERRED_TYPE_TOKEN: visitInferedType(t); break;
             case GazpreaParser::EXPLICIT_TYPE_TOKEN: visitExplicitType(t); break;            
             case GazpreaParser::TYPE_QUALIFIER_TOKEN: visitTypeQualifier(t); break;
@@ -39,7 +39,7 @@ void DefWalk::visit(std::shared_ptr<AST> t) {
             case GazpreaParser::BLOCK_TOKEN: visitBlock(t); break;
 
             //Expressions
-            case GazpreaParser::EXPR_TOKEN: visitExpr(t); break;
+            case GazpreaParser::EXPRESSION_TOKEN: visitExpr(t); break;
             
             //Atoms
             case GazpreaParser::IDENTIFIER_TOKEN: visitIdentifier(t); break;

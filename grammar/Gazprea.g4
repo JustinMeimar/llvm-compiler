@@ -1,10 +1,7 @@
 grammar Gazprea;
 
 tokens {
-    SCALAR_VAR_DECLARATION_TOKEN,
-    VECTOR_VAR_DECLARATION_TOKEN,
-    TUPLE_VAR_DECLARATION_TOKEN,
-    TYPEDEF_VAR_DECLARATION_TOKEN,
+    VAR_DECLARATION_TOKEN,
     ASSIGNMENT_TOKEN,
     CONDITIONAL_STATEMENT_TOKEN,
     ELSEIF_TOKEN,
@@ -19,8 +16,7 @@ tokens {
     GENERATOR_DOMAIN_VARIABLE_TOKEN,
     GENERATOR_DOMAIN_VARIABLE_LIST_TOKEN,
     FILTER_TOKEN,
-    FILTER_PREDICATE_TOKEN,
-    EXPR_TOKEN,
+    EXPRESSION_TOKEN,
     BLOCK_TOKEN,
     INDEXING_TOKEN,
     TUPLE_ACCESS_TOKEN,
@@ -37,22 +33,19 @@ tokens {
     TUPLE_TYPE_TOKEN,
     CAST_TOKEN,
     VECTOR_SIZE_DECLARATION_LIST_TOKEN,
-    TUPLE_TYPE_DECLARATION_ATOM,
-    TUPLE_TYPE_DECLARATION_LIST,
-    FUNCTION_DECLARATION_RETURN_TOKEN,
-    PROCEDURE_DECLARATION_RETURN_TOKEN,
+    TUPLE_TYPE_DECLARATION_ATOM_TOKEN,
+    TUPLE_TYPE_DECLARATION_LIST_TOKEN,
     SUBROUTINE_EMPTY_BODY_TOKEN,
     SUBROUTINE_EXPRESSION_BODY_TOKEN,
     SUBROUTINE_BLOCK_BODY_TOKEN,
-    FORMAL_PARAMETER_TOKEN,
+    FORMAL_PARAMETER_ATOM_TOKEN,
     FORMAL_PARAMETER_LIST_TOKEN,
     IDENTIFIER_TOKEN,
     EXPLICIT_TYPE_TOKEN,
     INFERRED_TYPE_TOKEN,
     UNQUALIFIED_TYPE_TOKEN,
     DOMAIN_EXPRESSION_TOKEN,
-    REAL_CONSTANT_TOKEN,
-    STATEMENT_TOKEN
+    REAL_CONSTANT_TOKEN
 }
 
 compilationUnit: (wS? statement)* wS? EOF;
@@ -92,14 +85,14 @@ singleTokenType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | iden
 singleTermType:
      singleTokenType wS? '[' wS? vectorSizeDeclarationList wS? ']'  # VectorMatrixType
      | TUPLE wS? '(' wS? tupleTypeDeclarationList wS? ')'           # TupleType
-     | singleTokenType                                  # SingleTokenTypeAtom
+     | singleTokenType                                              # SingleTokenTypeAtom
      ;
 
 typeQualifier: VAR | CONST ;
 unqualifiedType: singleTermType (wS? singleTermType)?;
 qualifiedType:
     (typeQualifier wS?)? unqualifiedType  # ExplcitType
-    | typeQualifier                 # InferredType
+    | typeQualifier                       # InferredType
     ;
 
 // typedef
@@ -111,12 +104,12 @@ assignmentStatement: expressionList wS? '=' wS? expression wS? ';' ;
 
 // Function and Procedure
 expressionList: expression (wS? ',' wS? expression)* ;
-formalParameter: qualifiedType wS? identifier ;
-formalParameterList: formalParameter (wS? ',' wS? formalParameter)* ;
+formalParameterAtom: qualifiedType wS? identifier ;
+formalParameterList: formalParameterAtom (wS? ',' wS? formalParameterAtom)* ;
 
-subroutineBody : ';'            # FunctionEmptyBody
-        | '=' wS? expression wS? ';'    # FunctionExprBody
-        | block                 # FunctionBlockBody
+subroutineBody : ';'                    # SubroutineEmptyBody
+        | '=' wS? expression wS? ';'    # SubroutineExprBody
+        | block                         # SubroutineBlockBody
         ;
 subroutineDeclDef: (PROCEDURE | FUNCTION) wS? identifier wS?
         '(' (wS? formalParameterList)? wS? ')' (wS? RETURNS wS? unqualifiedType)? wS? subroutineBody;
