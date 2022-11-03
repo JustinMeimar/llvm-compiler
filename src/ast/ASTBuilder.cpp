@@ -88,7 +88,7 @@ namespace gazprea {
 
     std::any ASTBuilder::visitVarDeclarationStatement(GazpreaParser::VarDeclarationStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::TYPEDEF_VAR_DECLARATION_TOKEN);
-        t->addChild(visit(ctx->anyType())); 
+        t->addChild(visit(ctx->qualifiedType()));
         t->addChild(visit(ctx->identifier())); //typedef id
         if (ctx->expression()) {
             t->addChild(visit(ctx->expression()));
@@ -121,7 +121,7 @@ namespace gazprea {
 
     std::any ASTBuilder::visitFormalParameter(GazpreaParser::FormalParameterContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::FORMAL_PARAMETER_TOKEN);
-        t->addChild(visit(ctx->anyType()));
+        t->addChild(visit(ctx->qualifiedType()));
         t->addChild(visit(ctx->identifier()));
         return t;
     }
@@ -186,7 +186,7 @@ namespace gazprea {
     std::any ASTBuilder::visitConditionalStatement(GazpreaParser::ConditionalStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::CONDITIONAL_STATEMENT_TOKEN);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->statement()));
+        t->addChild(visit(ctx->exprPrecededStatement()));
         for (auto elseIfStatement : ctx->elseIfStatement()) {
             t->addChild(visit(elseIfStatement));
         }
@@ -199,7 +199,7 @@ namespace gazprea {
     std::any ASTBuilder::visitElseIfStatement(GazpreaParser::ElseIfStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::ELSEIF_TOKEN);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->statement()));
+        t->addChild(visit(ctx->exprPrecededStatement()));
         return t;
     }
 
@@ -218,7 +218,7 @@ namespace gazprea {
     std::any ASTBuilder::visitPrePredicatedLoopStatement(GazpreaParser::PrePredicatedLoopStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::PRE_PREDICATE_LOOP_TOKEN);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->statement()));
+        t->addChild(visit(ctx->exprPrecededStatement()));
         return t;
     }
 
@@ -234,7 +234,7 @@ namespace gazprea {
         for (auto domainExpression : ctx->domainExpression()) {
             t->addChild(visit(domainExpression));
         }
-        t->addChild(visit(ctx->statement()));
+        t->addChild(visit(ctx->exprPrecededStatement()));
         return t;
     }
 

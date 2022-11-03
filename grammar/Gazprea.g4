@@ -51,7 +51,8 @@ tokens {
     INFERRED_TYPE_TOKEN,
     UNQUALIFIED_TYPE_TOKEN,
     DOMAIN_EXPRESSION_TOKEN,
-    REAL_CONSTANT_TOKEN
+    REAL_CONSTANT_TOKEN,
+    STATEMENT_TOKEN
 }
 
 @parser::members {
@@ -69,21 +70,22 @@ tokens {
 
 compilationUnit: statement* EOF;
 
-// statement: 'test';
-statement: varDeclarationStatement
-        | assignmentStatement
-        | conditionalStatement
-        | infiniteLoopStatement
-        | prePredicatedLoopStatement
-        | postPredicatedLoopStatement
-        | breakStatement
-        | continueStatement
-        | iteratorLoopStatement
-        | streamStatement
-        | subroutineDeclDef
-        | returnStatement
-        | callProcedure
-        | typedefStatement
+nonBlockStatement: varDeclarationStatement
+               | assignmentStatement
+               | conditionalStatement
+               | infiniteLoopStatement
+               | prePredicatedLoopStatement
+               | postPredicatedLoopStatement
+               | breakStatement
+               | continueStatement
+               | iteratorLoopStatement
+               | streamStatement
+               | subroutineDeclDef
+               | returnStatement
+               | callProcedure
+               | typedefStatement
+               ;
+statement: nonBlockStatement
         | block
         ;
 
@@ -103,7 +105,7 @@ singleTermType:
 
 typeQualifier: VAR | CONST ;
 unqualifiedType: singleTermType singleTermType?;
-anyType:
+qualifiedType:
     typeQualifier? unqualifiedType  # ExplcitType
     | typeQualifier                 # InferredType
     ;
@@ -112,12 +114,12 @@ anyType:
 typedefStatement: TYPEDEF unqualifiedType identifier ';' ;  // can not include const/var
 
 // Variable Declaration and Assignment
-varDeclarationStatement: anyType identifier ('=' expression)? ';' ;
+varDeclarationStatement: qualifiedType identifier ('=' expression)? ';' ;
 assignmentStatement: expressionList '=' expression ';' ;
 
 // Function and Procedure
 expressionList: expression (',' expression)* ;
-formalParameter: anyType identifier ;
+formalParameter: qualifiedType identifier ;
 formalParameterList: formalParameter (',' formalParameter)* ;
 
 subroutineBody : ';'            # FunctionEmptyBody
@@ -130,16 +132,20 @@ returnStatement: RETURN expression ';';
 
 callProcedure: CALL identifier '(' expressionList? ')' ';';
 
+exprPrecededStatement:  // a statement that follows after an expression
+    nonBlockStatement
+    | block
+    ;
 // Conditional
-conditionalStatement: IF expression statement elseIfStatement* elseStatement? ;
-elseIfStatement: ELSE IF expression statement ;
+conditionalStatement: IF expression exprPrecededStatement elseIfStatement* elseStatement? ;
+elseIfStatement: ELSE IF expression exprPrecededStatement ;
 elseStatement: ELSE statement ;
 //
 // Loop
 infiniteLoopStatement: LOOP statement ;
-prePredicatedLoopStatement: LOOP WHILE expression statement ;
+prePredicatedLoopStatement: LOOP WHILE expression exprPrecededStatement ;
 postPredicatedLoopStatement: LOOP statement WHILE expression ';' ;
-iteratorLoopStatement: LOOP domainExpression (',' domainExpression)* statement ;
+iteratorLoopStatement: LOOP domainExpression (',' domainExpression)* exprPrecededStatement ;
 //
 // Break and Continue
 breakStatement: BREAK ';' ;
