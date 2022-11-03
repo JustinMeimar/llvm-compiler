@@ -186,7 +186,7 @@ namespace gazprea {
     std::any ASTBuilder::visitConditionalStatement(GazpreaParser::ConditionalStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::CONDITIONAL_STATEMENT_TOKEN);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->exprPrecededStatement()));
+        t->addChild(visit(ctx->statement()));
         for (auto elseIfStatement : ctx->elseIfStatement()) {
             t->addChild(visit(elseIfStatement));
         }
@@ -199,7 +199,7 @@ namespace gazprea {
     std::any ASTBuilder::visitElseIfStatement(GazpreaParser::ElseIfStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::ELSEIF_TOKEN);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->exprPrecededStatement()));
+        t->addChild(visit(ctx->statement()));
         return t;
     }
 
@@ -218,7 +218,7 @@ namespace gazprea {
     std::any ASTBuilder::visitPrePredicatedLoopStatement(GazpreaParser::PrePredicatedLoopStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::PRE_PREDICATE_LOOP_TOKEN);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->exprPrecededStatement()));
+        t->addChild(visit(ctx->statement()));
         return t;
     }
 
@@ -234,7 +234,7 @@ namespace gazprea {
         for (auto domainExpression : ctx->domainExpression()) {
             t->addChild(visit(domainExpression));
         }
-        t->addChild(visit(ctx->exprPrecededStatement()));
+        t->addChild(visit(ctx->statement()));
         return t;
     }
 

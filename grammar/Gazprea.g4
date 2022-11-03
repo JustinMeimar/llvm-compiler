@@ -64,13 +64,15 @@ tokens {
             return true;
 
         antlr4::Token *prevToken = ins->get(index + i);
+        std::cout << "prevToken:" << prevToken->getText();
+        std::cout << ": with channel " << prevToken->getChannel() << std::endl;
         return prevToken->getChannel() != 1;
     }
 }
 
-compilationUnit: statement* EOF;
+compilationUnit: (block | statement)* EOF;
 
-nonBlockStatement: varDeclarationStatement
+statement: varDeclarationStatement
                | assignmentStatement
                | conditionalStatement
                | infiniteLoopStatement
@@ -85,9 +87,6 @@ nonBlockStatement: varDeclarationStatement
                | callProcedure
                | typedefStatement
                ;
-statement: nonBlockStatement
-        | block
-        ;
 
 // Type and Type Qualifier
 vectorSizeDeclarationAtom: '*' | expression ;
@@ -131,21 +130,16 @@ subroutineDeclDef: (PROCEDURE | FUNCTION) identifier '(' formalParameterList? ')
 returnStatement: RETURN expression ';';
 
 callProcedure: CALL identifier '(' expressionList? ')' ';';
-
-exprPrecededStatement:  // a statement that follows after an expression
-    nonBlockStatement
-    | block
-    ;
 // Conditional
-conditionalStatement: IF expression exprPrecededStatement elseIfStatement* elseStatement? ;
-elseIfStatement: ELSE IF expression exprPrecededStatement ;
-elseStatement: ELSE statement ;
+conditionalStatement: IF expression (block | statement) elseIfStatement* elseStatement? ;
+elseIfStatement: ELSE IF expression (block | statement) ;
+elseStatement: ELSE (block | statement) ;
 //
 // Loop
-infiniteLoopStatement: LOOP statement ;
-prePredicatedLoopStatement: LOOP WHILE expression exprPrecededStatement ;
-postPredicatedLoopStatement: LOOP statement WHILE expression ';' ;
-iteratorLoopStatement: LOOP domainExpression (',' domainExpression)* exprPrecededStatement ;
+infiniteLoopStatement: LOOP (block | statement) ;
+prePredicatedLoopStatement: LOOP WHILE expression (block | statement) ;
+postPredicatedLoopStatement: LOOP (block | statement) WHILE expression ';' ;
+iteratorLoopStatement: LOOP domainExpression (',' domainExpression)* (block | statement) ;
 //
 // Break and Continue
 breakStatement: BREAK ';' ;
@@ -158,7 +152,7 @@ streamStatement:
     ;
 //
 // Block
-block: '{' statement* '}' ;
+block: '{' (block | statement)* '}' ;
 //
 // realConstant
 identifier: 'e' | E_IdentifierToken | IdentifierToken;
