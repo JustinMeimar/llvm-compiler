@@ -2,9 +2,8 @@
 
 #include <sstream>
 
-AST::AST(antlr4::tree::ParseTree *parseTree) :parseTree(parseTree){ nodeType = NIL_TYPE; }
+AST::AST(antlr4::tree::ParseTree *parseTree) :parseTree(parseTree), nodeType(NIL_TYPE) {}
 AST::AST(size_t tokenType, antlr4::tree::ParseTree *parseTree) :parseTree(parseTree), nodeType(tokenType) {}
-AST::AST(size_t tokenType) :parseTree(nullptr), nodeType(tokenType) {}
 
 size_t AST::getNodeType() { return nodeType; }
 
@@ -61,6 +60,10 @@ std::string AST::toStringTree(gazprea::GazpreaParser *parser) {
 
 AST::~AST() {}
 
-std::shared_ptr<AST> AST::createNil() {
+std::shared_ptr<AST> AST::NewNilNode() {
     return std::make_shared<AST>(nullptr);
+}
+
+std::string AST::getText() {
+    return parseTree->getText();
 }
