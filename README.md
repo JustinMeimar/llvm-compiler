@@ -80,3 +80,6 @@ instructions here.
 
 Once the remote has been added, future updates are simply the `fetch` and
 `merge` steps.
+
+## Scrum/Project Review Meeting Notes:
+[Link to Drive Folder](https://drive.google.com/drive/folders/1kzOsXZckOhqkexO7T1ji3_ZkBXTX9KOP?usp=sharing)
