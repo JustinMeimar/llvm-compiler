@@ -1,7 +1,9 @@
 # Gather our source files in this directory.
 set(
   gazprea_rt_files
-  "${CMAKE_CURRENT_SOURCE_DIR}/placeholder.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RuntimeTypes.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RuntimeTypes.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Enums.h"
 )
 
 # Build our executable from the source files.
