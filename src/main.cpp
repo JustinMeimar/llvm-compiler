@@ -9,6 +9,7 @@
 #include "AST.h"
 #include "ASTBuilder.h"
 #include "DefWalk.h"
+#include "SymbolTable.h"
 
 #include "DiagnosticErrorListener.h"
 #include "BailErrorStrategy.h"
@@ -45,9 +46,12 @@ int main(int argc, char **argv) {
   
   //Build AST
   gazprea::ASTBuilder builder;
-  std::shared_ptr<AST> ast = std::any_cast<std::shared_ptr<AST>>(builder.visit(tree));
+  auto ast = std::any_cast<std::shared_ptr<gazprea::AST>>(builder.visit(tree));
 
-  gazprea::DefWalk defwalk;
+  // Initialize the symbol table
+  auto symtab = std::make_shared<gazprea::SymbolTable>();
+
+  gazprea::DefWalk defwalk(symtab);
   defwalk.visit(ast);
 
   // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
