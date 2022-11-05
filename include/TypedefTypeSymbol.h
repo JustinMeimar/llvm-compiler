@@ -8,7 +8,6 @@ namespace gazprea {
     public:
         TypedefTypeSymbol(std::string name);
         std::string getName();
-        std::shared_ptr<Type> targetDefinedType;
     };
 }
 

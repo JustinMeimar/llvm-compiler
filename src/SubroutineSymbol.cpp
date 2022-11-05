@@ -3,9 +3,14 @@
 #include <sstream>
 
 namespace gazprea {
-    SubroutineSymbol::SubroutineSymbol( std::string name, std::shared_ptr<Type> retType,
-                                std::shared_ptr<Scope> enclosingScope) 
-                            : Symbol(name, retType), enclosingScope(enclosingScope) {}
+    SubroutineSymbol::SubroutineSymbol(
+        std::string name,
+        std::shared_ptr<Type> retTypeSingleTerm1, 
+        std::shared_ptr<Type> retTypeSingleTerm2,
+        std::shared_ptr<Scope> enclosingScope,
+        bool isProcedure,
+        bool isBuiltIn
+        ) : Symbol(name, retTypeSingleTerm1, retTypeSingleTerm2), enclosingScope(enclosingScope), isProcedure(isProcedure), isBuiltIn(isBuiltIn) {}
 
     std::shared_ptr<Symbol> SubroutineSymbol::resolve(const std::string &name) {
         for ( auto sym : orderedArgs ) {
