@@ -8,32 +8,40 @@
 #include <string>
 #include <memory>
 
-class AST { // Homogeneous AST node type
-public:
-    const static size_t NIL_TYPE = 65535;
-    static std::shared_ptr<AST> createNil();
+namespace gazprea {
+    class Scope;   // forward declaration of Scope to resolve circular dependency
+    class Symbol;  // forward declaration of Scope to resolve circular dependency
 
-    antlr4::tree::ParseTree *parseTree;       // From which parse tree node did we create node?
-    size_t nodeType;                            // type of the AST node
-    std::vector<std::shared_ptr<AST>> children; // normalized list of children
+    class AST { // Homogeneous AST node type
+    public:
+        const static size_t NIL_TYPE = 65535;
+        static std::shared_ptr<AST> createNil();
 
-    explicit AST(antlr4::tree::ParseTree *parseTree);
-    /** Create node from token type; used mainly for imaginary tokens */
-    explicit AST(size_t tokenType);
-    AST(size_t tokenType, antlr4::tree::ParseTree *parseTree);
+        antlr4::tree::ParseTree *parseTree;       // From which parse tree node did we create node?
+        size_t nodeType;                            // type of the AST node
+        std::vector<std::shared_ptr<AST>> children; // normalized list of children
 
-    /** External visitors execute the same action for all nodes
-     *  with same node type while walking. */
-    size_t getNodeType();
-    
-    void addChild(std::any t);
-    void addChild(const std::shared_ptr<AST>& t);
-    bool isNil();
+        explicit AST(antlr4::tree::ParseTree *parseTree);
+        /** Create node from token type; used mainly for imaginary tokens */
+        explicit AST(size_t tokenType);
+        AST(size_t tokenType, antlr4::tree::ParseTree *parseTree);
 
-    /** Compute string for single node */
-    std::string toString(gazprea::GazpreaParser *parser);
-    /** Compute string for a whole tree not just a node */
-    std::string toStringTree(gazprea::GazpreaParser *parser);
+        /** External visitors execute the same action for all nodes
+         *  with same node type while walking. */
+        size_t getNodeType();
+        
+        void addChild(std::any t);
+        void addChild(const std::shared_ptr<AST>& t);
+        bool isNil();
 
-    virtual ~AST();
-};
+        /** Compute string for single node */
+        std::string toString(gazprea::GazpreaParser *parser);
+        /** Compute string for a whole tree not just a node */
+        std::string toStringTree(gazprea::GazpreaParser *parser);
+
+        virtual ~AST();
+
+        std::shared_ptr<Symbol> symbol; // Populate by Def and Ref pass
+        std::shared_ptr<Scope> scope;  // Populate by Def pass
+    };
+}

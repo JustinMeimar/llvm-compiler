@@ -6,7 +6,19 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/AST.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/ASTBuilder.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/DefWalk.cpp"
-    
+    "${CMAKE_CURRENT_SOURCE_DIR}/BaseScope.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/BuiltInScalarTypeSymbol.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/GlobalScope.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/LocalScope.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Scope.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Symbol.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/SymbolTable.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Type.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/VariableSymbol.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/SubroutineSymbol.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/TypedefTypeSymbol.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/BuiltInTypeQualifierSymbol.cpp"
+
 )
 
 # Build our executable from the source files.
