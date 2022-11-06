@@ -33,7 +33,7 @@ namespace gazprea {
         if (ctx->typeQualifier()) {
             t->addChild(visit(ctx->typeQualifier()));
         } else {
-            t->addChild(AST::createNil());
+            t->addChild(AST::NewNilNode());
         }
         t->addChild(visit(ctx->unqualifiedType()));
         
@@ -91,7 +91,7 @@ namespace gazprea {
         if (ctx->expression()) {
             t->addChild(visit(ctx->expression()));
         } else {
-            t->addChild(AST::createNil());
+            t->addChild(AST::NewNilNode());
         }
         return t;
     }
@@ -130,12 +130,12 @@ namespace gazprea {
         if (ctx->parameterList()) { // may be no args
             t->addChild(visit(ctx->parameterList()));
         } else {
-            t->addChild(AST::createNil());
+            t->addChild(AST::NewNilNode());
         }
         if (ctx->unqualifiedType()) {
             t->addChild(visit(ctx->unqualifiedType()));
         } else {
-            t->addChild(AST::createNil());
+            t->addChild(AST::NewNilNode());
         }
         t->addChild(visit(ctx->subroutineBody()));
         return t;
