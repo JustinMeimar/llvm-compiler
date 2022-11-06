@@ -66,7 +66,7 @@ namespace gazprea {
  
     std::any ASTBuilder::visitTupleType(GazpreaParser::TupleTypeContext *ctx){
         auto t = std::make_shared<AST>(GazpreaParser::TUPLE_TYPE_TOKEN, ctx);
-        t->addChild(visit(ctx->tupleTypeDeclarationList()));
+        t->addChild(visit(ctx->parameterList()));
         return t;
     }
 
@@ -118,21 +118,6 @@ namespace gazprea {
         }
         return t;
     }
-
-    std::any ASTBuilder::visitFormalParameterAtom(GazpreaParser::FormalParameterAtomContext *ctx) {
-        auto t = std::make_shared<AST>(GazpreaParser::FORMAL_PARAMETER_ATOM_TOKEN, ctx);
-        t->addChild(visit(ctx->qualifiedType()));
-        t->addChild(visit(ctx->identifier()));
-        return t;
-    }
-
-    std::any ASTBuilder::visitFormalParameterList(GazpreaParser::FormalParameterListContext *ctx) {
-        auto t = std::make_shared<AST>(GazpreaParser::FORMAL_PARAMETER_LIST_TOKEN, ctx);
-        for (auto formalParameter : ctx->formalParameterAtom()) {
-            t->addChild(visit(formalParameter));
-        }
-        return t;
-    }
    
     std::any ASTBuilder::visitSubroutineDeclDef(GazpreaParser::SubroutineDeclDefContext *ctx) {
         std::shared_ptr<AST> t = nullptr;
@@ -142,8 +127,8 @@ namespace gazprea {
             t = std::make_shared<AST>(GazpreaParser::FUNCTION, ctx);
         }
         t->addChild(visit(ctx->identifier()));
-        if (ctx->formalParameterList()) { // may be no args
-            t->addChild(visit(ctx->formalParameterList()));
+        if (ctx->parameterList()) { // may be no args
+            t->addChild(visit(ctx->parameterList()));
         } else {
             t->addChild(AST::createNil());
         }
@@ -399,17 +384,17 @@ namespace gazprea {
         return t;
     }
 
-    std::any ASTBuilder::visitTupleTypeDeclarationAtom(GazpreaParser::TupleTypeDeclarationAtomContext *ctx) {
-        auto t = std::make_shared<AST>(GazpreaParser::TUPLE_TYPE_DECLARATION_ATOM_TOKEN, ctx);
+    std::any ASTBuilder::visitParameterAtom(GazpreaParser::ParameterAtomContext *ctx) {
+        auto t = std::make_shared<AST>(GazpreaParser::PARAMETER_ATOM_TOKEN, ctx);
         for (auto singleTermType : ctx->singleTermType()) {
             t->addChild(visit(singleTermType));
         }
         return t;
     }
 
-    std::any ASTBuilder::visitTupleTypeDeclarationList(GazpreaParser::TupleTypeDeclarationListContext *ctx) {
-        auto t = std::make_shared<AST>(GazpreaParser::TUPLE_TYPE_DECLARATION_LIST_TOKEN, ctx);
-        for (auto tupleTypeDeclarationAtom : ctx->tupleTypeDeclarationAtom()) {
+    std::any ASTBuilder::visitParameterList(GazpreaParser::ParameterListContext *ctx) {
+        auto t = std::make_shared<AST>(GazpreaParser::PARAMETER_LIST_TOKEN, ctx);
+        for (auto tupleTypeDeclarationAtom : ctx->parameterAtom()) {
             t->addChild(visit(tupleTypeDeclarationAtom));
         }
         return t;

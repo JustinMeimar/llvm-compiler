@@ -16,9 +16,9 @@ public:
 
   virtual std::any visitVectorSizeDeclarationList(GazpreaParser::VectorSizeDeclarationListContext *ctx) override;
 
-  virtual std::any visitTupleTypeDeclarationAtom(GazpreaParser::TupleTypeDeclarationAtomContext *ctx) override;
+  virtual std::any visitParameterAtom(GazpreaParser::ParameterAtomContext *ctx) override;
 
-  virtual std::any visitTupleTypeDeclarationList(GazpreaParser::TupleTypeDeclarationListContext *ctx) override;
+  virtual std::any visitParameterList(GazpreaParser::ParameterListContext *ctx) override;
 
   virtual std::any visitSingleTokenType(GazpreaParser::SingleTokenTypeContext *ctx) override;
 
@@ -43,10 +43,6 @@ public:
   virtual std::any visitExpressionList(GazpreaParser::ExpressionListContext *ctx) override;
 
   virtual std::any visitTupleExpressionList(GazpreaParser::TupleExpressionListContext *ctx) override;
-
-  virtual std::any visitFormalParameterAtom(GazpreaParser::FormalParameterAtomContext *ctx) override;
-
-  virtual std::any visitFormalParameterList(GazpreaParser::FormalParameterListContext *ctx) override;
 
   virtual std::any visitSubroutineEmptyBody(GazpreaParser::SubroutineEmptyBodyContext *ctx) override;
 
