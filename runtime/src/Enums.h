@@ -4,7 +4,7 @@
 
 // This file define all enums and consts in the runtime library
 
-const int64_t VECTOR_SIZE_UNKNOWN = -1;
+const int64_t SIZE_UNKNOWN = -1;
 
 ///TYPES
 typedef enum enum_gazprea_typeid {
@@ -14,8 +14,8 @@ typedef enum enum_gazprea_typeid {
     typeid_real,
     typeid_boolean,
     typeid_character,
+    typeid_interval,  // not a compound type because it is always constant size
     // compound types
-    typeid_interval,
     typeid_vector,
     typeid_string,
     typeid_matrix,
@@ -27,13 +27,15 @@ typedef enum enum_gazprea_typeid {
     typeid_stream_out,
     typeid_null,
     typeid_identity,
-    typeid_empty_vector,    // empty vector or matrix
+    typeid_empty_list,      // empty vector or matrix
     typeid_unknown,         // unknown type is for declaration/parameter atom with inferred type
     // compound types
     typeid_vector_literal,  // can have different types for each element, useful only in varDeclarationStatement, converted to vector right away in any other situation
     typeid_matrix_literal,  // rectangular shape, the shorter rows are filled with nulls
+    typeid_vector_ref,      // vector/matrix indexed by a vector is a reference to the original vector
+    typeid_matrix_ref,      // matrix indexed by two vectors
 
-    NUM_TYPE_IDS  // number of ids in the enum
+    NUM_TYPE_IDS            // number of ids in the enum
 } TypeID;
 
 typedef enum enum_type_qualifier {
