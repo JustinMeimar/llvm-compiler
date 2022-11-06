@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 // This file declares all enums and consts in the runtime library
 
 const int64_t SIZE_UNKNOWN;
@@ -19,8 +21,6 @@ typedef enum enum_gazprea_typeid {
     typeid_stream_out,
     typeid_empty_array,     // empty vector or matrix
     typeid_unknown,         // unknown type is for declaration/parameter atom with inferred type
-    // compound types
-    typeid_array_ref,
 
     NUM_TYPE_IDS            // number of ids in the enum
 } TypeID;

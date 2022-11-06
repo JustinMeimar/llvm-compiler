@@ -196,9 +196,6 @@ void variableDestructor(Variable *this) {
         case typeid_stream_out:
         case typeid_empty_array:
             break;  // m_data is ignored for these types
-        case typeid_array_ref:
-            // TODO
-            break;
         case typeid_interval:
         case typeid_tuple:
             free(this->m_data);
