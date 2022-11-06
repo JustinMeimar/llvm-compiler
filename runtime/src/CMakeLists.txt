@@ -3,6 +3,13 @@ set(
   gazprea_rt_files
   "${CMAKE_CURRENT_SOURCE_DIR}/RuntimeTypes.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/RuntimeTypes.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RuntimeVariables.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RuntimeVariables.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RuntimeErrors.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RuntimeErrors.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/NDArray.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/NDArray.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Enums.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/Enums.h"
 )
 
