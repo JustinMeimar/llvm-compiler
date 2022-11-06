@@ -1,5 +1,10 @@
 #include "RefWalk.h"
 
+typedef int AType;
+void hello(AType, int b) {
+
+}
+
 namespace gazprea {
 
     RefWalk::RefWalk(std::shared_ptr<SymbolTable> symtab) : symtab(symtab), currentScope(symtab->globals) {

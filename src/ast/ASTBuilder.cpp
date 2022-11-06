@@ -385,9 +385,19 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitParameterAtom(GazpreaParser::ParameterAtomContext *ctx) {
+        ///children: Term1 Term2 Term3 TypeQualifier
         auto t = std::make_shared<AST>(GazpreaParser::PARAMETER_ATOM_TOKEN, ctx);
-        for (auto singleTermType : ctx->singleTermType()) {
-            t->addChild(visit(singleTermType));
+        const auto &terms = ctx->singleTermType();
+        for (int i = 0; i < 3; i++) {
+            if (i + 1 <= (int) terms.size())
+                t->addChild(visit(terms[i]));
+            else
+                t->addChild(AST::NewNilNode());
+        }
+        if (ctx->typeQualifier()) {
+            t->addChild(visit(ctx->typeQualifier()));
+        } else {
+            t->addChild(AST::NewNilNode());
         }
         return t;
     }

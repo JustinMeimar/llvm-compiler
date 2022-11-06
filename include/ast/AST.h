@@ -19,7 +19,6 @@ namespace gazprea {
     class AST { // Homogeneous AST node type
     public:
         const static size_t NIL_TYPE = 65535;  // distinguish from other numbers (since size_t is unsigned I can't use -1)
-        static std::shared_ptr<AST> createNil();
 
         antlr4::tree::ParseTree *parseTree;       // From which parse tree node did we create node?
         size_t nodeType;                            // type of the AST node
