@@ -39,11 +39,15 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
     } else if (targetTypeID == typeid_stream_in || targetTypeID == typeid_stream_out || targetTypeID == typeid_empty_array) {
         ///- any -> stream_in/stream_out/empty array: invalid target type
         targetTypeError(targetType, "Invalid target type:");
-    } else if (typeIsArrayOrString(targetType) && !config->m_allowUnknownTargetArraySize) {
+    } else if (typeIsArrayOrString(targetType)) {
         ArrayType *CTI = targetType->m_compoundTypeInfo;
-        for (int64_t i = 0; i < CTI->m_nDim; i++) {
-            if (CTI->m_dims[i] < 0) {
-                targetTypeError(targetType, "Attempt to convert empty array into unknown size array:");
+        if (CTI->m_elementTypeID == element_mixed) {
+            targetTypeError(targetType, "Attempt to convert into a mixed element array:");
+        } else if (!config->m_allowUnknownTargetArraySize) {
+            for (int64_t i = 0; i < CTI->m_nDim; i++) {
+                if (CTI->m_dims[i] < 0) {
+                    targetTypeError(targetType, "Attempt to convert into unknown size array:");
+                }
             }
         }
     } else if (config->m_isCast && (typeIsArrayNull(rhsType) || typeIsArrayIdentity(rhsType))) {
@@ -61,7 +65,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
             typeInitFromCopy(this->m_type, targetType);  // same type as target type
             ArrayType *CTI = this->m_type->m_compoundTypeInfo;
 
-            if (CTI->m_nDim == 0 || CTI->m_elementTypeID == element_mixed)
+            if (CTI->m_nDim == 0)
                 targetTypeError(targetType, "Attempt to convert empty array into:");
 
             // otherwise we do conversion to null/identity/basic type vector/string/matrix, of unspecified/unknown/any size
@@ -110,10 +114,28 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
 
     /// any -> unknown
     if (targetTypeID == typeid_unknown) {
-        if (!config->m_allowUnknownTargetType) {
+        if (!config->m_allowUnknownTargetType || typeIsArrayNull(rhsType) || typeIsArrayIdentity(rhsType)) {
             targetTypeError(rhsType, "Attempt to convert to unknown. rhsType:");
+        } else if (rhsTypeID == typeid_ndarray) {
+            ArrayType *rhsCTI = rhsType->m_compoundTypeInfo;
+            if (rhsCTI->m_elementTypeID == element_mixed) {
+                int64_t size = arrayTypeGetTotalLength(rhsCTI);
+                this->m_type = typeMalloc();
+                typeInitFromCopy(this->m_type, rhsType);
+                ArrayType *CTI = this->m_type->m_compoundTypeInfo;
+                if (!arrayMixedElementCanBePromotedToSameType(rhs->m_data, size,
+                                                              &CTI->m_elementTypeID)) {
+                    targetTypeError(rhsType, "Attempt to convert to homogenous array from:");
+                }
+                arrayMallocFromPromote(CTI->m_elementTypeID, element_mixed, size, rhs->m_data, &this->m_data);
+            } else {
+                variableInitFromMemcpy(this, rhs);
+            }
+        } else {
+            variableInitFromMemcpy(this, rhs);
         }
-        variableInitFromMemcpy(this, rhs);
+        this->m_fieldPos = -1;
+        this->m_parent = this->m_data;
         return;
     }
 
