@@ -1,18 +1,16 @@
 #pragma once
-
-// forward declaration
-typedef struct struct_gazprea_variable Variable;
-
-///------------------------------TYPE---------------------------------------------------------------
-
 #include <stdint.h>
 #include <stdbool.h>
 #include "Enums.h"
+#include "RuntimeVariables.h"
 
-typedef struct struct_gazprea_type {
-    TypeID m_typeId;
-    void *m_compoundTypeInfo;  // for compound type only
-} Type;
+// forward declaration
+typedef struct struct_gazprea_variable Variable;
+typedef struct struct_gazprea_pcadp_config PCADPConfig;
+typedef struct struct_gazprea_type Type;
+typedef enum enum_vectovec_rhssize_restriction VecToVecRHSSizeRestriction;
+
+///------------------------------TYPE---------------------------------------------------------------
 
 Type *typeMalloc();
 
@@ -27,13 +25,18 @@ void typeInitFromTwoSingleTerms(Type *this, Type *first, Type *second);
 void typeInitFromParameter(Type *this, Type *parameterType, Variable *invokeValue);  // same as fromDeclaration but allow vec/matrix references
 void typeInitFromVectorSizeSpecification(Type *this, int64_t size, Type *baseType);  // for vector and string
 void typeInitFromMatrixSizeSpecification(Type *this, int64_t nRow, int64_t nCol, Type *baseType);
+void typeInitFromIntervalType(Type *this);
 
 
 void typeDestructor(Type *this);
 
+bool typeIsScalarNull(Type *this);
+bool typeIsScalarIdentity(Type *this);
+bool typeIsArrayNull(Type *this);
+bool typeIsArrayIdentity(Type *this);
 bool typeIsUnknown(Type *this);
 bool typeIsBasicType(Type *this);
-bool typeIsLValueType(Type *this);
+bool typeIsLValueType(Type *this);  // also known as spec types (ndarray, string, interval and tuple)
 bool typeIsVectorOrString(Type *this);  // does not include ref type
 bool typeIsMatrix(Type *this);  // does not include ref type
 bool typeIsIdentical(Type *this, Type *other);  // checks if the two types are describing the same types
@@ -54,12 +57,14 @@ typedef struct struct_gazprea_array_or_string_type {
 /// allocate
 ArrayType *arrayTypeMalloc();
 /// constructor
-void arrayTypeInitFromVectorSize(ArrayType *this, TypeID elementTypeID, int64_t vecLength);
-void arrayTypeInitFromMatrixSize(ArrayType *this, TypeID elementTypeID, int64_t dim1, int64_t dim2);  // dim1 is #rows
+void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength);
+void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2);  // dim1 is #rows
 void arrayTypeInitFromCopy(ArrayType *this, ArrayType *other);
 /// destructor
 void arrayTypeDestructor(ArrayType *this);
 /// methods
+VecToVecRHSSizeRestriction arrayTypeMinimumConpatibleRestriction(ArrayType *this, ArrayType *target);
+bool arrayTypeHasUnknownSize(ArrayType *this);
 int64_t arrayTypeElementSize(ArrayType *this);
 int64_t arrayTypeGetTotalLength(ArrayType *this);
 bool arrayTypeCanBeLValue(ArrayType *this);
@@ -73,7 +78,7 @@ bool arrayTypeCanBeLValue(ArrayType *this);
 // TupleType---------------------------------------------------------------------------------------------
 
 typedef struct struct_gazprea_tuple_type {
-    Type *m_fieldTypeArray;
+    Type *m_fieldTypeArr;
     int64_t *m_strIdToField;  // maps identifier access to position of field in the tuple; of size 2 * m_nField
     int64_t m_nField;
 } TupleType;
@@ -81,5 +86,12 @@ typedef struct struct_gazprea_tuple_type {
 TupleType *tupleTypeMalloc();
 
 void tupleTypeInitFromTypeAndId(TupleType *this, Type *typeArray, int64_t *idArray);
+void tupleTypeInitFromCopy(TupleType *this, TupleType *other);
 
 void tupleTypeDestructor(TupleType *this);
+
+void *tupleTypeMallocDataFromNull(TupleType *this);
+void *tupleTypeMallocDataFromIdentity(TupleType *this);
+void *tupleTypeMallocDataFromCopy(TupleType *this, void *otherTupleData);
+void *tupleTypeMallocDataFromPCADP(TupleType *this, Variable *src, PCADPConfig *config);
+void tupleTypeFreeData(TupleType *this, void *data);

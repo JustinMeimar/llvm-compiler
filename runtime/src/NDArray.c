@@ -26,7 +26,7 @@ int64_t elementGetSize(ElementTypeID id) {
         case element_boolean:
             return sizeof(bool);
         case element_mixed:
-            return sizeof(void *);
+            return sizeof(MixedTypeElement);
         default:
             break;
     }
@@ -383,12 +383,21 @@ void *arrayMallocFromIdentity(ElementTypeID id, int64_t size) {
 void *arrayMallocFromElementValue(ElementTypeID id, int64_t size, void *value) {
     if (elementIsBasicType(id)) {
         int64_t elementSize = elementGetSize(id);
-        char *src = value;
         char *target = malloc(elementSize * size);
         for (int64_t i = 0; i < size; i++) {
-            memcpy(target + i * elementSize, src, elementSize);
+            memcpy(target + i * elementSize, value, elementSize);
         }
         return (void *)target;
+    }
+    return NULL;
+}
+
+void *arrayMallocFromMemcpy(ElementTypeID id, int64_t size, void *value) {
+    if (elementIsBasicType(id)) {
+        int64_t elementSize = elementGetSize(id);
+        void *target = malloc(elementSize * size);
+        memcpy(target, value, elementSize * size);
+        return target;
     }
     return NULL;
 }
@@ -417,6 +426,20 @@ void *arrayMallocFromRealValue(int64_t size, float value) {
     for (int64_t i = 0; i < size; i++)
         arr[i] = value;
     return arr;
+}
+
+void arrayFree(ElementTypeID id, void *arr, int64_t size) {
+    if (elementIsBasicType(id)) {
+        free(arr);
+    } else if (elementIsMixedType(id)) {
+        MixedTypeElement *ptr = arr;
+        for (int64_t i = 0; i < size; i++) {
+            if (elementIsBasicType(ptr[i].m_elementTypeID))
+                free(ptr[i].m_element);
+        }
+        // then free the pointer array itself
+        free(arr);
+    }
 }
 
 // simple getter/setters
@@ -611,25 +634,111 @@ void arrayMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, int64_t
     *resultSize = resultArraySize;
 }
 
-bool arrayMixedElementCanBePromotedToSameType(ElementTypeID *idArray, int64_t size, ElementTypeID *resultType) {
+void arrayMallocFromCastPromote(ElementTypeID resultID, ElementTypeID srcID, int64_t size, void *src, void **result,
+    void conversion(ElementTypeID, ElementTypeID, void*, void**)) {
+    int64_t resultElementSize = elementGetSize(resultID);
+    char *resultPos = malloc(resultElementSize * size);
+
+    if (srcID == element_mixed) {
+        MixedTypeElement *mixed = src;
+        for (int64_t i = 0; i < size; i++) {
+            ElementTypeID eid = mixed[i].m_elementTypeID;
+            void *temp;
+            conversion(resultID, eid, mixed[i].m_element, &temp);
+            memcpy(resultPos + resultElementSize * i, temp, resultElementSize);
+            free(temp);
+        }
+    } else {
+        int64_t srcElementSize = elementGetSize(srcID);
+        char *srcPos = src;
+        for (int64_t i = 0; i < size; i++) {
+            void *temp;
+            conversion(resultID, srcID, srcPos + i * srcElementSize, &temp);
+            memcpy(resultPos + resultElementSize * i, temp, resultElementSize);
+            free(temp);
+        }
+    }
+    *result = resultPos;
+}
+
+void arrayMallocFromCast(ElementTypeID resultID, ElementTypeID srcID, int64_t size, void *src, void **result) {
+    arrayMallocFromCastPromote(resultID, srcID, size, src, result, elementMallocFromCast);
+}
+void arrayMallocFromPromote(ElementTypeID resultID, ElementTypeID srcID, int64_t size, void *src, void **result) {
+    arrayMallocFromCastPromote(resultID, srcID, size, src, result, elementMallocFromPromotion);
+}
+
+bool arrayMixedElementCanBePromotedToSameType(MixedTypeElement *arr, int64_t size, ElementTypeID *resultType) {
     // not a general algorithm, but should work on gazprea since the only nontrivial scalar promotion is integer->real
-    *resultType = idArray[0];  // we assume array literal is at least size one
+    *resultType = arr[0].m_elementTypeID;  // we assume array literal is at least size one
     for (int64_t i = 1; i < size; i++) {
-        bool success = elementCanBePromotedBetween(*resultType, idArray[i], resultType);
+        bool success = elementCanBePromotedBetween(*resultType, arr[i].m_elementTypeID, resultType);
         if (!success)
             return false;
     }
     return true;
 }
 
-void arrayMixedElementPromoteToTargetType(ElementTypeID *idArray, void **valueArray, int64_t size, ElementTypeID targetType, void **result) {
-    int64_t targetElementSize = elementGetSize(targetType);
-    char *resultPos = malloc(targetElementSize * size);
-    for (int64_t i = 0; i < size; i++) {
-        void *temp;
-        elementMallocFromPromotion(targetType, idArray[i], valueArray[i], &temp);
-        memcpy(resultPos + targetElementSize * i, temp, targetElementSize);
-        free(temp);
+// n * m matrix multiply by m * k matrix to produce a n * k matrix
+void arrayMallocFromMatrixMultiplication(ElementTypeID id, void *op1, void *op2, int64_t n, int64_t m, int64_t k, void **result) {
+    if (id == element_integer) {
+        int32_t *mat1 = op1;
+        int32_t *mat2 = op2;
+        int32_t *mat3 = arrayMallocFromNull(id, n * k);
+        for (int64_t i = 0; i < n; i++) {
+            for (int64_t j = 0; j < k; j++) {
+                int32_t sum = 0;
+                for (int64_t l = 0; l < m; l++) {
+                    sum += mat1[i * m + l] * mat2[l * k + j];
+                }
+                mat3[i * k + j] = sum;
+            }
+        }
+        *result = mat3;
+        return;
+    } else if (id == element_real) {
+        float *mat1 = op1;
+        float *mat2 = op2;
+        float *mat3 = arrayMallocFromNull(id, n * k);
+        for (int64_t i = 0; i < n; i++) {
+            for (int64_t j = 0; j < k; j++) {
+                float sum = 0;
+                for (int64_t l = 0; l < m; l++) {
+                    sum += mat1[i * m + l] * mat2[l * k + j];
+                }
+                mat3[i * k + j] = sum;
+            }
+        }
+        *result = mat3;
+        return;
     }
-    *result = resultPos;
+    errorAndExit("Invalid matrix multiplication base type!");
+}
+
+void arrayMallocFromVectorResize(ElementTypeID id, void *old, int64_t oldSize, int64_t newSize, void **result) {
+    if (!elementIsBasicType(id)) {
+        errorAndExit("Vector to be resized is not of any of the basic types!");
+    }
+    int64_t elementSize = elementGetSize(id);
+    char *oldArr = old;
+    char *resultArr = arrayMallocFromNull(id, newSize);
+    for (int64_t i = 0; i < oldSize && i < newSize; i++) {
+        memcpy(resultArr + i * elementSize, oldArr + i * elementSize, elementSize);
+    }
+    *result = resultArr;
+}
+
+void arrayMallocFromMatrixResize(ElementTypeID id, void *old, int64_t oldNRow, int64_t oldNCol, int64_t newNRow, int64_t newNCol, void **result) {
+    if (!elementIsBasicType(id)) {
+        errorAndExit("Vector to be resized is not of any of the basic types!");
+    }
+    int64_t elementSize = elementGetSize(id);
+    char *oldArr = old;
+    char *resultArr = arrayMallocFromNull(id, newNRow * newNCol);
+    for (int64_t i = 0; i < oldNRow && i < newNRow; i++) {
+        for (int64_t j = 0; j < oldNCol && j < newNCol; j++) {
+            int64_t offset = i * newNRow + j;
+            memcpy(resultArr + offset * elementSize, oldArr + offset * elementSize, elementSize);
+        }
+    }
 }

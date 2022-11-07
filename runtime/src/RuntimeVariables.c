@@ -1,6 +1,7 @@
 #include "RuntimeVariables.h"
 #include <stdlib.h>
 #include "RuntimeErrors.h"
+#include "NDArray.h"
 #include <string.h>
 
 ///------------------------------DATA---------------------------------------------------------------
@@ -13,82 +14,210 @@
 // integer[3] - int32_t * - a pointer to 3 int32_t element array
 // integer[3, 3] - int32_t * - a pointer to 3 * 3 = 9 int32_t element array
 // string[2] - int8_t * - a pointer to 2 int8_t element array
-// tuple(character c, integer i) - void * - a pointer to the start of memory which contains a int8_t * followed by a int32_t *
+// tuple(character c, integer i) - Variable ** - a pointer to 2 Variable * pointers
 // null & identity & [] & stream_in & stream_out - these types do not need to store associated data, m_data is ignored
 // unknown - unknown type should not be associated with a variable
-// TODO: vector_ref/matrix_ref
 
 ///------------------------------HELPER FUNCTIONS---------------------------------------------------------------
 
-//void variableInitFromIntegerLiteral(Variable *this, int32_t value) {
-//    this->m_type.m_typeId = typeid_integer;
-//    this->m_type.m_compoundTypeInfo = NULL;
-//    this->m_data = malloc(sizeof(int32_t));
-//    *((int32_t *)this->m_data) = value;
-//    this->m_fieldPos = -1;
-//    this->m_parent = this->m_data;
-//}
-//
-//void variableInitFromRealLiteral(Variable *this, float value) {
-//    this->m_type.m_typeId = typeid_real;
-//    this->m_type.m_compoundTypeInfo = NULL;
-//    this->m_data = malloc(sizeof(float));
-//    *((float *)this->m_data) = value;
-//    this->m_fieldPos = -1;
-//    this->m_parent = this->m_data;
-//}
-//
-//void variableInitFromCharacterLiteral(Variable *this, int8_t value) {
-//    this->m_type.m_typeId = typeid_character;
-//    this->m_type.m_compoundTypeInfo = NULL;
-//    this->m_data = malloc(sizeof(int8_t));
-//    *((int8_t *)this->m_data) = value;
-//    this->m_fieldPos = -1;
-//    this->m_parent = this->m_data;
-//}
-//
-//void variableInitFromBooleanLiteral(Variable *this, bool value) {
-//    this->m_type.m_typeId = typeid_boolean;
-//    this->m_type.m_compoundTypeInfo = NULL;
-//    this->m_data = malloc(sizeof(bool));
-//    *((bool *)this->m_data) = value;
-//    this->m_fieldPos = -1;
-//    this->m_parent = this->m_data;
-//}
-//
-//void variableInitFromIntervalLiteral(Variable *this, int32_t head, int32_t tail) {
-//    this->m_type.m_typeId = typeid_interval;
-//    this->m_type.m_compoundTypeInfo = NULL;
-//    int *data = malloc(sizeof(int32_t) * 2);
-//    this->m_data = data;
-//    data[0] = head;
-//    data[1] = tail;
-//    this->m_fieldPos = -1;
-//    this->m_parent = this->m_data;
-//}
+void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCADPConfig *config) {
+    // in every possible case, we need to do one of the below two things
+    // 1. throw an error when input types do not make sense
+    // 2. initialize every field of this fully, including this->m_type and this->m_data
 
-// <type> var = null;
-void variableInitFromNull(Variable *this, Type *type) {
-    TypeID typeid = type->m_typeId;
-    switch(typeid) {
-        // TODO
-//        case typeid_integer:
-//            variableInitFromIntegerLiteral(this, 0); break;
-//        case typeid_character:
-//            variableInitFromCharacterLiteral(this, 0); break;
-//        case typeid_real:
-//            variableInitFromRealLiteral(this, 0.0f); break;
-//        case typeid_boolean:
-//            variableInitFromBooleanLiteral(this, false); break;
-//        case typeid_interval:
-//            variableInitFromIntervalLiteral(this, 0, 0); break;
-//        case typeid_vector:
-//        case typeid_string:
-//        case typeid_matrix:
-//        case typeid_tuple:
-        default:
-            targetTypeError(type, "Attempt to promote null into type: ");
-            break;
+    /// common local variables
+    Type *rhsType = &rhs->m_type;
+    TypeID rhsTypeID = rhsType->m_typeId;
+    // targetType
+    TypeID targetTypeID = targetType->m_typeId;
+
+    if (rhsTypeID == typeid_stream_in || rhsTypeID == typeid_stream_out || rhsTypeID == typeid_unknown) {
+        ///- stream_in/stream_out/unknown -> any: invalid rhs type
+        targetTypeError(rhsType, "Invalid rhs type:");
+    } else if (targetTypeID == typeid_stream_in || targetTypeID == typeid_stream_out || targetTypeID == typeid_empty_array) {
+        ///- any -> stream_in/stream_out/empty array: invalid target type
+        targetTypeError(targetType, "Invalid target type:");
+    } else if (typeIsVectorOrString(targetType) && !config->m_allowUnknownTargetArraySize) {
+        ArrayType *CTI = targetType->m_compoundTypeInfo;
+        for (int64_t i = 0; i < CTI->m_nDim; i++) {
+            if (CTI->m_dims[i] < 0) {
+                targetTypeError(targetType, "Attempt to convert empty array into unknown size array:");
+            }
+        }
+    } else if (config->m_isCast && (typeIsArrayNull(rhsType) || typeIsArrayIdentity(rhsType))) {
+        targetTypeError(rhsType, "Null or identity not allowed to be rhs:");
+    } else if (typeIsVectorOrString(rhsType)) {
+        if (arrayTypeHasUnknownSize(rhsType->m_compoundTypeInfo))
+            targetTypeError(rhsType, "RHS type has unknown size:");
+    }
+
+    ///- empty array -> any
+    if (rhsTypeID == typeid_empty_array) {
+        // empty array -> ndarray/string
+        if (typeIsVectorOrString(targetType)) {
+            typeInitFromCopy(&this->m_type, targetType);  // same type as target type
+            ArrayType *CTI = this->m_type.m_compoundTypeInfo;
+
+            if (CTI->m_nDim == 0 || CTI->m_elementTypeID == element_mixed)
+                targetTypeError(targetType, "Attempt to convert empty array into:");
+
+            // otherwise we do conversion to null/identity/basic type vector/string/matrix, of unspecified/unknown/any size
+            for (int64_t i = 0; i < CTI->m_nDim; i++) {
+                int64_t dim = CTI->m_dims[i];
+                if (dim > 0 && config->m_rhsSizeRestriction == vectovec_rhs_must_be_same_size) {
+                    targetTypeError(targetType, "Attempt to convert empty array into a >= 1 size array:");
+                }
+                CTI->m_dims[i] = dim >= 0 ? dim : 0;
+            }
+            this->m_data = arrayMallocFromNull(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI));
+        } else {
+            targetTypeError(targetType, "Attempt to convert empty array into:");
+        }
+        this->m_fieldPos = -1;
+        this->m_parent = this->m_data;
+        return;
+    }
+
+    /// any -> interval
+    if (targetTypeID == typeid_interval) {
+        // ndarray/interval -> interval
+        if (rhsTypeID == typeid_ndarray) {
+            // only possible case is when the ndarray is a scalar null/identity
+            ArrayType *CTI = rhsType->m_compoundTypeInfo;
+            ElementTypeID eid = CTI->m_elementTypeID;
+            if (CTI->m_nDim != 0 || (eid != element_null && eid != element_identity))
+                targetTypeError(rhsType, "Attempt to convert to interval from:");
+            typeInitFromIntervalType(&this->m_type);
+            if (eid == element_null) {
+                variableInitFromNull(this, NULL);
+            } else if (eid == element_identity) {
+                variableInitFromIdentity(this, NULL);
+            } else {
+                targetTypeError(rhsType, "Attempt to convert to interval from:");
+            }
+        } else if (rhsTypeID == typeid_interval) {
+            // we just copy it
+            variableInitFromMemcpy(this, rhs);
+        } else {
+            targetTypeError(rhsType, "Attempt to convert to interval from:");
+        }
+        return;
+    }
+
+    /// any -> unknown
+    if (targetTypeID == typeid_unknown) {
+        if (!config->m_allowUnknownTargetType) {
+            targetTypeError(rhsType, "Attempt to convert to unknown. rhsType:");
+        }
+        variableInitFromMemcpy(this, rhs);
+        return;
+    }
+
+    /// interval -> ndarray
+    if (rhsTypeID == typeid_interval) {
+        if (targetTypeID == typeid_ndarray) {
+            // interval -> vector of integer or real
+            ArrayType *CTI = targetType->m_compoundTypeInfo;
+            ElementTypeID eid = CTI->m_elementTypeID;
+            if (CTI->m_nDim != 1)
+                targetTypeError(targetType, "Attempt to convert interval to:");
+            int64_t arrayLength = CTI->m_dims[0];
+
+            int32_t *interval = rhs->m_data;
+            int64_t size = interval[1] - interval[0] + 1;
+            if (arrayLength < 0)
+                arrayLength = size;  // for unspecified/unknown size we just assume it is the same size
+            if (config->m_rhsSizeRestriction == vectovec_rhs_must_be_same_size && arrayLength != size
+            || config->m_rhsSizeRestriction == vectovec_rhs_size_must_not_be_greater && size > arrayLength) {
+                targetTypeError(targetType, "Attempt to convert interval to:");
+            }
+            int *vec = arrayMallocFromNull(element_integer, arrayLength);
+
+            int64_t resultSize = size < arrayLength ? size : arrayLength;
+            for (int64_t i = 0; i < resultSize; i++) {
+                vec[i] = interval[0] + (int32_t)i;
+            }
+            if (eid != element_integer) {
+                arrayMallocFromCast(eid, element_integer, resultSize, vec, &this->m_data);
+                free(vec);
+            } else {
+                this->m_data = vec;
+            }
+        } else {
+            targetTypeError(targetType, "Attempt to convert interval to:");
+        }
+        this->m_fieldPos = -1;
+        this->m_parent = this->m_data;
+        return;
+    }
+
+    /// tuple -> any
+    /// any -> tuple
+    if (rhsTypeID == typeid_tuple || targetTypeID == typeid_tuple) {
+        if (rhsTypeID != typeid_tuple || targetTypeID != typeid_tuple) {
+            errorAndExit("Tuple can not be converted to/from any other type!");
+        }
+        // tuple -> tuple
+        // we convert variables pair-wise
+        TupleType *rhsCTI = rhsType->m_compoundTypeInfo;
+        TupleType *targetCTI = targetType->m_compoundTypeInfo;
+        if (rhsCTI->m_nField != targetCTI->m_nField) {
+            errorAndExit("Tuple can not be converted to/from tuple of different size!");
+        }
+        typeInitFromCopy(&this->m_type, targetType);
+        this->m_data = tupleTypeMallocDataFromPCADP(targetCTI, rhs, config);
+        this->m_fieldPos = -1;
+        this->m_parent = this->m_data;
+        return;
+    }
+
+    /// array/string -> array/string
+    {
+        ArrayType *rhsCTI = rhsType->m_compoundTypeInfo;
+        int8_t rhsNDim = rhsCTI->m_nDim;
+        int64_t *rhsDims = rhsCTI->m_dims;
+
+        typeInitFromCopy(&this->m_type, targetType);
+        ArrayType *CTI = this->m_type.m_compoundTypeInfo;
+        int8_t nDim = CTI->m_nDim;
+        int64_t *dims = CTI->m_dims;
+        if (!config->m_allowArrToArrDifferentElementTypeConversion) {
+            errorAndExit("No array to array conversion allowed");
+        } else if (nDim < rhsNDim) {
+            errorAndExit("Cannot convert to a lower dimension array!");
+        } else if (nDim == 2 && rhsNDim == 1) {
+            errorAndExit("Cannot convert from vector to matrix!");
+        }
+
+        void (*conversion)(ElementTypeID, ElementTypeID, int64_t, void *, void **)
+            = config->m_isCast ? arrayMallocFromCast : arrayMallocFromPromote;
+        void *convertedArray;
+        conversion(CTI->m_elementTypeID, rhsCTI->m_elementTypeID, arrayTypeGetTotalLength(rhsCTI), rhs->m_data, &convertedArray);
+
+        if (rhsNDim == 0) {
+            if (arrayTypeHasUnknownSize(CTI))
+                targetTypeError(targetType, "Attempt to convert scalar to unknown size array or string:");
+            this->m_data = arrayMallocFromElementValue(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI),convertedArray);
+        } else if (rhsNDim == nDim) {
+            for (int64_t i = 0; i < nDim; i++) {
+                if (dims[i] < 0)
+                    dims[i] = rhsDims[i];
+            }
+            if (config->m_rhsSizeRestriction < arrayTypeMinimumConpatibleRestriction(rhsCTI, CTI)) {
+                errorAndExit("Incompatible vector size in convertion!");
+            }
+            // resize
+            if (rhsNDim == 1) {
+                arrayMallocFromVectorResize(CTI->m_elementTypeID, convertedArray, rhsDims[0], dims[0], &this->m_data);
+            } else {
+                arrayMallocFromMatrixResize(CTI->m_elementTypeID, rhs->m_data, rhsDims[0], rhsDims[1], dims[0], dims[1], &this->m_data);
+            }
+        }
+        free(convertedArray);
+
+        this->m_fieldPos = -1;
+        this->m_parent = this->m_data;
+        return;
     }
 }
 
@@ -99,72 +228,90 @@ Variable *variableMalloc() {
 }
 
 void variableInitFromMemcpy(Variable *this, Variable *other) {
-    // copy the type
     typeInitFromCopy(&this->m_type, &other->m_type);
-    int64_t dataSize = typeGetMemorySize(&other->m_type);
-    this->m_data = malloc(dataSize);
-    memcpy(this->m_data, other->m_data, dataSize);
-    this->m_fieldPos = other->m_fieldPos;
+    TypeID id = this->m_type.m_typeId;
+    this->m_data = NULL;
+    switch (id) {
+        case typeid_ndarray:
+        case typeid_string: {
+            ArrayType *CTI = other->m_type.m_compoundTypeInfo;
+            this->m_data = arrayMallocFromMemcpy(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI), other->m_data);
+        } break;
+        case typeid_tuple: {
+            TupleType *CTI = other->m_type.m_compoundTypeInfo;
+            this->m_data = tupleTypeMallocDataFromCopy(CTI, other->m_data);
+        } break;
+        case typeid_stream_in:
+        case typeid_stream_out:
+        case typeid_empty_array:
+            break;  // m_data is ignored for these types
+        case typeid_interval: {
+            int64_t intervalSize = 2 * sizeof(int32_t);
+            this->m_data = malloc(intervalSize);
+            memcpy(this->m_data, other->m_data, intervalSize);
+        } break;
+        case typeid_unknown:
+        case NUM_TYPE_IDS:
+        default:
+            unknownTypeVariableError();
+            break;
+    }
+    this->m_fieldPos = -1;
     this->m_parent = this->m_data;
 }
 
-void variableInitFromAssign(Variable *this, Type *lhsType, Variable *rhs) {
-    // The left-hand side type can only be lvalue type or reference types
-    // TODO: add considerations for reference types
-    if (!typeIsLValueType(lhsType)) {
-        targetTypeError(lhsType, "Attempt to assign to a value of type:");
+// <type> var = null;
+void variableInitFromNull(Variable *this, Type *type) {
+    if (type == NULL)
+        type = &this->m_type;  // use its own type;
+    else
+        typeInitFromCopy(&this->m_type, type);
+    TypeID typeid = type->m_typeId;
+
+    if (typeid == typeid_ndarray || typeid == typeid_string) {
+        ArrayType *CTI = type->m_compoundTypeInfo;
+        if (arrayTypeHasUnknownSize(CTI))
+            targetTypeError(type, "Attempt to promote null into unknown type: ");
+        this->m_data = arrayMallocFromNull(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI));
+    } else if (typeid == typeid_interval) {
+        int32_t *arr = malloc(sizeof(int32_t) * 2);
+        arr[0] = 0;
+        arr[1] = 0;
+        this->m_data = arr;
+    } else if (typeid == typeid_tuple) {
+        this->m_data = tupleTypeMallocDataFromNull(type->m_compoundTypeInfo);
     }
-    // case 1: assign to scalar
-    if (typeIsBasicType(lhsType)) {
-        // use the same method as promotion
-        variableInitFromPromotion(this, lhsType, rhs);
-        return;
-    }
-    // TODO
+    this->m_parent = this->m_data;
+    this->m_fieldPos = -1;
 }
 
-void variableInitFromDeclaration(Variable *this, Type *lhsType, Variable *rhs) {
-    // The left-hand side type can only be lvalue type or of unknown type
-    if (!typeIsLValueType(lhsType) && !typeIsUnknown(lhsType)) {
-        targetTypeError(lhsType, "Attempt to declare a value of type:");
-    }
-    // case 1: declaring a scalar
-    if (typeIsBasicType(lhsType)) {
-        // use the same method as promotion
-        variableInitFromPromotion(this, lhsType, rhs);
-        return;
-    }
+// <type> var = identity;
+void variableInitFromIdentity(Variable *this, Type *type) {
+    typeInitFromCopy(&this->m_type, type);
+    TypeID typeid = type->m_typeId;
 
-    Type *rhsType = &rhs->m_type;
-    TypeID lhsTypeID = lhsType->m_typeId;
-    TypeID rhsTypeID = rhsType->m_typeId;
-
-    // case 2: declaring a vector
-    // TODO
+    if (typeid == typeid_ndarray || typeid == typeid_string) {
+        ArrayType *CTI = type->m_compoundTypeInfo;
+        if (arrayTypeHasUnknownSize(CTI))
+            targetTypeError(type, "Attempt to promote identity into unknown type: ");
+        this->m_data = arrayMallocFromIdentity(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI));
+    } else if (typeid == typeid_interval) {
+        int32_t *arr = malloc(sizeof(int32_t) * 2);
+        arr[0] = 1;
+        arr[1] = 1;
+        this->m_data = arr;
+    } else if (typeid == typeid_tuple) {
+        this->m_data = tupleTypeMallocDataFromIdentity(type->m_compoundTypeInfo);
+    }
+    this->m_parent = this->m_data;
+    this->m_fieldPos = -1;
 }
 
-void variableInitFromPromotion(Variable *this, Type *targetType, Variable *source) {
-    // The target of promotion must be a lvalue type
-    if (!typeIsLValueType(targetType)) {
-        targetTypeError(targetType, "Attempt to promote to a value of type:");
-    }
-    Type *srcType = &source->m_type;
-    TypeID targetTypeID = targetType->m_typeId;
-    TypeID srcTypeID = srcType->m_typeId;
-
-    // case 1: promote to a scalar
-//    if (typeIsBasicType(targetType)) {
-//        if (targetTypeID == srcTypeID) {
-//            // if same type, copy the content
-//            variableInitFromMemcpy(this, source);
-//        } else if (targetTypeID == typeid_real && srcTypeID == typeid_integer) {  // integer one-way promotion to real
-//            // TODO: make sure this promotion follows spec
-//            float value = (float) *((int32_t *)source->m_data);
-//            variableInitFromRealLiteral(this, value);
-//        }
-//        return;
-//    }
-}
+void variableInitFromParameter(Variable *this, Type *lhsType, Variable *rhs);
+void variableInitFromCast(Variable *this, Type *lhsType, Variable *rhs);
+void variableInitFromAssign(Variable *this, Type *lhsType, Variable *rhs);
+void variableInitFromDeclaration(Variable *this, Type *lhsType, Variable *rhs);
+void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs);
 
 void variableDestructor(Variable *this) {
     TypeID id = this->m_type.m_typeId;
@@ -172,21 +319,10 @@ void variableDestructor(Variable *this) {
     if (id == typeid_ndarray || id == typeid_string) {
         // destructor does different things depending on the element type
         ArrayType *CTI = this->m_type.m_compoundTypeInfo;
-        ElementTypeID elementID = CTI->m_elementTypeID;
-        if (elementID == element_mixed) {
-            // we need to free each pointer in pointer array in m_data
-            int64_t size = arrayTypeGetTotalLength(CTI);
-            char *ptr = this->m_data;
-            for (int64_t i = 0; i < size; i ++) {
-                void *curPos = ptr + i * sizeof(void *);
-                free(curPos);
-            }
-            // then free the pointer array itself
-            free(this->m_data);
-        } else if (elementID == element_null || elementID == element_identity) { // no array is associated with these types
-        } else {  // basic type arrays
-            free(this->m_data);
-        }
+        arrayFree(CTI->m_elementTypeID, this->m_data, arrayTypeGetTotalLength(CTI));
+    } else if (id == typeid_tuple) {
+        TupleType *CTI = this->m_type.m_compoundTypeInfo;
+        tupleTypeFreeData(CTI, this->m_data);
     }
 
     switch (id) {
@@ -195,9 +331,9 @@ void variableDestructor(Variable *this) {
         case typeid_stream_in:
         case typeid_stream_out:
         case typeid_empty_array:
+        case typeid_tuple:
             break;  // m_data is ignored for these types
         case typeid_interval:
-        case typeid_tuple:
             free(this->m_data);
             break;
         case typeid_unknown:
