@@ -4,6 +4,10 @@
 #include "GazpreaParser.h"
 #include "GazpreaLexer.h"
 
+#include "Type.h"
+#include "Scope.h"
+#include "Symbol.h"
+
 #include <vector>
 #include <string>
 #include <memory>
@@ -42,6 +46,7 @@ namespace gazprea {
         virtual ~AST();
 
         std::shared_ptr<Symbol> symbol; // Populate by Def and Ref pass
+        std::shared_ptr<Type> type;  // Solely use for Type Reference in Ref pass
         std::shared_ptr<Scope> scope;  // Populate by Def pass
     };
 }

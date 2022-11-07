@@ -8,6 +8,18 @@ namespace gazprea {
     public:
         BuiltInScalarTypeSymbol(std::string name);
         std::string getName();
+        bool isTypedefType() {
+            return false;
+        }
+        bool isMatrixType() {
+            return false;
+        }
+        bool isIntervalType() {
+            return false;
+        }
+        bool isTupleType() {
+            return false;
+        }
     };
 }
 

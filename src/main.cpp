@@ -9,6 +9,7 @@
 #include "AST.h"
 #include "ASTBuilder.h"
 #include "DefWalk.h"
+#include "RefWalk.h"
 #include "SymbolTable.h"
 
 #include "DiagnosticErrorListener.h"
@@ -52,6 +53,9 @@ int main(int argc, char **argv) {
   auto symtab = std::make_shared<gazprea::SymbolTable>();
 
   gazprea::DefWalk defwalk(symtab);
+  defwalk.visit(ast);
+
+  gazprea::RefWalk refwalk(symtab);
   defwalk.visit(ast);
 
   // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree

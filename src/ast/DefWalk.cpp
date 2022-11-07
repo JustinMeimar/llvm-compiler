@@ -5,11 +5,11 @@ namespace gazprea {
     DefWalk::DefWalk(std::shared_ptr<SymbolTable> symtab) : symtab(symtab), currentScope(symtab->globals) {
         // Define built-in subroutine symbols
         bool isBuiltIn = true;
-        symtab->globals->define(std::make_shared<SubroutineSymbol>("length", nullptr, nullptr, symtab->globals, false, isBuiltIn));
-        symtab->globals->define(std::make_shared<SubroutineSymbol>("rows", nullptr, nullptr, symtab->globals, false, isBuiltIn));
-        symtab->globals->define(std::make_shared<SubroutineSymbol>("columns", nullptr, nullptr, symtab->globals, false, isBuiltIn));
-        symtab->globals->define(std::make_shared<SubroutineSymbol>("reverse", nullptr, nullptr, symtab->globals, false, isBuiltIn));
-        symtab->globals->define(std::make_shared<SubroutineSymbol>("stream_state", nullptr, nullptr, symtab->globals, true, isBuiltIn));
+        symtab->globals->define(std::make_shared<SubroutineSymbol>("length", nullptr, symtab->globals, false, isBuiltIn));
+        symtab->globals->define(std::make_shared<SubroutineSymbol>("rows", nullptr, symtab->globals, false, isBuiltIn));
+        symtab->globals->define(std::make_shared<SubroutineSymbol>("columns", nullptr, symtab->globals, false, isBuiltIn));
+        symtab->globals->define(std::make_shared<SubroutineSymbol>("reverse", nullptr, symtab->globals, false, isBuiltIn));
+        symtab->globals->define(std::make_shared<SubroutineSymbol>("stream_state", nullptr, symtab->globals, true, isBuiltIn));
     }
     DefWalk::~DefWalk() {}
 
@@ -44,7 +44,7 @@ namespace gazprea {
 
     void DefWalk::visitVariableDeclaration(std::shared_ptr<AST> t) {
         auto identiferAST = t->children[1];
-        auto vs = std::make_shared<VariableSymbol>(identiferAST->parseTree->getText(), nullptr, nullptr);
+        auto vs = std::make_shared<VariableSymbol>(identiferAST->parseTree->getText(), nullptr);
         vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = vs;  // track in AST
         currentScope->define(vs);
@@ -60,7 +60,7 @@ namespace gazprea {
             isProcedure = false;
         }
         auto identiferAST = t->children[0];
-        auto subroutineSymbol = std::make_shared<SubroutineSymbol>(identiferAST->parseTree->getText(), nullptr, nullptr, currentScope, isProcedure, isBuiltIn);
+        auto subroutineSymbol = std::make_shared<SubroutineSymbol>(identiferAST->parseTree->getText(), nullptr, currentScope, isProcedure, isBuiltIn);
         subroutineSymbol->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = subroutineSymbol;  // track in AST
         currentScope->define(subroutineSymbol); // def subroutine in globals

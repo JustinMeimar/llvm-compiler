@@ -8,8 +8,6 @@ namespace gazprea {
         globals->define(std::make_shared<BuiltInScalarTypeSymbol>("string"));
         globals->define(std::make_shared<BuiltInScalarTypeSymbol>("boolean"));
         globals->define(std::make_shared<BuiltInScalarTypeSymbol>("interval"));
-        globals->define(std::make_shared<BuiltInTypeQualifierSymbol>("var"));
-        globals->define(std::make_shared<BuiltInTypeQualifierSymbol>("const"));
     }
 
     SymbolTable::SymbolTable() : globals(std::make_shared<GlobalScope>()) { 

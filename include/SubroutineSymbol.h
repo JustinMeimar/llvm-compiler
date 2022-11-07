@@ -19,7 +19,7 @@ namespace gazprea {
                                                         // simple alternative may not be ideal for performance.
         std::shared_ptr<Scope> enclosingScope;
     public:
-        SubroutineSymbol(std::string name, std::shared_ptr<Type> retTypeSingleTerm1, std::shared_ptr<Type> retTypeSingleTerm2, std::shared_ptr<Scope> enclosingScope, bool isProcedure, bool isBuiltIn);
+        SubroutineSymbol(std::string name, std::shared_ptr<Type> retType, std::shared_ptr<Scope> enclosingScope, bool isProcedure, bool isBuiltIn);
         std::shared_ptr<Symbol> resolve(const std::string &name);
         void define(std::shared_ptr<Symbol> sym);
         std::shared_ptr<Scope> getEnclosingScope();

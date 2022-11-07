@@ -6,6 +6,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/AST.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/ASTBuilder.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/DefWalk.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ast/RefWalk.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/BaseScope.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/BuiltInScalarTypeSymbol.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/GlobalScope.cpp"
@@ -17,7 +18,9 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/VariableSymbol.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/SubroutineSymbol.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/TypedefTypeSymbol.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/BuiltInTypeQualifierSymbol.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/MatrixType.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/IntervalType.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/TupleType.cpp"
 
 )
 
