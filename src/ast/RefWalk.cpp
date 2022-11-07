@@ -76,6 +76,10 @@ namespace gazprea {
     void RefWalk::visitSingleTokenType(std::shared_ptr<AST> t) {
         auto text = t->parseTree->getText();
         t->type = std::dynamic_pointer_cast<Type>(symtab->globals->resolve(text));
+        if (t->type->isTypedefType()) {
+            auto typeDefTypeSymbol = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->type);
+            typeDefTypeSymbol->resolveTargetType();  // If TypeDef is already called resolveTargetType once, this method will do nothing
+        }
     }
 
     void RefWalk::visitVectorMatrixType(std::shared_ptr<AST> t) {
