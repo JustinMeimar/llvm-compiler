@@ -18,30 +18,39 @@ namespace gazprea {
 
     class AST { // Homogeneous AST node type
     public:
-        const static size_t NIL_TYPE = 65535;
+        const static size_t NIL_TYPE = 65535;  // distinguish from other numbers (since size_t is unsigned I can't use -1)
         static std::shared_ptr<AST> createNil();
 
         antlr4::tree::ParseTree *parseTree;       // From which parse tree node did we create node?
         size_t nodeType;                            // type of the AST node
         std::vector<std::shared_ptr<AST>> children; // normalized list of children
 
-        explicit AST(antlr4::tree::ParseTree *parseTree);
-        /** Create node from token type; used mainly for imaginary tokens */
-        explicit AST(size_t tokenType);
-        AST(size_t tokenType, antlr4::tree::ParseTree *parseTree);
 
-        /** External visitors execute the same action for all nodes
-         *  with same node type while walking. */
-        size_t getNodeType();
-        
-        void addChild(std::any t);
-        void addChild(const std::shared_ptr<AST>& t);
-        bool isNil();
+    	/** create a node with NIL_TYPE and no parse tree node */
+    	static std::shared_ptr<AST> NewNilNode();
+    	/** create a node with a parse tree */
+    	explicit AST(antlr4::tree::ParseTree *parseTree);
+    	/** Create node from token type; used mainly for imaginary tokens */
+    	explicit AST(size_t tokenType, antlr4::tree::ParseTree *parseTree = nullptr);
 
-        /** Compute string for single node */
-        std::string toString(gazprea::GazpreaParser *parser);
-        /** Compute string for a whole tree not just a node */
-        std::string toStringTree(gazprea::GazpreaParser *parser);
+   	 	/** External visitors execute the same action for all nodes
+    	 *  with same node type while walking. */
+    	size_t getNodeType();
+    
+    	void addChild(std::any t);
+    	void addChild(const std::shared_ptr<AST>& t);
+
+    	/** returns true if and only if the node is created with a NIL_TYPE and no parse tree node is given */
+    	bool isNil();
+
+    	/** get the Gazprea source code text for a node */
+    	std::string getText();
+
+    	// ------------ FOR DEBUGGING ONLY -------------
+    	/** Compute string for single node */
+    	std::string toString(gazprea::GazpreaParser *parser);
+    	/** Compute string for a whole tree not just a node */
+    	std::string toStringTree(gazprea::GazpreaParser *parser);
 
         virtual ~AST();
 

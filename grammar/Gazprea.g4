@@ -34,13 +34,11 @@ tokens {
     TUPLE_TYPE_TOKEN,
     CAST_TOKEN,
     VECTOR_SIZE_DECLARATION_LIST_TOKEN,
-    TUPLE_TYPE_DECLARATION_ATOM_TOKEN,
-    TUPLE_TYPE_DECLARATION_LIST_TOKEN,
+    PARAMETER_ATOM_TOKEN,
+    PARAMETER_LIST_TOKEN,
     SUBROUTINE_EMPTY_BODY_TOKEN,
     SUBROUTINE_EXPRESSION_BODY_TOKEN,
     SUBROUTINE_BLOCK_BODY_TOKEN,
-    FORMAL_PARAMETER_ATOM_TOKEN,
-    FORMAL_PARAMETER_LIST_TOKEN,
     IDENTIFIER_TOKEN,
     EXPLICIT_TYPE_TOKEN,
     INFERRED_TYPE_TOKEN,
@@ -79,13 +77,13 @@ nonBlockStatement: varDeclarationStatement
 vectorSizeDeclarationAtom: '*' | expression ;
 vectorSizeDeclarationList: vectorSizeDeclarationAtom (wS? ',' wS? vectorSizeDeclarationAtom)? ;
 
-tupleTypeDeclarationAtom: singleTermType (wS? singleTermType (wS? singleTermType)?)?;  // for tuple(a b) it's impossible to distinguish if b is a type or an id, parse them together
-tupleTypeDeclarationList: tupleTypeDeclarationAtom (wS? ',' wS? tupleTypeDeclarationAtom)* ;
+parameterAtom: singleTermType (wS? singleTermType (wS? singleTermType)?)?;  // for f(a b) it's impossible to distinguish if b is a type or an id, parse them together
+parameterList: parameterAtom (wS? ',' wS? parameterAtom)* ;
 
 singleTokenType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | identifier;  // type represented by one token
 singleTermType:
      singleTokenType wS? '[' wS? vectorSizeDeclarationList wS? ']'  # VectorMatrixType
-     | TUPLE wS? '(' wS? tupleTypeDeclarationList wS? ')'           # TupleType
+     | TUPLE wS? '(' wS? parameterList wS? ')'           # TupleType
      | singleTokenType                                              # SingleTokenTypeAtom
      ;
 
@@ -105,15 +103,13 @@ assignmentStatement: expressionList wS? '=' wS? expression wS? ';' ;
 
 // Function and Procedure
 expressionList: expression (wS? ',' wS? expression)* ;
-formalParameterAtom: qualifiedType wS? identifier ;
-formalParameterList: formalParameterAtom (wS? ',' wS? formalParameterAtom)* ;
 
 subroutineBody : ';'                    # SubroutineEmptyBody
         | '=' wS? expression wS? ';'    # SubroutineExprBody
         | block                         # SubroutineBlockBody
         ;
 subroutineDeclDef: (PROCEDURE | FUNCTION) wS? identifier wS?
-        '(' (wS? formalParameterList)? wS? ')' (wS? RETURNS wS? unqualifiedType)? wS? subroutineBody;
+        '(' (wS? parameterList)? wS? ')' (wS? RETURNS wS? unqualifiedType)? wS? subroutineBody;
 
 returnStatement: RETURN wS? expression wS? ';';
 
