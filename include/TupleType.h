@@ -25,5 +25,9 @@ namespace gazprea {
         }
         std::vector<std::shared_ptr<Type>> listType;
         std::shared_ptr<AST> def;
+        
+        int getTypeId() {
+            return Type::TUPLE;
+        }
     };
 }

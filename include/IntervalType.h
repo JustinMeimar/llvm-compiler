@@ -7,7 +7,8 @@
 namespace gazprea {
     class IntervalType : public Type {
     public:
-        IntervalType(std::shared_ptr<Type> baseType, std::shared_ptr<Type> intervalType);
+        std::shared_ptr<Type> baseType;
+        IntervalType(std::shared_ptr<Type> baseType);
         bool isTypedefType() {
             return false;
         }
@@ -23,7 +24,9 @@ namespace gazprea {
         std::string getName() {
             return "interval";
         }
-        std::shared_ptr<Type> baseType;
-        std::shared_ptr<Type> intervalType;  // Should always be BuiltInScalarTypeSymbol("interval")
+
+        int getTypeId() {
+            return Type::INTEGER_INTERVAL;
+        }
     };
 }

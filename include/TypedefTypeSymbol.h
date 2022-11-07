@@ -23,6 +23,11 @@ namespace gazprea {
         bool isTupleType() {
             return false;
         }
+
+        int getTypeId() {
+            resolveTargetType();
+            return type->getTypeId();
+        }
     };
 }
 

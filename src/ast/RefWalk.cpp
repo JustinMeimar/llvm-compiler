@@ -95,7 +95,7 @@ namespace gazprea {
         visitChildren(t);
         if ((t->children).size() == 2) {
             // Interval Type
-            t->type = std::make_shared<IntervalType>(t->children[0]->type, t->children[1]->type);
+            t->type = std::make_shared<IntervalType>(t->children[0]->type);
             return;
         } else {
             // Not an interval type

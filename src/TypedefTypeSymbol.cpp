@@ -7,6 +7,7 @@ namespace gazprea {
         return Symbol::getName();
     }
 
+    // This method will not do anything if there's no recursion, e.g., typedef integer x;
     void TypedefTypeSymbol::resolveTargetType() {
         auto iterator = type;
         while (iterator->isTypedefType()) {
