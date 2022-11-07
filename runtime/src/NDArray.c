@@ -360,9 +360,9 @@ void *arrayMallocFromNull(ElementTypeID id, int64_t size) {
             return arrayMallocFromCharacterValue(size, 0);
         case element_real:
             return arrayMallocFromRealValue(size, 0.0f);
-        default:
-            return NULL;
+        default: break;
     }
+    return NULL;
 }
 
 void *arrayMallocFromIdentity(ElementTypeID id, int64_t size) {
@@ -375,9 +375,9 @@ void *arrayMallocFromIdentity(ElementTypeID id, int64_t size) {
             return arrayMallocFromCharacterValue(size, 1);
         case element_real:
             return arrayMallocFromRealValue(size, 1.0f);
-        default:
-            return NULL;
+        default:  break;
     }
+    return NULL;
 }
 
 void *arrayMallocFromElementValue(ElementTypeID id, int64_t size, void *value) {
@@ -445,11 +445,191 @@ void arraySetRealValue(void *arr, int64_t index, float value) {
     ((float *)arr)[index] = value;
 }
 
-void arrayMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, int64_t length, void **result);
+void arrayMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, int64_t length, void **result) {
+    if(!elementCanUseUnaryOp(id, opcode)) {
+        errorAndExit("Invalid unary operand type!");
+    }
+    if (id == element_boolean) {
+        bool *resultArray = arrayMallocFromNull(id, length);
+        for (int64_t i = 0; i < length; i++)
+            resultArray[i] = arrayGetBoolValue(src, i) ? false : true;
+        *result = resultArray;
+    } else if (id == element_integer) {
+        int32_t *resultArray = arrayMallocFromNull(id, length);
+        for (int64_t i = 0; i < length; i++) {
+            int32_t value = arrayGetIntegerValue(src, i);
+            resultArray[i] = (opcode == unary_minus) ? -value : value;
+        }
+        *result = resultArray;
+    } else if (id == element_real) {
+        float *resultArray = arrayMallocFromNull(id, length);
+        for (int64_t i = 0; i < length; i++) {
+            float value = arrayGetRealValue(src, i);
+            resultArray[i] = (opcode == unary_minus) ? -value : value;
+        }
+        *result = resultArray;
+    } else {
+        errorAndExit("This should not happen!");
+    }
+}
 
 // make sure the binary op can be handled by dimensionless array before calling this function
-bool arrayBinopResultType(ElementTypeID id, BinOpCode opcode, ElementTypeID *resultType, bool* resultCollapseToScalar);
-void arrayMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, int64_t op1Size, void *op2, int64_t op2Size, void **result, int64_t *resultSize);
+bool arrayBinopResultType(ElementTypeID id, BinOpCode opcode, ElementTypeID *resultType, bool* resultCollapseToScalar) {
+    // first filter the ops that can not be done between two arrays
+    // or not returning an array
+    if (opcode == binary_range_construct || opcode == binary_index)
+        return false;
+    // no null, identity or mixed type can be used in binop without some transformation e.g. promotion
+    if (!elementIsBasicType(id))
+        return false;
+    if (id == element_boolean) {
+        switch(opcode) {
+            case binary_eq:
+            case binary_ne:
+                *resultType = element_boolean;
+                *resultCollapseToScalar = true;
+                return true;
+            case binary_and:
+            case binary_or:
+            case binary_xor:
+            case binary_concat:
+                *resultType = element_boolean;
+                *resultCollapseToScalar = false;
+                return true;
+            default: break;
+        }
+    } else if (id == element_character) {
+        if (opcode == binary_concat) {
+            *resultType = id;
+            *resultCollapseToScalar = false;
+            return true;
+        }
+    } else {
+        // integer and real
+        switch(opcode) {
+            case binary_eq:
+            case binary_ne:
+                *resultType = element_boolean;
+                *resultCollapseToScalar = true;
+                return true;
+            case binary_lt:
+            case binary_bt:
+            case binary_leq:
+            case binary_beq:
+                *resultType = element_boolean;
+                *resultCollapseToScalar = false;
+                return true;
+            case binary_exponent:
+            case binary_multiply:
+            case binary_divide:
+            case binary_remainder:
+            case binary_plus:
+            case binary_minus:
+            case binary_concat:
+                *resultType = id;  // same as the original element type
+                *resultCollapseToScalar = false;
+                return true;
+            case binary_dot_product:
+                *resultType = id;
+                *resultCollapseToScalar = true;
+            default: break;
+        }
+    }
+    return false;
+}
 
-bool arrayMixedElementCanPromoteToSameType(ElementTypeID *idArray, int64_t size, ElementTypeID *resultType);
-void arrayMixedElementPromoteToTargetType(ElementTypeID *idArray, void *valueArray, int64_t size, ElementTypeID targetType, void **result);
+void arrayMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, int64_t op1Size, void *op2, int64_t op2Size, void **result, int64_t *resultSize) {
+    ElementTypeID resultType;
+    bool resultCollapseToScalar;
+    bool success = arrayBinopResultType(id, opcode, &resultType, &resultCollapseToScalar);
+    if (!success) {
+        errorAndExit("Invalid type for binary operator!");
+    }
+
+    char *op1Pos = op1;
+    char *op2Pos = op2;
+    char *resultPos = NULL;
+    int64_t elementSize = elementGetSize(id);
+    int64_t resultArraySize;
+    // only differences from scalar binop is that now we have dot-product, concat and boolean; as well as != and ==
+    // and the only way we have binop between two boolean arrays is when we concat them
+    // op1Size should be the same as op2Size except for concatenation '||'
+    if (opcode == binary_concat) {
+        resultArraySize = op1Size + op2Size;
+        resultPos = malloc(resultArraySize * elementSize);
+        memcpy(resultPos, op1, op1Size * elementSize);
+        memcpy(resultPos + op1Size * elementSize, op2, op2Size * elementSize);
+    } else if (opcode == binary_dot_product) {
+        resultArraySize = 1;
+
+        void *sum = arrayMallocFromNull(id, 1);
+        for (int64_t i = 0; i < resultArraySize; i++) {
+            // sum += op1[i] * op2[i]
+            void *temp;
+            void *tempSum;
+            elementMallocFromBinOp(id, binary_multiply, op1Pos + i * elementSize, op2Pos + i * elementSize, &temp);
+            elementMallocFromBinOp(id, binary_plus, sum, temp, &tempSum);
+            free(temp);
+            free(sum);
+            sum = tempSum;
+        }
+        resultPos = sum;
+    } else if (opcode == binary_eq || opcode == binary_ne) {
+        resultArraySize = 1;
+
+        void *aggregate = arrayMallocFromNull(element_boolean, 1);
+        for (int64_t i = 0; i < resultArraySize; i++) {
+            // aggregate = aggregate and (op1[i] == op2[i])
+            void *temp;
+            void *tempAggregate;
+            elementMallocFromBinOp(id, binary_eq, op1Pos + i * elementSize, op2Pos + i * elementSize, &temp);
+            elementMallocFromBinOp(element_boolean, binary_and, aggregate, temp, &tempAggregate);
+            free(temp);
+            free(aggregate);
+            aggregate = tempAggregate;
+        }
+        if (opcode == binary_ne) {
+            // negate the result
+            void *temp;
+            elementMallocFromUnaryOp(element_boolean, unary_not, aggregate, &temp);
+            free(aggregate);
+            aggregate = temp;
+        }
+        resultPos = aggregate;
+    } else {  // same as scalar case
+        resultArraySize = op1Size;
+        resultPos = malloc(resultArraySize * elementSize);
+
+        for (int64_t i = 0; i < resultArraySize; i++) {
+            void *temp;
+            elementMallocFromBinOp(id, opcode, op1Pos + i * elementSize, op2Pos + i * elementSize, &temp);
+            memcpy(resultPos + i * elementSize, temp, elementSize);
+            free(temp);
+        }
+    }
+    *result = resultPos;
+    *resultSize = resultArraySize;
+}
+
+bool arrayMixedElementCanBePromotedToSameType(ElementTypeID *idArray, int64_t size, ElementTypeID *resultType) {
+    // not a general algorithm, but should work on gazprea since the only nontrivial scalar promotion is integer->real
+    *resultType = idArray[0];  // we assume array literal is at least size one
+    for (int64_t i = 1; i < size; i++) {
+        bool success = elementCanBePromotedBetween(*resultType, idArray[i], resultType);
+        if (!success)
+            return false;
+    }
+    return true;
+}
+
+void arrayMixedElementPromoteToTargetType(ElementTypeID *idArray, void **valueArray, int64_t size, ElementTypeID targetType, void **result) {
+    int64_t targetElementSize = elementGetSize(targetType);
+    char *resultPos = malloc(targetElementSize * size);
+    for (int64_t i = 0; i < size; i++) {
+        void *temp;
+        elementMallocFromPromotion(targetType, idArray[i], valueArray[i], &temp);
+        memcpy(resultPos + targetElementSize * i, temp, targetElementSize);
+        free(temp);
+    }
+    *result = resultPos;
+}

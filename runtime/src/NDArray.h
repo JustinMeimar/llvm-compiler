@@ -54,9 +54,10 @@ void arraySetRealValue(void *arr, int64_t index, float value);
 
 void arrayMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, int64_t length, void **result);
 
-// make sure the binary op can be handled by dimensionless array before calling this function
+// make sure the binary op can be handled by dimensionless array before calling
+// this function does not handle matrix multiplication
 bool arrayBinopResultType(ElementTypeID id, BinOpCode opcode, ElementTypeID *resultType, bool* resultCollapseToScalar);
 void arrayMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, int64_t op1Size, void *op2, int64_t op2Size, void **result, int64_t *resultSize);
 
-bool arrayMixedElementCanPromoteToSameType(ElementTypeID *idArray, int64_t size, ElementTypeID *resultType);
-void arrayMixedElementPromoteToTargetType(ElementTypeID *idArray, void *valueArray, int64_t size, ElementTypeID targetType, void **result);
+bool arrayMixedElementCanBePromotedToSameType(ElementTypeID *idArray, int64_t size, ElementTypeID *resultType);
+void arrayMixedElementPromoteToTargetType(ElementTypeID *idArray, void **valueArray, int64_t size, ElementTypeID targetType, void **result);
