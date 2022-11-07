@@ -16,7 +16,6 @@ namespace gazprea {
                     break;
                 case GazpreaParser::TYPEDEF: visitTypedefStatement(t); break;
                 case GazpreaParser::IDENTIFIER_TOKEN: visitIdentifier(t); break;
-                case GazpreaParser::FORMAL_PARAMETER_ATOM_TOKEN:
                 case GazpreaParser::VAR_DECLARATION_TOKEN:
                     visitVariableDeclaration(t);
                     break;
