@@ -139,9 +139,9 @@ void elementMallocFromPromotion(ElementTypeID resultID, ElementTypeID srcID, voi
 
     if (elementIsBasicType(resultID)) {
         if (srcID == element_null)
-            arrayMallocFromNull(resultID, 1);
+            *result = arrayMallocFromNull(resultID, 1);
         else if (srcID == element_identity)
-            arrayMallocFromIdentity(resultID, 1);
+            *result = arrayMallocFromIdentity(resultID, 1);
         else if (srcID == element_integer && resultID == element_real) {  // the only remaining case is promoting from integer to real
             // TODO: Check if the promotion satisfy spec
             *result = arrayMallocFromRealValue(1, (float)*((int32_t *)src));
@@ -491,6 +491,15 @@ void arrayMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, int
             resultArray[i] = (opcode == unary_minus) ? -value : value;
         }
         *result = resultArray;
+    } else if (id == element_mixed) {
+        ElementTypeID eid;
+        if (!arrayMixedElementCanBePromotedToSameType(src, length, &eid)) {
+            errorAndExit("mixed type can not be promoted to the same type!");
+        }
+        void *temp;
+        arrayMallocFromPromote(eid, id, length, src, &temp);
+        arrayMallocFromUnaryOp(eid, opcode, temp, length, result);
+        free(temp);
     } else {
         errorAndExit("This should not happen!");
     }

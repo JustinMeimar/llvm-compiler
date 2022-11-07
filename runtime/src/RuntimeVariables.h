@@ -10,7 +10,7 @@ typedef struct struct_gazprea_type {
 } Type;
 
 typedef struct struct_gazprea_variable {
-    Type m_type;
+    Type *m_type;
     void *m_parent;  // used to avoid memory location aliasing in case of vector, matrix and tuple
     int64_t m_fieldPos;  // used to avoid tuple field aliasing
     void *m_data;  // stores the value of the variable

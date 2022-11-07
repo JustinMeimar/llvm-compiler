@@ -60,6 +60,10 @@ void typeInitFromIntervalType(Type *this) {
     this->m_typeId = typeid_interval;
 }
 
+bool typeIsStream(Type *this) {
+    return this->m_typeId == typeid_stream_in || this->m_typeId == typeid_stream_out;
+}
+
 bool typeIsScalarNull(Type *this) {
     if (this->m_typeId == typeid_ndarray) {
         ArrayType *CTI = this->m_compoundTypeInfo;
@@ -110,25 +114,8 @@ bool typeIsBasicType(Type *this) {
     return CTI->m_nDim == 0;
 }
 
-bool typeIsLValueType(Type *this) {
-    switch (this->m_typeId) {
-        case typeid_ndarray:
-            return arrayTypeCanBeLValue(this->m_compoundTypeInfo);
-        case typeid_interval:
-        case typeid_string:
-        case typeid_tuple:
-            return true;
-        default: break;
-    }
-    return false;
-}
-
-bool typeIsVectorOrString(Type *this) {
-    TypeID id = this->m_typeId;
-    if (id != typeid_ndarray && id != typeid_string)
-        return false;
-    ArrayType *CTI = this->m_compoundTypeInfo;
-    return CTI->m_nDim == 1;
+bool typeIsArrayOrString(Type *this) {
+    return this->m_typeId == typeid_ndarray || this->m_typeId == typeid_string;
 }
 
 bool typeIsMatrix(Type *this) {
@@ -137,6 +124,64 @@ bool typeIsMatrix(Type *this) {
         return false;
     ArrayType *CTI = this->m_compoundTypeInfo;
     return CTI->m_nDim == 2;
+}
+
+///------------------------------COMPOUND TYPE INFO---------------------------------------------------------------
+
+VecToVecRHSSizeRestriction arrayTypeMinimumConpatibleRestriction(ArrayType *this, ArrayType *target) {
+    VecToVecRHSSizeRestriction compatibleRestriction = vectovec_rhs_must_be_same_size;
+
+    int8_t nDim = target->m_nDim;
+    int64_t *dims = this->m_dims;
+    int64_t *targetDims = target->m_dims;
+
+    int64_t i = 0;
+    while (i < nDim) {
+        if (targetDims[i] != dims[i]) {
+            compatibleRestriction = vectovec_rhs_size_must_not_be_greater;
+            break;
+        }
+        i++;
+    }
+    while (i < nDim) {
+        if (targetDims[i] < dims[i]) {
+            compatibleRestriction = vectovec_rhs_size_can_be_any;
+            break;
+        }
+        i++;
+    }
+    return compatibleRestriction;
+}
+
+void *intervalTypeMallocDataFromNull() {
+    int *interval = malloc(sizeof(int32_t) * 2);
+    interval[0] = 0;
+    interval[1] = 0;
+    return interval;
+}
+
+void *intervalTypeMallocDataFromIdentity() {
+    int *interval = malloc(sizeof(int32_t) * 2);
+    interval[0] = 1;
+    interval[1] = 1;
+    return interval;
+}
+
+void *intervalTypeMallocDataFromHeadTail(int32_t head, int32_t tail) {
+    int *interval = malloc(sizeof(int32_t) * 2);
+    interval[0] = head;
+    interval[1] = tail;
+    return interval;
+}
+
+void *intervalTypeMallocDataFromCopy(void *otherIntervalData) {
+    int *interval = malloc(sizeof(int32_t) * 2);
+    memcpy(interval, otherIntervalData, sizeof(int32_t) * 2);
+    return interval;
+}
+
+void intervalTypeFreeData(void *data) {
+    free(data);
 }
 
 void tupleTypeInitFromCopy(TupleType *this, TupleType *other) {
@@ -208,29 +253,4 @@ void tupleTypeFreeData(TupleType *this, void *data) {
         free(vars[i]);
     }
     free(vars);
-}
-
-VecToVecRHSSizeRestriction arrayTypeMinimumConpatibleRestriction(ArrayType *this, ArrayType *target) {
-    VecToVecRHSSizeRestriction compatibleRestriction = vectovec_rhs_must_be_same_size;
-
-    int8_t nDim = target->m_nDim;
-    int64_t *dims = this->m_dims;
-    int64_t *targetDims = target->m_dims;
-
-    int64_t i = 0;
-    while (i < nDim) {
-        if (targetDims[i] != dims[i]) {
-            compatibleRestriction = vectovec_rhs_size_must_not_be_greater;
-            break;
-        }
-        i++;
-    }
-    while (i < nDim) {
-        if (targetDims[i] < dims[i]) {
-            compatibleRestriction = vectovec_rhs_size_can_be_any;
-            break;
-        }
-        i++;
-    }
-    return compatibleRestriction;
 }

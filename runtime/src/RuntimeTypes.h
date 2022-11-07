@@ -15,14 +15,7 @@ typedef enum enum_vectovec_rhssize_restriction VecToVecRHSSizeRestriction;
 Type *typeMalloc();
 
 void typeInitFromCopy(Type *this, Type *other);
-void typeInitFromAssign(Type *this, Type *lhs, Variable *rhs);
-void typeInitFromDeclaration(Type *this, Type *lhs, Variable *rhs);
-void typeInitFromCast(Type *this, Type *target, Variable *source);
-void typeInitFromPromotion(Type *this, Type *target, Variable *source);
-void typeInitFromUnaryOp(Type *this, Variable *operand, UnaryOpCode opcode);
-void typeInitFromBinaryOp(Type *this, Variable *op1, Variable *op2, BinOpCode opcode);
 void typeInitFromTwoSingleTerms(Type *this, Type *first, Type *second);
-void typeInitFromParameter(Type *this, Type *parameterType, Variable *invokeValue);  // same as fromDeclaration but allow vec/matrix references
 void typeInitFromVectorSizeSpecification(Type *this, int64_t size, Type *baseType);  // for vector and string
 void typeInitFromMatrixSizeSpecification(Type *this, int64_t nRow, int64_t nCol, Type *baseType);
 void typeInitFromIntervalType(Type *this);
@@ -30,14 +23,14 @@ void typeInitFromIntervalType(Type *this);
 
 void typeDestructor(Type *this);
 
+bool typeIsStream(Type *this);
 bool typeIsScalarNull(Type *this);
 bool typeIsScalarIdentity(Type *this);
 bool typeIsArrayNull(Type *this);
 bool typeIsArrayIdentity(Type *this);
 bool typeIsUnknown(Type *this);
 bool typeIsBasicType(Type *this);
-bool typeIsLValueType(Type *this);  // also known as spec types (ndarray, string, interval and tuple)
-bool typeIsVectorOrString(Type *this);  // does not include ref type
+bool typeIsArrayOrString(Type *this);  // does not include ref type
 bool typeIsMatrix(Type *this);  // does not include ref type
 bool typeIsIdentical(Type *this, Type *other);  // checks if the two types are describing the same types
 
@@ -73,6 +66,15 @@ bool arrayTypeCanBeLValue(ArrayType *this);
 // 1. vector
 // 2. vector reference (vec[vec], mat[vec, scalar] or mat[scalar, vec])
 // we need to look at Type.m_typeid to determine which one is the actual type of this variable
+
+
+// IntervalType---------------------------------------------------------------------------------------------
+
+void *intervalTypeMallocDataFromNull();
+void *intervalTypeMallocDataFromIdentity();
+void *intervalTypeMallocDataFromHeadTail(int32_t head, int32_t tail);
+void *intervalTypeMallocDataFromCopy(void *otherIntervalData);
+void intervalTypeFreeData(void *data);
 
 
 // TupleType---------------------------------------------------------------------------------------------
