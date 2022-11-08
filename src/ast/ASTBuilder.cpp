@@ -28,7 +28,7 @@ namespace gazprea {
         return t;
     }
 
-    std::any ASTBuilder::visitExplcitType(GazpreaParser::ExplcitTypeContext *ctx){
+    std::any ASTBuilder::visitExplicitType(GazpreaParser::ExplicitTypeContext *ctx){
         auto t = std::make_shared<AST>(GazpreaParser::EXPLICIT_TYPE_TOKEN, ctx);
         if (ctx->typeQualifier()) {
             t->addChild(visit(ctx->typeQualifier()));

@@ -85,14 +85,14 @@ parameterList: parameterAtom (wS? ',' wS? parameterAtom)* ;
 singleTokenType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | identifier;  // type represented by one token
 singleTermType:
      singleTokenType wS? '[' wS? vectorSizeDeclarationList wS? ']'  # VectorMatrixType
-     | TUPLE wS? '(' wS? parameterList wS? ')'           # TupleType
+     | TUPLE wS? '(' wS? parameterList wS? ')'                      # TupleType
      | singleTokenType                                              # SingleTokenTypeAtom
      ;
 
 typeQualifier: VAR | CONST ;
 unqualifiedType: singleTermType (wS? singleTermType)?;
 qualifiedType:
-    (typeQualifier wS?)? unqualifiedType  # ExplcitType
+    (typeQualifier wS?)? unqualifiedType  # ExplicitType
     | typeQualifier                       # InferredType
     ;
 

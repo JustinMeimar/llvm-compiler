@@ -30,7 +30,7 @@ public:
 
   virtual std::any visitUnqualifiedType(GazpreaParser::UnqualifiedTypeContext *ctx) override;
 
-  virtual std::any visitExplcitType(GazpreaParser::ExplcitTypeContext *ctx) override;
+  virtual std::any visitExplicitType(GazpreaParser::ExplicitTypeContext *ctx) override;
 
   virtual std::any visitInferredType(GazpreaParser::InferredTypeContext *ctx) override;
 
