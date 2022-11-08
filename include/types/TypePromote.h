@@ -5,7 +5,7 @@
 
 namespace gazprea {
 
-class Promote {
+class TypePromote {
     public:
         // -1 means void type (invalid)
         int arithmeticResultType[16][16] = { // + - / * ^  ..  
@@ -68,7 +68,7 @@ class Promote {
         /*   REAL_2         */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2}
         };
 
-        size_t promotionFromTo[16][16] = { // the only implicit promotion is from integer to real...
+        int promotionFromTo[16][16] = {
 
         //                      0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15
         /*   TUPLE          */ {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
@@ -89,7 +89,7 @@ class Promote {
         /*   REAL_2         */ {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
         };
 
-        int getResultType(int typetable[16][16], std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs);
+        void getResultType(int typetable[16][16], std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs);
 };
 
 } //namespace gazprea

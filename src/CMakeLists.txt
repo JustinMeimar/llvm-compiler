@@ -26,7 +26,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/types/MatrixType.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/types/TupleType.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/types/Type.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/types/TypePromotion.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/types/TypePromote.cpp"
 
 )
 
