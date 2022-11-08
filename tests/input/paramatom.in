@@ -1,0 +1,41 @@
+typedef integer int;
+typedef integer interval intinterval;
+
+procedure fib(var int a, var int b) returns integer {
+    integer c = a + b;
+    a = b;
+    b = c; 
+    return c;
+}
+
+procedure change_first(var int[*] v) {
+    v[1] = 7;
+}
+
+procedure intervalTest(integer interval x) {
+    x -> std_output;
+}
+
+
+procedure intervalTest(intinterval x) {
+    x -> std_output;
+}
+
+procedure main() returns integer {
+    
+    integer a = 5;
+    integer b = 8;
+    call fib(a, b);
+
+    int[5] v = 13;
+    call change_first(v);
+
+    integer interval x = 1..10;
+    call intervalTest(x);
+
+    intinterval y = 1..10;
+
+    return 0;
+}
+
+

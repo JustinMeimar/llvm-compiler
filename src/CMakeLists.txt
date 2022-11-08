@@ -1,26 +1,30 @@
 # Gather our source files in this directory.
 set(
   gazprea_src_files
-
+    #main
     "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
+    #ast 
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/AST.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/ASTBuilder.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/DefWalk.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/ast/RefWalk.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/BaseScope.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/BuiltInScalarTypeSymbol.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/GlobalScope.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/LocalScope.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Scope.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Symbol.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/SymbolTable.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Type.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/VariableSymbol.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/SubroutineSymbol.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/TypedefTypeSymbol.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/MatrixType.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/IntervalType.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/TupleType.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ast/RefWalk.cpp" 
+    #scopes 
+    "${CMAKE_CURRENT_SOURCE_DIR}/scopes/BaseScope.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/scopes/GlobalScope.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/scopes/LocalScope.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/scopes/Scope.cpp" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/scopes/SymbolTable.cpp"
+    #symbols 
+    "${CMAKE_CURRENT_SOURCE_DIR}/symbols/BuiltInScalarTypeSymbol.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/symbols/SubroutineSymbol.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/symbols/Symbol.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/symbols/TypedefTypeSymbol.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/symbols/VariableSymbol.cpp"
+    #types 
+    "${CMAKE_CURRENT_SOURCE_DIR}/types/IntervalType.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/types/MatrixType.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/types/TupleType.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/types/Type.cpp"
 
 )
 

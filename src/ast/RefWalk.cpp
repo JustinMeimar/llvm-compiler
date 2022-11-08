@@ -83,8 +83,9 @@ namespace gazprea {
         if (typeQualifierExist) {
             variableSymbol->typeQualifier = t->children[3]->parseTree->getText();
         }
-        if (numSingleTermType == 3) {
+        if (numSingleTermType == 3) { 
             variableSymbol->type = std::make_shared<IntervalType>(t->children[0]->type);
+            variableSymbol->name = t->children[2]->parseTree->getText(); 
         } else if (numSingleTermType == 2) {
             auto symbol = symtab->globals->resolve(t->children[1]->parseTree->getText());
             if (symbol == nullptr || !symbol->isType()) {
@@ -92,6 +93,7 @@ namespace gazprea {
                 variableSymbol->type = t->children[0]->type;
             } else {
                 variableSymbol->type = std::make_shared<IntervalType>(t->children[0]->type);
+                variableSymbol->name = t->children[1]->parseTree->getText(); 
             }
         } else if (numSingleTermType == 1) {
             auto symbol = symtab->globals->resolve(t->children[0]->parseTree->getText());
