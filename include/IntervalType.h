@@ -25,8 +25,6 @@ namespace gazprea {
             return "interval";
         }
 
-        int getTypeId() {
-            return Type::INTEGER_INTERVAL;
-        }
+        int getTypeId();
     };
 }

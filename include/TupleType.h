@@ -2,12 +2,17 @@
 
 #include "Symbol.h"
 #include "Type.h"
+#include "Scope.h"
 #include "AST.h"
 
 namespace gazprea {
-    class TupleType : public Type {
+    class TupleType : public Type, public Scope {
+    private:
+        std::shared_ptr<Scope> enclosingScope;
     public:
-        TupleType(std::vector<std::shared_ptr<Type>> listType, std::shared_ptr<AST> def);
+        std::vector<std::shared_ptr<Symbol>> orderedArgs;
+        std::shared_ptr<AST> def;
+        TupleType(std::shared_ptr<Scope> enclosingScope, std::shared_ptr<AST> def);
         bool isTypedefType() {
             return false;
         }
@@ -20,14 +25,22 @@ namespace gazprea {
         bool isTupleType() {
             return true;
         }
+        int getTypeId();
+
         std::string getName() {
             return "tuple";
         }
-        std::vector<std::shared_ptr<Type>> listType;
-        std::shared_ptr<AST> def;
-        
-        int getTypeId() {
-            return Type::TUPLE;
+
+        std::string getScopeName() {
+            return "tuple";
         }
+
+        std::string toString() {
+            return "tuple";
+        }
+
+        std::shared_ptr<Scope> getEnclosingScope();
+        std::shared_ptr<Symbol> resolve(const std::string &name);
+        void define(std::shared_ptr<Symbol> sym);
     };
 }

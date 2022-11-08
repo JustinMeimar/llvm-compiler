@@ -11,5 +11,8 @@ namespace gazprea {
     public:
         std::string typeQualifier;  // Can be "var" or "const"
         VariableSymbol(std::string name, std::shared_ptr<Type> type);
+        bool isType() {
+            return false;
+        }
     };
 }

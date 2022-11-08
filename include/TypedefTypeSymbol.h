@@ -24,9 +24,10 @@ namespace gazprea {
             return false;
         }
 
-        int getTypeId() {
-            resolveTargetType();
-            return type->getTypeId();
+        int getTypeId();
+
+        bool isType() {
+            return true;
         }
     };
 }

@@ -21,11 +21,32 @@ namespace gazprea {
                 case GazpreaParser::FUNCTION:
                     visitSubroutineDeclDef(t);
                     break;
-                case GazpreaParser::TYPEDEF: visitTypedefStatement(t); break;
-                case GazpreaParser::BLOCK_TOKEN: visitBlock(t); break;
-                case GazpreaParser::IDENTIFIER_TOKEN: visitIdentifier(t); break;
+                case GazpreaParser::TYPEDEF:
+                    visitTypedefStatement(t);
+                    break;
+                case GazpreaParser::BLOCK_TOKEN: 
+                    visitBlock(t);
+                    break;
+                case GazpreaParser::IDENTIFIER_TOKEN:
+                    visitIdentifier(t);
+                    break;
                 case GazpreaParser::VAR_DECLARATION_TOKEN:
                     visitVariableDeclaration(t);
+                    break;
+                case GazpreaParser::PARAMETER_ATOM_TOKEN:
+                    visitParameterAtom(t);
+                    break;
+                case GazpreaParser::TUPLE_TYPE_TOKEN:
+                    visitTupleType(t);
+                    break;
+                case GazpreaParser::BREAK:
+                    visitBreak(t);
+                    break;
+                case GazpreaParser::CONTINUE:
+                    visitContinue(t);
+                    break;
+                case GazpreaParser::RETURN:
+                    visitReturn(t);
                     break;
                 default: visitChildren(t);
             };
@@ -63,6 +84,8 @@ namespace gazprea {
         subroutineSymbol->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = subroutineSymbol;  // track in AST
         currentScope->define(subroutineSymbol); // def subroutine in globals
+
+        currentSubroutineScope = subroutineSymbol;  // Track Subroutine Scope for visitReturn()
         currentScope = subroutineSymbol;        // set current scope to subroutine scope
         visitChildren(t);
         currentScope = currentScope->getEnclosingScope(); // pop subroutine scope
@@ -87,5 +110,33 @@ namespace gazprea {
 
     void DefWalk::visitIdentifier(std::shared_ptr<AST> t) {
         t->scope = currentScope;
+    }
+
+    void DefWalk::visitTupleType(std::shared_ptr<AST> t) {
+        auto tupleType = std::make_shared<TupleType>(currentScope, t);
+        t->type = tupleType;
+        currentScope = tupleType;        // set current scope to tuple scope
+        visitChildren(t);
+        currentScope = currentScope->getEnclosingScope(); // pop tuple scope
+    }
+
+    void DefWalk::visitParameterAtom(std::shared_ptr<AST> t) {
+        auto variableSymbol = std::make_shared<VariableSymbol>("", nullptr);
+        currentScope->define(variableSymbol);
+        t->symbol = variableSymbol;
+        variableSymbol->def = t;
+    }
+
+    void DefWalk::visitBreak(std::shared_ptr<AST> t) {
+        t->scope = currentScope;
+    }
+
+    void DefWalk::visitContinue(std::shared_ptr<AST> t) {
+        t->scope = currentScope;
+    }
+
+    void DefWalk::visitReturn(std::shared_ptr<AST> t) {
+        t->scope = currentSubroutineScope;
+        visitChildren(t);
     }
 } // namespace gazprea 

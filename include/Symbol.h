@@ -23,6 +23,7 @@ namespace gazprea {
         virtual std::string getName();
 
         virtual std::string toString();
+        virtual bool isType() = 0;
         virtual ~Symbol();
     };
 }

@@ -77,7 +77,7 @@ nonBlockStatement: varDeclarationStatement
 vectorSizeDeclarationAtom: '*' | expression ;
 vectorSizeDeclarationList: vectorSizeDeclarationAtom (wS? ',' wS? vectorSizeDeclarationAtom)? ;
 
-parameterAtom: typeQualifier? singleTermType (wS? singleTermType (wS? singleTermType)?)?  // for f(a b) it's impossible to distinguish if b is a type or an id, parse them together
+parameterAtom: (typeQualifier wS?)? singleTermType (wS? singleTermType (wS? singleTermType)?)?  // for f(a b) it's impossible to distinguish if b is a type or an id, parse them together
              | typeQualifier
              ;
 parameterList: parameterAtom (wS? ',' wS? parameterAtom)* ;

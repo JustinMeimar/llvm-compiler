@@ -20,19 +20,10 @@ namespace gazprea {
         bool isTupleType() {
             return false;
         }
-        int getTypeId() {
-            if (name == "boolean") {
-                return Type::BOOLEAN;
-            } else if (name == "character") {
-                return Type::CHARACTER;
-            } else if (name == "integer") {
-                return Type::INTEGER;
-            } else if (name == "real") {
-                return Type::REAL;
-            } else if (name == "interval") {
-                return -1;  // will not be used
-            }
-            return Type::STRING;
+        int getTypeId();
+
+        bool isType() {
+            return true;
         }
     };
 }

@@ -16,4 +16,9 @@ namespace gazprea {
         }
         type = iterator;
     }
+
+    int TypedefTypeSymbol::getTypeId() {
+        resolveTargetType();
+        return type->getTypeId();
+    }
 }

@@ -1,10 +1,5 @@
 #include "RefWalk.h"
 
-typedef int AType;
-void hello(AType, int b) {
-
-}
-
 namespace gazprea {
 
     RefWalk::RefWalk(std::shared_ptr<SymbolTable> symtab) : symtab(symtab), currentScope(symtab->globals) {
@@ -68,10 +63,46 @@ namespace gazprea {
 
     void RefWalk::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
         visitChildren(t);
+        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->symbol);
+        subroutineSymbol->type = t->children[2]->type;  // Set return type
     }
 
     void RefWalk::visitParameterAtom(std::shared_ptr<AST> t) {
         visitChildren(t);
+        auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
+        bool typeQualifierExist = false;
+        int numSingleTermType = 0;
+        if (t->children[3]->getNodeType() == GazpreaParser::TYPE_QUALIFIER_TOKEN) {
+            typeQualifierExist = true;
+        }
+        for (int i = 0; i < 3; i++) {
+            if (!t->children[i]->isNil()) {
+                numSingleTermType++;
+            }
+        }
+        if (typeQualifierExist) {
+            variableSymbol->typeQualifier = t->children[3]->parseTree->getText();
+        }
+        if (numSingleTermType == 3) {
+            variableSymbol->type = std::make_shared<IntervalType>(t->children[0]->type);
+        } else if (numSingleTermType == 2) {
+            auto symbol = symtab->globals->resolve(t->children[1]->parseTree->getText());
+            if (symbol == nullptr || !symbol->isType()) {
+                variableSymbol->name = t->children[1]->parseTree->getText();
+                variableSymbol->type = t->children[0]->type;
+            } else {
+                variableSymbol->type = std::make_shared<IntervalType>(t->children[0]->type);
+            }
+        } else if (numSingleTermType == 1) {
+            auto symbol = symtab->globals->resolve(t->children[0]->parseTree->getText());
+            if (t->children[0]->getNodeType() == GazpreaParser::VECTOR_TYPE_TOKEN || t->children[0]->getNodeType() == GazpreaParser::TUPLE_TYPE_TOKEN) {
+                variableSymbol->type = t->children[0]->type;
+            } else if (symbol == nullptr || !symbol->isType()) {
+                variableSymbol->name = t->children[0]->parseTree->getText();
+            } else {
+                variableSymbol->type = t->children[0]->type;
+            }
+        }
     }
 
     void RefWalk::visitTypedefStatement(std::shared_ptr<AST> t) {
