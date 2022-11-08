@@ -11,6 +11,10 @@ set(
   "${CMAKE_CURRENT_SOURCE_DIR}/NDArray.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/Enums.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/Enums.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/FreeList.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/FreeList.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Literal.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Literal.h"
 )
 
 # Build our executable from the source files.

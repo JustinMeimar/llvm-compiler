@@ -3,6 +3,7 @@
 /**
  * This file handles interfaces for element type math in array type
  * no type checking is enforced in most interfaces
+ * The idea of ndarray comes from numpy's handling of different dimension arrays
  */
 
 #include <stdint.h>

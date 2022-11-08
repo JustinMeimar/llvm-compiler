@@ -46,9 +46,13 @@ void variableInitFromCast(Variable *this, Type *lhsType, Variable *rhs);
 void variableInitFromAssign(Variable *this, Type *lhsType, Variable *rhs);
 void variableInitFromDeclaration(Variable *this, Type *lhsType, Variable *rhs);
 void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs);
-
+void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed);
+void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail);
+void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step);  // the new variable is a vector
 void variableDestructor(Variable *this);
+void variableDestructThenFree(Variable *this);
 
+void variableBinOpBothSidesPromotion(Variable *this, Variable *op1, Variable *op2, Type *op1Target, Type *op2Target);
 bool variableAliasWith(Variable *this, Variable *other);  // return ture if the two variable alias
 void variableVectorIndexAssignment(Variable *vector, Variable *index, Variable *rhs);
 void variableMatrixIndexAssignment(Variable *vector, Variable *rowIndex, Variable *colIndex, Variable *rhs);

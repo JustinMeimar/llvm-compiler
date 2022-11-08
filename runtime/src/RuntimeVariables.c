@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include "RuntimeErrors.h"
 #include "NDArray.h"
+#include "FreeList.h"
 #include <string.h>
+#include "Literal.h"
 
 ///------------------------------DATA---------------------------------------------------------------
 // below explains how m_data is interpreted in each type of data
@@ -119,23 +121,13 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         } else if (rhsTypeID == typeid_ndarray) {
             ArrayType *rhsCTI = rhsType->m_compoundTypeInfo;
             if (rhsCTI->m_elementTypeID == element_mixed) {
-                int64_t size = arrayTypeGetTotalLength(rhsCTI);
-                this->m_type = typeMalloc();
-                typeInitFromCopy(this->m_type, rhsType);
-                ArrayType *CTI = this->m_type->m_compoundTypeInfo;
-                if (!arrayMixedElementCanBePromotedToSameType(rhs->m_data, size,
-                                                              &CTI->m_elementTypeID)) {
-                    targetTypeError(rhsType, "Attempt to convert to homogenous array from:");
-                }
-                arrayMallocFromPromote(CTI->m_elementTypeID, element_mixed, size, rhs->m_data, &this->m_data);
+                variableInitFromMixedArrayPromoteToSameType(this, rhs);
             } else {
                 variableInitFromMemcpy(this, rhs);
             }
         } else {
             variableInitFromMemcpy(this, rhs);
         }
-        this->m_fieldPos = -1;
-        this->m_parent = this->m_data;
         return;
     }
 
@@ -335,15 +327,13 @@ void variableInitFromUnaryOp(Variable *this, Variable *operand, UnaryOpCode opco
 
     if (operandType->m_typeId == typeid_interval) {
         // +ivl or -ivl
-        int32_t *interval = intervalTypeMallocDataFromCopy(operand->m_data);
+        int32_t *interval = intervalTypeMallocDataFromNull();
         if (opcode == unary_minus) {
-            int32_t r0 = -interval[1];
-            int32_t r1 = -interval[0];
-            interval[0] = r0;
-            interval[1] = r1;
+            intervalTypeUnaryMinus(interval, operand->m_data);
         } else if (opcode == unary_plus) {
+            intervalTypeUnaryPlus(interval, operand->m_data);
         } else {
-            targetTypeError(operandType, "Attempt to perform unary not on type: ");
+            targetTypeError(operandType, "Attempt to perform unary 'not' on type: ");
         }
         this->m_data = interval;
     } else if (operandType->m_typeId == typeid_ndarray) {
@@ -357,12 +347,304 @@ void variableInitFromUnaryOp(Variable *this, Variable *operand, UnaryOpCode opco
     this->m_fieldPos = -1;
 }
 
+void computeIvlByIntBinop(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode) {
+    variableInitFromIntervalStep(this, op1, op2);
+}
+
+void computeSameTypeSameSizeArrayArrayBinop(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode) {
+    Type *op1Type = op1->m_type;
+    ArrayType *op1CTI = op1->m_type->m_compoundTypeInfo;
+    int64_t arrSize = arrayTypeGetTotalLength(op1CTI);
+    ElementTypeID resultType;
+    bool resultCollapseToScalar;
+    if (!arrayBinopResultType(op1CTI->m_elementTypeID, opcode, &resultType, &resultCollapseToScalar)) {
+        errorAndExit("Cannot perform binop between two arrays variables!");
+    }
+
+    // init type
+    this->m_type = typeMalloc();
+    if (resultCollapseToScalar) {
+        typeInitFromArrayType(this->m_type, resultType, 0, NULL);
+    } else {
+        typeInitFromCopy(this->m_type, op1Type);
+    }
+
+    // init data
+    arrayMallocFromBinOp(resultType, opcode, op1->m_data, arrSize,
+                         op2->m_data, arrSize, &this->m_data, NULL);
+}
+
+void computeIvlIvlBinop(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode) {
+    this->m_type = typeMalloc();
+    if (opcode == binary_eq || opcode == binary_ne) {
+        // result is boolean
+        typeInitFromArrayType(this->m_type, element_boolean, 0, NULL);
+        this->m_data = arrayMallocFromNull(element_boolean, 1);
+    } else {
+        typeInitFromIntervalType(this->m_type);
+        this->m_data = intervalTypeMallocDataFromNull();
+    }
+    switch(opcode) {
+        case binary_multiply:
+            intervalTypeBinaryMultiply(this->m_data, op1->m_data, op2->m_data); break;
+        case binary_plus:
+            intervalTypeBinaryPlus(this->m_data, op1->m_data, op2->m_data); break;
+        case binary_minus:
+            intervalTypeBinaryMinus(this->m_data, op1->m_data, op2->m_data); break;
+        case binary_eq:
+            intervalTypeBinaryEq(this->m_data, op1->m_data, op2->m_data); break;
+        case binary_ne:
+            intervalTypeBinaryNe(this->m_data, op1->m_data, op2->m_data); break;
+        default:
+            errorAndExit("Unexpected opcode!"); break;
+    }
+}
+
+// compute function is responsible for initializing this->m_type and this->m_data from the two promoted variables
+void binopPromoteComputationAndDispose(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode, Type *promoteOp1To, Type *promoteOp2To,
+                                       void compute(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode)) {
+    Variable *op1Promoted = variableMalloc();
+    Variable *op2Promoted = variableMalloc();
+    variableInitFromPromotion(op1Promoted, promoteOp1To, op1);
+    variableInitFromPromotion(op2Promoted, promoteOp2To, op2);
+
+    compute(this, op1Promoted, op2Promoted, opcode);
+
+    variableDestructThenFree(op1Promoted);
+    variableDestructThenFree(op2Promoted);
+
+    this->m_fieldPos = -1;
+    this->m_parent = this->m_data;
+}
+
+
+// guarantee op1 and op2 can only be spec types
+void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode) {
+    ///remaining types: empty array, ndarray/string, interval, tuple
+    ///remaining opcodes: every op besides concat
+    Type *op1Type = op1->m_type;
+    Type *op2Type = op2->m_type;
+
+    if (op2Type->m_typeId == typeid_empty_array && typeIsVectorOrString(op1Type)) {
+        // return 0 size array of the same element type as op1
+        this->m_type = typeMalloc();
+        typeInitFromCopy(this->m_type, op1Type);
+        ArrayType *CTI = this->m_type->m_compoundTypeInfo;
+        CTI->m_dims[0] = 0;
+
+        this->m_data = arrayMallocFromNull(CTI->m_elementTypeID, 0);
+
+        this->m_fieldPos = -1;
+        this->m_parent = this->m_data;
+        return;
+    } else if (op1Type->m_typeId == typeid_empty_array || op2Type->m_typeId == typeid_empty_array) {
+        errorAndExit("Unexpected empty array in binary op!");
+    }
+
+    if (opcode == binary_range_construct) {
+        // promote both sides to integer and retrieve the result then create a new interval from it
+        variableInitFromIntervalHeadTail(this, op1, op2);
+        return;
+    }
+
+    switch (opcode) {
+        case binary_index: {
+            // TODO
+        } break;
+        case binary_exponent:
+        case binary_multiply:
+        case binary_divide:
+        case binary_remainder:
+        case binary_dot_product:
+        case binary_plus:
+        case binary_minus:
+        case binary_lt:
+        case binary_bt:
+        case binary_leq:
+        case binary_beq:
+        case binary_eq:
+        case binary_ne:
+        case binary_and:
+        case binary_or:
+        case binary_xor: {  /// same type same size
+            /// interval op interval
+            if (op1Type->m_typeId == typeid_interval && !typeIsVectorOrString(op2Type)
+                || op2Type->m_typeId == typeid_interval && !typeIsVectorOrString(op1Type)) {
+                Type *ivlType = typeMalloc();
+                typeInitFromIntervalType(ivlType);
+                binopPromoteComputationAndDispose(this, op1, op2, opcode, ivlType, ivlType,
+                                                  computeIvlIvlBinop);
+                typeDestructThenFree(ivlType);
+            } else if (op1Type->m_typeId == typeid_interval || op2Type->m_typeId == typeid_interval) {
+                Variable *vec = typeIsArrayOrString(op1Type) ? op1 : op2;
+                Type *targetType = typeMalloc();
+                typeInitFromCopy(targetType, vec->m_type);
+                // in this case we may have vector null element promote to interval element
+                ArrayType *CTI = targetType->m_compoundTypeInfo;
+                if (!elementCanBePromotedBetween(element_integer, CTI->m_elementTypeID, &CTI->m_elementTypeID)) {
+                    errorAndExit("Cannot promote between interval and vector!");
+                }
+                binopPromoteComputationAndDispose(this, op1, op2, opcode, targetType, targetType,
+                                                  computeSameTypeSameSizeArrayArrayBinop);
+                typeDestructThenFree(targetType);
+            } else if (typeIsArrayOrString(op1Type) && typeIsArrayOrString(op2Type)) {
+                Type *targetType = typeMalloc();
+                typeInitFromCopy(targetType, op1Type);
+                ArrayType *op1CTI = op1Type->m_compoundTypeInfo;
+                ArrayType *op2CTI = op2Type->m_compoundTypeInfo;
+                ArrayType *CTI = targetType->m_compoundTypeInfo;
+                if (!elementCanBePromotedBetween(op1CTI->m_elementTypeID, op2CTI->m_elementTypeID, &CTI->m_elementTypeID)) {
+                    errorAndExit("Cannot promote between interval and vector!");
+                }
+                binopPromoteComputationAndDispose(this, op1, op2, opcode, targetType, targetType,
+                                                  computeSameTypeSameSizeArrayArrayBinop);
+                typeDestructThenFree(targetType);
+            } else if (op1Type->m_typeId == typeid_tuple || op2Type->m_typeId == typeid_tuple) {
+                // must both be tuple now because we have ruled out possibility of null/identity before
+                TupleType *op1CTI = op1Type->m_compoundTypeInfo;
+                TupleType *op2CTI = op2Type->m_compoundTypeInfo;
+                Variable **op1Vars = op1->m_data;
+                Variable **op2Vars = op2->m_data;
+
+                bool result = true;
+                for (int64_t i = 0; i < op1CTI->m_nField; i++) {
+                    Variable *temp = variableMalloc();
+                    variableInitFromBinaryOp(temp, op1Vars[i], op2Vars[i], binary_eq);
+                    bool *resultBool = temp->m_data;
+                    result = result && *resultBool;
+                    variableDestructThenFree(temp);
+                }
+                if (opcode == binary_ne)
+                    result = !result;
+                variableInitFromBooleanScalar(this, result);
+            } else {
+                errorAndExit("Unexpected type on binary operation!");
+            }
+        } break;
+        case binary_by: {
+            Type *ivlType = typeMalloc();
+            typeInitFromIntervalType(ivlType);
+            Type *intType = typeMalloc();
+            typeInitFromArrayType(intType, element_integer, 0, NULL);
+
+            binopPromoteComputationAndDispose(this, op1, op2, opcode, ivlType, intType, computeIvlByIntBinop);
+
+            typeDestructThenFree(ivlType);
+            typeDestructThenFree(intType);
+        } break;
+        default:
+            errorAndExit("unexpected op!"); break;
+    }
+}
+
+void variableInitFromConcat(Variable *this, Variable *op1, Variable *op2) {
+    Type *op1Type = op1->m_type;
+    Type *op2Type = op2->m_type;
+    if ((!typeIsArrayOrString(op1Type) && op1Type->m_typeId != typeid_empty_array) || typeIsMatrix(op1Type)) {
+        targetTypeError(op1Type, "Attempt to concat with type: ");
+    } else if (!typeIsArrayOrString(op2Type) && op2Type->m_typeId != typeid_empty_array || typeIsMatrix(op2Type)) {
+        targetTypeError(op2Type, "Attempt to concat with type: ");
+    }
+
+    // [] || [] -> []
+    // [] || A -> A
+    // A || [] -> A
+    if (op1Type->m_typeId == typeid_empty_array) {
+        variableInitFromMemcpy(this, op2);
+        return;
+    } else if (op2Type->m_typeId == typeid_empty_array) {
+        variableInitFromMemcpy(this, op1);
+        return;
+    }
+
+    if (typeIsScalar(op1Type) && typeIsScalar(op2Type)) {
+        errorAndExit("Cannot concat two scalar varaibles!");
+    }
+    ArrayType *op1CTI = op1Type->m_compoundTypeInfo;
+    ElementTypeID op1EID = op1CTI->m_elementTypeID;
+    int64_t arr1Length = arrayTypeGetTotalLength(op1CTI);
+
+    ArrayType *op2CTI = op2Type->m_compoundTypeInfo;
+    ElementTypeID op2EID = op2CTI->m_elementTypeID;
+    int64_t arr2Length = arrayTypeGetTotalLength(op2CTI);
+
+    ElementTypeID resultEID;
+    if (!elementCanBePromotedBetween(op1EID, op2EID, &resultEID)) {
+        errorAndExit("Attempt to concat two vectors of incompatible element types");
+    }
+
+    FreeList *freeList = NULL;
+    void *pop1Data = op1->m_data;
+    if (op1EID != resultEID) {
+        arrayMallocFromPromote(resultEID, op1EID, arr1Length, op1->m_data, &pop1Data);
+        freeList = freeListAppend(freeList, pop1Data);
+    }
+    void *pop2Data = op2->m_data;
+    if (op2EID != resultEID) {
+        arrayMallocFromPromote(resultEID, op2EID, arr2Length, op2->m_data, &pop2Data);
+        freeList = freeListAppend(freeList, pop2Data);
+    }
+
+    arrayMallocFromBinOp(resultEID, binary_concat,
+                         pop1Data, arr1Length,
+                         pop2Data, arr2Length,
+                         &this->m_data, NULL);
+    this->m_type = typeMalloc();
+    int64_t dims[1] = {arr1Length + arr2Length};
+    typeInitFromArrayType(this->m_type, resultEID, 1, dims);
+    // if one of the two operands is string then the result is string
+    if (op1Type->m_typeId == typeid_string || op2Type->m_typeId == typeid_string)
+        this->m_type->m_typeId = typeid_string;
+
+    freeListFreeAll(freeList, free);
+
+    this->m_fieldPos = -1;
+    this->m_parent = this->m_data;
+}
+
 void variableInitFromBinaryOp(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode) {
+    // this function is responsible for dealing with null/identity/mixed arrays
     Type *op1Type = op1->m_type;
     Type *op2Type = op2->m_type;
     if (typeIsStream(op1->m_type) || typeIsStream(op2->m_type) || op1Type->m_typeId == typeid_unknown || op2Type->m_typeId == typeid_unknown) {
         errorAndExit("binary op cannot be performed on stream/unknown object!");
     }
+    Variable *pop1 = op1;
+    Variable *pop2 = op2;
+    // mixed array
+    FreeList *freeList = NULL;
+    if (typeIsMixedArray(op1Type)) {
+        pop1 = variableMalloc();
+        variableInitFromMixedArrayPromoteToSameType(pop1, op1);
+        freeList = freeListAppend(freeList, pop1);
+    }
+    if (typeIsMixedArray(op2Type)) {
+        pop2 = variableMalloc();
+        variableInitFromMixedArrayPromoteToSameType(pop2, op2);
+        freeList = freeListAppend(freeList, pop2);
+    }
+    // null/identity array
+    // note special case: cocat op "||" promotes to one element array instead of two
+    // second special case: interval by integer
+    if (opcode == binary_concat) {
+        variableInitFromConcat(this, pop1, pop2);
+    } else {
+        if (typeIsArrayNull(op1Type) || typeIsArrayIdentity((op1Type))) {
+            Variable *temp = pop1;
+            pop1 = variableMalloc();
+            variableInitFromPromotion(pop1, pop2->m_type, temp);
+            freeList = freeListAppend(freeList, pop1);
+        }
+        if (typeIsArrayNull(op2Type) || typeIsArrayIdentity((op2Type))) {
+            Variable *temp = pop2;
+            pop2 = variableMalloc();
+            variableInitFromPromotion(pop2, pop1->m_type, temp);
+            freeList = freeListAppend(freeList, pop2);
+        }
+        variableInitFromBinaryOpWithSpecTypes(this, pop1, pop2, opcode);
+    }
+
+    freeListFreeAll(freeList, (void (*)(void *)) variableDestructThenFree);
 }
 
 PCADPConfig pcadpParameterConfig = {
@@ -411,6 +693,60 @@ void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs) {
     variableInitFromPCADP(this, lhsType, rhs, &pcadpPromotionConfig);
 }
 
+void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed) {
+    Type *rhsType = mixed->m_type;
+    ArrayType *rhsCTI = rhsType->m_compoundTypeInfo;
+    int64_t size = arrayTypeGetTotalLength(rhsCTI);
+    this->m_type = typeMalloc();
+    typeInitFromCopy(this->m_type, rhsType);
+    ArrayType *CTI = this->m_type->m_compoundTypeInfo;
+    if (!arrayMixedElementCanBePromotedToSameType(mixed->m_data, size,
+                                                  &CTI->m_elementTypeID)) {
+        targetTypeError(rhsType, "Attempt to convert to homogenous array from:");
+    }
+    arrayMallocFromPromote(CTI->m_elementTypeID, element_mixed, size, mixed->m_data, &this->m_data);
+    this->m_fieldPos = -1;
+    this->m_parent = this->m_data;
+}
+
+void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail) {
+    Type *intType = typeMalloc();
+    typeInitFromArrayType(intType, element_integer, 0, NULL);
+    Variable *op1Promoted = variableMalloc();
+    Variable *op2Promoted = variableMalloc();
+    variableInitFromPromotion(op1Promoted, intType, head);
+    variableInitFromPromotion(op2Promoted, intType, tail);
+
+    int *headValue = op1Promoted->m_data;
+    int *tailValue = op2Promoted->m_data;
+    this->m_type = typeMalloc();
+    typeInitFromIntervalType(this->m_type);
+    int32_t *data = intervalTypeMallocDataFromHeadTail(*headValue, *tailValue);
+    this->m_data = data;
+    this->m_parent = this->m_data;
+    this->m_fieldPos = -1;
+}
+
+void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step) {
+    int32_t *interval = ivl->m_data;
+    int32_t k = *((int32_t *)step->m_data);
+    if (k <= 0) {
+        errorAndExit("ivl by step has a step value of 0 or negative!");
+    }
+    int8_t nDim = 1;
+    int64_t dims[1] = {(interval[1] - interval[0]) / k + 1};
+
+    this->m_type = typeMalloc();
+    typeInitFromArrayType(this->m_type, element_integer, nDim, dims);
+    int32_t *vec = arrayMallocFromNull(element_integer, dims[0]);
+    for (int64_t i = 0; i < dims[0]; i++) {
+        vec[i] = interval[0] + (int32_t)i * k;
+    }
+    this->m_data = vec;
+    this->m_parent = this->m_data;
+    this->m_fieldPos = -1;
+}
+
 void variableDestructor(Variable *this) {
     TypeID id = this->m_type->m_typeId;
 
@@ -441,6 +777,10 @@ void variableDestructor(Variable *this) {
             break;
     }
 
-    typeDestructor(this->m_type);
-    free(this->m_type);
+    typeDestructThenFree(this->m_type);
+}
+
+void variableDestructThenFree(Variable *this) {
+    variableDestructor(this);
+    free(this);
 }

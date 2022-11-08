@@ -232,7 +232,7 @@ void elementMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, v
         errorAndExit("Invalid unary operand type!");
     }
     if (id == element_boolean) {
-        *result = arrayMallocFromBoolValue(1, *((bool *)src) ? false : true);
+        *result = arrayMallocFromBoolValue(1, !*((bool *)src));
     } else if (id == element_integer) {
         int32_t value = *((int32_t *)src);
         *result = arrayMallocFromIntegerValue(1, (opcode == unary_minus) ? -value : value);
@@ -245,8 +245,16 @@ void elementMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, v
 }
 
 int32_t integerExponentiation(int32_t base, int32_t exp) {
+    if (base == 0 && exp < 0) {
+        return 0;
+        // TODO: division by zero error
+    } else if (base == -1) {
+        return exp % 2 == 0 ? 1 : -1;
+    } else if (exp < 0) {
+        return 0;
+    }
+
     // power by repeated squaring
-    // TODO: what if we have negative exponent?
     int32_t result = 1;
     while (exp != 0) {
         if (exp % 2 == 1) {
@@ -255,6 +263,7 @@ int32_t integerExponentiation(int32_t base, int32_t exp) {
         exp /= 2;
         base *= base;
     }
+    return result;
 }
 
 // binary operation may not return the same type e.g. 1 == 2
@@ -333,8 +342,8 @@ void elementMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, void 
             case binary_divide:
                 *result = arrayMallocFromRealValue(1, v1 / v2); break;
             case binary_remainder:
-                // TODO: what should we return on real % real?
-                *result = arrayMallocFromRealValue(1, 0.0f); break;
+                // TODO: verify this satisfies spec
+                *result = arrayMallocFromRealValue(1, fmodf(v1, v2)); break;
             case binary_plus:
                 *result = arrayMallocFromRealValue(1, v1 + v2); break;
             case binary_minus:
@@ -475,7 +484,7 @@ void arrayMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, int
     if (id == element_boolean) {
         bool *resultArray = arrayMallocFromNull(id, length);
         for (int64_t i = 0; i < length; i++)
-            resultArray[i] = arrayGetBoolValue(src, i) ? false : true;
+            resultArray[i] = !arrayGetBoolValue(src, i);
         *result = resultArray;
     } else if (id == element_integer) {
         int32_t *resultArray = arrayMallocFromNull(id, length);
@@ -640,7 +649,8 @@ void arrayMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, int64_t
         }
     }
     *result = resultPos;
-    *resultSize = resultArraySize;
+    if (resultSize != NULL)
+        *resultSize = resultArraySize;
 }
 
 void arrayMallocFromCastPromote(ElementTypeID resultID, ElementTypeID srcID, int64_t size, void *src, void **result,
