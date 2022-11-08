@@ -80,14 +80,21 @@ namespace gazprea {
             isProcedure = false;
         }
         auto identiferAST = t->children[0];
-        auto subroutineSymbol = std::make_shared<SubroutineSymbol>(identiferAST->parseTree->getText(), nullptr, currentScope, isProcedure, isBuiltIn);
-        subroutineSymbol->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
-        t->symbol = subroutineSymbol;  // track in AST
-        currentScope->define(subroutineSymbol); // def subroutine in globals
+        std::shared_ptr<SubroutineSymbol> subroutineSymbol;
+        auto declarationSubroutineSymbol = symtab->globals->resolve(identiferAST->parseTree->getText());
+        if (declarationSubroutineSymbol == nullptr) {
+            subroutineSymbol = std::make_shared<SubroutineSymbol>(identiferAST->parseTree->getText(), nullptr, symtab->globals, isProcedure, isBuiltIn);
+            subroutineSymbol->declaration = t;
+            symtab->globals->define(subroutineSymbol); // def subroutine in globals
+        } else {
+            subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(declarationSubroutineSymbol);
+            subroutineSymbol->definition = t;
+        }
 
+        t->symbol = subroutineSymbol;  // track in AST
         currentSubroutineScope = subroutineSymbol;  // Track Subroutine Scope for visitReturn()
         currentScope = subroutineSymbol;        // set current scope to subroutine scope
-        visitChildren(t);
+        visitChildren(t);    
         currentScope = currentScope->getEnclosingScope(); // pop subroutine scope
 
         t->children[0]->scope = currentScope;  // Manually set the scope of the identifier token of this AST node (override visitIdentifier(t))

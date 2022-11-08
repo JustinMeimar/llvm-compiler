@@ -14,6 +14,8 @@ namespace gazprea {
     public:
         bool isProcedure;  // True if the subroutine is a procedure, False if the subroutine is a function
         bool isBuiltIn;  // True if this subroutine is built-in, false otherwise
+        std::shared_ptr<AST> declaration;
+        std::shared_ptr<AST> definition;
         std::vector<std::shared_ptr<Symbol>> orderedArgs;
         SubroutineSymbol(std::string name, std::shared_ptr<Type> retType, std::shared_ptr<Scope> enclosingScope, bool isProcedure, bool isBuiltIn);
         std::shared_ptr<Symbol> resolve(const std::string &name);
