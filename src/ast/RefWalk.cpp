@@ -33,6 +33,9 @@ namespace gazprea {
                 case GazpreaParser::UNQUALIFIED_TYPE_TOKEN:
                     visitUnqualifiedType(t);
                     break;
+                case GazpreaParser::PARAMETER_ATOM_TOKEN:
+                    visitParameterAtom(t);
+                    break;
                 default: visitChildren(t);
             };
         }
@@ -54,16 +57,20 @@ namespace gazprea {
         if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
             variableDeclarationSymbol->typeQualifier = t->children[0]->children[0]->parseTree->getText();
         } else {
-            if (t->children[0]->children[0]->getNodeType() == GazpreaParser::TYPE_QUALIFIER_TOKEN) {
-                variableDeclarationSymbol->typeQualifier = t->children[0]->children[0]->parseTree->getText();
+            if (t->children[0]->children[0]->isNil()) {
                 variableDeclarationSymbol->type = t->children[0]->children[1]->type;
             } else {
-                variableDeclarationSymbol->type = t->children[0]->children[0]->type;
+                variableDeclarationSymbol->typeQualifier = t->children[0]->children[0]->parseTree->getText();
+                variableDeclarationSymbol->type = t->children[0]->children[1]->type;
             }
         }
     }
 
     void RefWalk::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
+        visitChildren(t);
+    }
+
+    void RefWalk::visitParameterAtom(std::shared_ptr<AST> t) {
         visitChildren(t);
     }
 
@@ -80,6 +87,10 @@ namespace gazprea {
     void RefWalk::visitSingleTokenType(std::shared_ptr<AST> t) {
         auto text = t->parseTree->getText();
         t->type = std::dynamic_pointer_cast<Type>(symtab->globals->resolve(text));
+        if (t->type == nullptr) {
+            // SingleTokenType can be a Type, or an identifier. If it is an identifier, t->type will be nullptr
+            return;
+        }
         if (t->type->isTypedefType()) {
             auto typeDefTypeSymbol = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->type);
             typeDefTypeSymbol->resolveTargetType();  // If TypeDef is already called resolveTargetType once, this method will do nothing
