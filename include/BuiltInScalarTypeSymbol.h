@@ -23,7 +23,7 @@ namespace gazprea {
         int getTypeId() {
             if (name == "boolean") {
                 return Type::BOOLEAN;
-            } else if (name == "chracter") {
+            } else if (name == "character") {
                 return Type::CHARACTER;
             } else if (name == "integer") {
                 return Type::INTEGER;
