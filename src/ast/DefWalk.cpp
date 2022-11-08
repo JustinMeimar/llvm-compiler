@@ -76,7 +76,6 @@ namespace gazprea {
         typeDefTypeSymbol->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = typeDefTypeSymbol;  // track in AST
         symtab->globals->define(typeDefTypeSymbol);
-        std::cout << currentScope->toString(); 
         visitChildren(t);
     } 
     void DefWalk::visitBlock(std::shared_ptr<AST> t) {
