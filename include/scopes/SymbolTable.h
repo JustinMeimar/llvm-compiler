@@ -8,7 +8,6 @@
 #include "Symbol.h"
 #include "GlobalScope.h"
 #include "BuiltInScalarTypeSymbol.h"
-#include "BuiltInTypeQualifierSymbol.h"
 
 namespace gazprea {
     class SymbolTable { // single-scope symtab
