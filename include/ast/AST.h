@@ -52,6 +52,10 @@ namespace gazprea {
     	std::string toStringTree(gazprea::GazpreaParser *parser);
 
         virtual ~AST();
+		
+		//TypeWalk
+		std::shared_ptr<Type> evalType;
+		std::shared_ptr<Type> promoteType;
 
         std::shared_ptr<Symbol> symbol; // Populate by Def and Ref pass
         std::shared_ptr<Type> type;  // Solely use for Type Reference in Ref pass
