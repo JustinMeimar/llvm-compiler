@@ -9,42 +9,15 @@ namespace gazprea {
     void TypeWalk::visit(std::shared_ptr<AST> t) {
         if(!t->isNil()){
             switch(t->getNodeType()){
-                //Top level
-                case GazpreaParser::PROCEDURE:
-                case GazpreaParser::FUNCTION:
-                    visitSubroutineDeclDef(t);
-                    break; 
-                //Expr 
+                case GazpreaParser::VAR_DECLARATION_TOKEN: visitVariableDeclaration(t); break; 
                 case GazpreaParser::EXPRESSION_TOKEN: visitExpression(t);  break;
-                case GazpreaParser::BLOCK_TOKEN: visitBlock(t); break;
-                case GazpreaParser::VAR_DECLARATION_TOKEN: visitVariableDeclaration(t); break;
-
-                //Binary Op
-                case GazpreaParser::ASTERISK:
-                case GazpreaParser::DIV:
-                case GazpreaParser::MODULO:
-                case GazpreaParser::DOTPRODUCT:
-                case GazpreaParser::PLUS:
-                case GazpreaParser::MINUS:
-                case GazpreaParser::BY:
-                case GazpreaParser::GREATERTHAN:
-                case GazpreaParser::LESSTHAN:
-                case GazpreaParser::LESSTHANOREQUAL:
-                case GazpreaParser::GREATERTHANOREQUAL:
-                case GazpreaParser::ISEQUAL:
-                case GazpreaParser::ISNOTEQUAL:
-                case GazpreaParser::AND:
-                case GazpreaParser::OR:
-                case GazpreaParser::XOR:
+                case GazpreaParser::BINARY_OP_TOKEN:
                     visitBinaryOp(t);
                     break;
-                //Unary Op
-
-                //Leaf Nodes
                 case GazpreaParser::IntegerConstant: visitIntegerConstant(t); break;
+                case GazpreaParser::CharacterConstant: visitCharacterConstant(t); break;
                 case GazpreaParser::REAL_CONSTANT_TOKEN: visitRealConstant(t); break;
                 case GazpreaParser::IDENTIFIER_TOKEN: visitIdentifier(t); break;
-
                 default: visitChildren(t);
             };
         }
@@ -54,21 +27,30 @@ namespace gazprea {
     }
 
     void TypeWalk::visitChildren(std::shared_ptr<AST> t) {
-        for( auto child : t->children) {
-            visit(child);
-        } 
+        for( auto child : t->children) visit(child);
     }
 
-    void TypeWalk::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
+    void TypeWalk::visitVariableDeclaration(std::shared_ptr<AST> t) { 
+        //example of function use: character[3] cvec = 'c'; (promote char -> vec of char);
         visitChildren(t);
-    }
+        if (t->children[2]->evalType == nullptr) {
+            return;
+        }
+        //this indexing only works for explicit type i think..
+        auto varTy = t->children[1]->evalType->getTypeId(); 
+        auto exprTy = t->children[2]->evalType->getTypeId();
 
-    void TypeWalk::visitBlock(std::shared_ptr<AST> t) {
-        visitChildren(t);
-    } 
-
-    void TypeWalk::visitVariableDeclaration(std::shared_ptr<AST> t) {
-        visitChildren(t);
+        int promote = tp->promotionFromTo[exprTy][varTy];
+        if(promote != 0) {
+            t->children[2]->promoteType = t->children[1]->evalType;
+            //uncomment to printout the promotion 
+            std::cout   << "VarDecl promotion:\t" 
+                        << t->children[1]->parseTree->getText() <<  " of type "
+                        << t->children[1]->evalType->getTypeId() <<  " caused promotion of "
+                        << t->children[2]->parseTree->getText() << " of type " 
+                        << t->children[2]->evalType->getTypeId() << " into type " 
+                        << t->children[2]->promoteType->getTypeId() << std::endl;   
+        }
     }
 
     void TypeWalk::visitExpression(std::shared_ptr<AST> t) {
@@ -79,12 +61,34 @@ namespace gazprea {
     
     void TypeWalk::visitBinaryOp(std::shared_ptr<AST> t) {
         visitChildren(t); 
-        std::cout << t->children.size(); //prints 0
+        auto node1 = t->children[0];
+        auto node2 = t->children[1]; 
 
-        // What we want to do if binary op AST has children... 
-        // auto node1 = t->children[0];
-        // auto node2 = t->children[1];        
-        // t->evalType = this->tp->getResultType(tp->arithmeticResultType, node1, node2);
+        //getResultType automatically populates promotType of children
+        switch(t->children[2]->getNodeType()){ 
+            case GazpreaParser::PLUS:
+            case GazpreaParser::MINUS:
+            case GazpreaParser::DIV:
+            case GazpreaParser::ASTERISK: 
+                t->evalType = tp->getResultType(tp->arithmeticResultType, node1, node2);
+            break;
+            case GazpreaParser::LESSTHAN:
+            case GazpreaParser::GREATERTHAN:
+            case GazpreaParser::LESSTHANOREQUAL:
+            case GazpreaParser::GREATERTHANOREQUAL:
+                t->evalType = tp->getResultType(tp->relationalResultType, node1, node2);
+            break;
+            case GazpreaParser::ISEQUAL:
+            case GazpreaParser::ISNOTEQUAL:
+                t->evalType = tp->getResultType(tp->equalityResultType, node1, node2);
+            break; 
+        }     
+         //uncomment to print what is promoted
+        if (node1->promoteType != nullptr) {
+            std::cout << "BinaryOp promotion:\tpromote node1 " << node1->parseTree->getText() << " to type: "<< node1->promoteType->getTypeId() << std::endl;
+        } else if (node2->promoteType != nullptr) {
+            std::cout << "BinaryOp promotion:\tpromote node2 " << node2->parseTree->getText() << " to type: "<< node2->promoteType->getTypeId() << std::endl; 
+        }
     }
 
     void TypeWalk::visitIntegerConstant(std::shared_ptr<AST> t) {
@@ -96,7 +100,12 @@ namespace gazprea {
         t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("real"));
         t->promoteType = nullptr; 
     }
-
+    
+    void TypeWalk::visitCharacterConstant(std::shared_ptr<AST> t) {
+        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("character"));
+        t->promoteType = nullptr;
+    }
+  
     void TypeWalk::visitIdentifier(std::shared_ptr<AST> t) {
         t->evalType = t->symbol->type;
         t->promoteType = nullptr;

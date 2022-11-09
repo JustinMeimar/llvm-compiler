@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
   typewalk.visit(ast);
 
   // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
-  std::cout << "ast:\n" << ast->toStringTree(&parser) << std::endl;
+  // std::cout << "ast:\n" << ast->toStringTree(&parser) << std::endl;
 
   return 0;
 }

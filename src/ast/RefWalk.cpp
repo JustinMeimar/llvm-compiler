@@ -72,8 +72,7 @@ namespace gazprea {
                 newArgs.push_back(subroutineSymbol->orderedArgs[i]);
             }
             subroutineSymbol->orderedArgs = newArgs;
-        }
-        
+        } 
     }
 
     void RefWalk::visitParameterAtom(std::shared_ptr<AST> t) {
