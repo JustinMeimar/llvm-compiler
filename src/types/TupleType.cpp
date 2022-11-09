@@ -2,6 +2,7 @@
 
 namespace gazprea {
     TupleType::TupleType(std::shared_ptr<Scope> enclosingScope, std::shared_ptr<AST> def) : enclosingScope(enclosingScope), def(def) {}
+    TupleType::TupleType(std::shared_ptr<Scope> enclosingScope, std::shared_ptr<AST> def, size_t size) : enclosingScope(enclosingScope), def(def), size(size) {}
 
     std::shared_ptr<Symbol> TupleType::resolve(const std::string &name) {
         for ( auto sym : orderedArgs ) {

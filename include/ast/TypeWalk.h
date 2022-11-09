@@ -4,9 +4,13 @@
 #include "AST.h"
 #include "SymbolTable.h"
 #include "Symbol.h"
+#include "VariableSymbol.h"
+#include "SubroutineSymbol.h"
 #include "LocalScope.h"
+
 #include "TypePromote.h"
 #include "MatrixType.h"
+#include "TupleType.h"
 
 namespace gazprea {
 
@@ -23,6 +27,7 @@ class TypeWalk {
         void visit(std::shared_ptr<AST> t); 
         void visitChildren(std::shared_ptr<AST> t);
 
+        void visitSubroutineDeclDef(std::shared_ptr<AST> t);
         void visitVariableDeclaration(std::shared_ptr<AST> t);
         void visitExpression(std::shared_ptr<AST> t);
         void visitBinaryOp(std::shared_ptr<AST> t);

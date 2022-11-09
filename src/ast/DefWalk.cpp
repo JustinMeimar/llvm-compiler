@@ -63,8 +63,8 @@ namespace gazprea {
     }
 
     void DefWalk::visitVariableDeclaration(std::shared_ptr<AST> t) {
-        auto identiferAST = t->children[1];
-        auto vs = std::make_shared<VariableSymbol>(identiferAST->parseTree->getText(), nullptr);
+        auto identifierAST = t->children[1];
+        auto vs = std::make_shared<VariableSymbol>(identifierAST->parseTree->getText(), nullptr);
         vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = vs;  // track in AST
         currentScope->define(vs);
@@ -120,7 +120,8 @@ namespace gazprea {
     }
 
     void DefWalk::visitTupleType(std::shared_ptr<AST> t) {
-        auto tupleType = std::make_shared<TupleType>(currentScope, t);
+        size_t tupleSize = t->children[0]->children.size();
+        auto tupleType = std::make_shared<TupleType>(currentScope, t, tupleSize);
         t->type = tupleType;
         currentScope = tupleType;        // set current scope to tuple scope
         visitChildren(t);

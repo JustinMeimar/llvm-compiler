@@ -66,7 +66,7 @@ int TypePromote::equalityResultType[16][16] = { // ===, !=
     /*   REAL_2         */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2}
 };
 
-int TypePromote::promotionFromTo[16][16] = {
+int TypePromote::promotionFromTo[16][16] = { // 0 = nullptr
     //                          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
     /*   0  TUPLE          */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
     /*   1  INTERVAL       */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0},
