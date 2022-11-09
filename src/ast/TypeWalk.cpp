@@ -2,8 +2,7 @@
 
 namespace gazprea {
 
-    TypeWalk::TypeWalk(std::shared_ptr<SymbolTable> symtab) : symtab(symtab), currentScope(symtab->globals) {
-    }
+    TypeWalk::TypeWalk(std::shared_ptr<SymbolTable> symtab) : symtab(symtab), currentScope(symtab->globals) {}
     TypeWalk::~TypeWalk() {}
 
     void TypeWalk::visit(std::shared_ptr<AST> t) {
@@ -16,7 +15,9 @@ namespace gazprea {
                     break;
                 case GazpreaParser::IntegerConstant: visitIntegerConstant(t); break;
                 case GazpreaParser::CharacterConstant: visitCharacterConstant(t); break;
+                case GazpreaParser::BooleanConstant: visitBooleanConstant(t); break;
                 case GazpreaParser::REAL_CONSTANT_TOKEN: visitRealConstant(t); break;
+                case GazpreaParser::StringLiteral: visitStringLiteral(t); break;
                 case GazpreaParser::IDENTIFIER_TOKEN: visitIdentifier(t); break;
                 default: visitChildren(t);
             };
@@ -91,6 +92,21 @@ namespace gazprea {
         }
     }
 
+    //Compound Types
+    void TypeWalk::visitVectorLiteral(std::shared_ptr<AST> t) {
+
+        // t->evalType == std::dynamic_pointer_cast<Type>(symtab->globals->resolve());
+    }
+
+    void TypeWalk::visitTupler(std::shared_ptr<AST> t) {
+
+    }
+
+    void TypeWalk::visitInterval(std::shared_ptr<AST> t) {
+
+    }
+    
+    //Terminal Types
     void TypeWalk::visitIntegerConstant(std::shared_ptr<AST> t) {
         t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("integer"));
         t->promoteType = nullptr;
@@ -105,7 +121,17 @@ namespace gazprea {
         t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("character"));
         t->promoteType = nullptr;
     }
-  
+    
+    void TypeWalk::visitBooleanConstant(std::shared_ptr<AST> t) {
+        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("boolean"));
+        t->promoteType = nullptr;
+    }
+
+    void TypeWalk::visitStringLiteral(std::shared_ptr<AST> t) {
+        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("string"));
+        t->promoteType = nullptr;
+    }
+
     void TypeWalk::visitIdentifier(std::shared_ptr<AST> t) {
         t->evalType = t->symbol->type;
         t->promoteType = nullptr;

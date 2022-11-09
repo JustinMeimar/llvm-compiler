@@ -179,6 +179,7 @@ expr:
     | identifier                                                                    # IdentifierAtom
     | IntegerConstant                                                               # IntegerAtom
     | CharacterConstant                                                             # CharacterAtom
+    | BooleanConstant                                                               # BooleanAtom
     | StringLiteral                                                                 # StringLiteralAtom
     ;
 //
@@ -256,6 +257,7 @@ fragment SChar
     ;
 fragment EscapeSequence: '\\' ['"0abnrt\\] ;
 //
+BooleanConstant: 'true' | 'false';
 // Comment
 LineComment : '//' ~[\r\n]* -> skip ;
 BlockComment: '/*' .*? '*/' -> skip ;

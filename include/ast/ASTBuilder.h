@@ -122,6 +122,8 @@ public:
 
   virtual std::any visitRealConstant(GazpreaParser::RealConstantContext *ctx) override;
 
+  virtual std::any visitBooleanAtom(GazpreaParser::BooleanAtomContext *ctx) override; 
+
 };
 
 }  // namespace gazprea
