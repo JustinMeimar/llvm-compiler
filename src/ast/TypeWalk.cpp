@@ -13,6 +13,10 @@ namespace gazprea {
                 case GazpreaParser::BINARY_OP_TOKEN:
                     visitBinaryOp(t);
                     break;
+
+                //Compound Types
+                case GazpreaParser::VECTOR_LITERAL_TOKEN: visitVectorLiteral(t); break;
+                //Terminal Types
                 case GazpreaParser::IntegerConstant: visitIntegerConstant(t); break;
                 case GazpreaParser::CharacterConstant: visitCharacterConstant(t); break;
                 case GazpreaParser::BooleanConstant: visitBooleanConstant(t); break;
@@ -34,9 +38,8 @@ namespace gazprea {
     void TypeWalk::visitVariableDeclaration(std::shared_ptr<AST> t) { 
         //example of function use: character[3] cvec = 'c'; (promote char -> vec of char);
         visitChildren(t);
-        if (t->children[2]->evalType == nullptr) {
-            return;
-        }
+        if (t->children[2]->evalType == nullptr) { printf("here"); return; }
+
         //this indexing only works for explicit type i think..
         auto varTy = t->children[1]->evalType->getTypeId(); 
         auto exprTy = t->children[2]->evalType->getTypeId();
@@ -94,11 +97,25 @@ namespace gazprea {
 
     //Compound Types
     void TypeWalk::visitVectorLiteral(std::shared_ptr<AST> t) {
-
-        // t->evalType == std::dynamic_pointer_cast<Type>(symtab->globals->resolve());
+        visitChildren(t);
+        if (t->children[0]->children.size() == 0) { return; } //null vector
+        if (t->children[0]->children[0]->children[0]->getNodeType() == GazpreaParser::VECTOR_LITERAL_TOKEN) {
+            //matrix
+            auto baseType =  t->children[0]->children[0]->children[0]->children[0]->children[0]->evalType;
+            t->evalType = std::make_shared<MatrixType>(MatrixType(baseType, 1, t));
+            std::cout << "Matrix BaseType: " << baseType->getTypeId() << std::endl;
+            std::cout << "Matrix Type: "  << t->evalType->getTypeId() << std::endl;       
+        } else {
+            //literal vector
+            auto baseType = t->children[0]->children[0]->children[0]->evalType;
+            t->evalType = std::make_shared<MatrixType>(MatrixType(baseType, 1, t));
+            std::cout << "Vector BaseType: " << baseType->getTypeId() << std::endl;
+            std::cout << "Vector Type: "  << t->evalType->getTypeId() << std::endl;
+        }
+        t->promoteType = nullptr;
     }
 
-    void TypeWalk::visitTupler(std::shared_ptr<AST> t) {
+    void TypeWalk::visitTuple(std::shared_ptr<AST> t) {
 
     }
 

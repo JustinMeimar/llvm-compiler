@@ -6,6 +6,7 @@
 #include "Symbol.h"
 #include "LocalScope.h"
 #include "TypePromote.h"
+#include "MatrixType.h"
 
 namespace gazprea {
 
@@ -28,7 +29,7 @@ class TypeWalk {
 
         //Compound Types
         void visitVectorLiteral(std::shared_ptr<AST> t); //9,10,11,12 
-        void visitTupler(std::shared_ptr<AST> t); //0
+        void visitTuple(std::shared_ptr<AST> t); //0
         void visitInterval(std::shared_ptr<AST> t);
 
         //Terminal Types

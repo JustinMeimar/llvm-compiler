@@ -23,8 +23,8 @@ namespace gazprea {
             INTEGER_2 = 14,
             REAL_2 = 15
         };
+        virtual ~Type(); 
         virtual std::string getName() = 0;
-        virtual ~Type();
         virtual bool isTypedefType() = 0;
         virtual bool isMatrixType() = 0;
         virtual bool isIntervalType() = 0;
