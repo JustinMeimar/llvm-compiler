@@ -7,7 +7,7 @@
 const int64_t SIZE_UNKNOWN;
 const int64_t SIZE_UNSPECIFIED;  // for string only
 
-///TYPES
+/// TYPES
 typedef enum enum_gazprea_typeid {
     /// spec
     typeid_ndarray,
@@ -25,7 +25,7 @@ typedef enum enum_gazprea_typeid {
     NUM_TYPE_IDS            // number of ids in the enum
 } TypeID;
 
-///Element types are data types of elements for scalar, vector and matrix types
+/// Element types are data types of elements for scalar, vector and matrix types
 typedef enum enum_gazprea_element_typeid {
     element_integer,
     element_real,
@@ -39,8 +39,14 @@ typedef enum enum_gazprea_element_typeid {
 } ElementTypeID;
 // mixed element type is used for vector or matrix constructs that can have many types inside the same array temporarily
 
+/// Base types of interval type
+typedef enum enum_gazprea_interval_base_typeid {
+    integer_base_interval,
+    unspecified_base_interval,  // the interval alone
+} IntervalTypeBaseTypeID;
 
-///Unary/Binary Ops
+
+/// Unary/Binary Ops
 typedef enum enum_unary_op_code {
     unary_plus,
     unary_minus,

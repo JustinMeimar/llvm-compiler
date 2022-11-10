@@ -47,7 +47,7 @@ void typeDebugPrint(Type *this) {
             TupleType *CTI = this->m_compoundTypeInfo;
             printf(",nField=%ld,idToIdx=[", CTI->m_nField);
             for (int64_t i = 0; i < CTI->m_nField; i++) {
-                printf("%ld:%ld", CTI->m_idToIndex[i * 2], CTI->m_idToIndex[i * 2 + 1]);
+                printf("%ld", CTI->m_idxToStrid[i]);
                 if (i != CTI->m_nField - 1)
                     printf(",");
             }

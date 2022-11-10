@@ -35,8 +35,8 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
     // targetType
     TypeID targetTypeID = targetType->m_typeId;
 
-    if (rhsTypeID == typeid_stream_in || rhsTypeID == typeid_stream_out || rhsTypeID == typeid_unknown) {
-        ///- stream_in/stream_out/unknown -> any: invalid rhs type
+    if (rhsTypeID == typeid_stream_in || rhsTypeID == typeid_stream_out || !typeIsConcreteType(rhsType)) {
+        ///- stream_in/stream_out/unknown/unknown-size-array -> any: invalid rhs type
         targetTypeError(rhsType, "Invalid rhs type:");
     } else if (targetTypeID == typeid_stream_in || targetTypeID == typeid_stream_out || targetTypeID == typeid_empty_array) {
         ///- any -> stream_in/stream_out/empty array: invalid target type
@@ -45,18 +45,11 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         ArrayType *CTI = targetType->m_compoundTypeInfo;
         if (CTI->m_elementTypeID == element_mixed) {
             targetTypeError(targetType, "Attempt to convert into a mixed element array:");
-        } else if (!config->m_allowUnknownTargetArraySize) {
-            for (int64_t i = 0; i < CTI->m_nDim; i++) {
-                if (CTI->m_dims[i] < 0) {
-                    targetTypeError(targetType, "Attempt to convert into unknown size array:");
-                }
-            }
+        } else if (!config->m_allowUnknownTargetArraySize && arrayTypeHasUnknownSize(CTI)) {
+            targetTypeError(targetType, "Attempt to convert into unknown size array:");
         }
     } else if (config->m_isCast && (typeIsArrayNull(rhsType) || typeIsArrayIdentity(rhsType))) {
         targetTypeError(rhsType, "Null or identity not allowed to be rhs:");
-    } else if (typeIsArrayOrString(rhsType)) {
-        if (arrayTypeHasUnknownSize(rhsType->m_compoundTypeInfo))
-            targetTypeError(rhsType, "RHS type has unknown size:");
     }
 
     ///- empty array -> any
@@ -97,7 +90,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
             if (CTI->m_nDim != 0 || (eid != element_null && eid != element_identity))
                 targetTypeError(rhsType, "Attempt to convert to interval from:");
             this->m_type = typeMalloc();
-            typeInitFromIntervalType(this->m_type);
+            typeInitFromIntervalType(this->m_type, integer_base_interval);
             if (eid == element_null) {
                 variableInitFromNull(this, NULL);
             } else if (eid == element_identity) {
@@ -223,7 +216,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
                 if (dims[i] < 0)
                     dims[i] = rhsDims[i];
             }
-            if (config->m_rhsSizeRestriction < arrayTypeMinimumConpatibleRestriction(rhsCTI, CTI)) {
+            if (config->m_rhsSizeRestriction < arrayTypeMinimumCompatibleRestriction(rhsCTI, CTI)) {
                 errorAndExit("Incompatible vector size in convertion!");
             }
             // resize
@@ -292,6 +285,9 @@ void variableInitFromNull(Variable *this, Type *type) {
             targetTypeError(type, "Attempt to promote null into unknown type: ");
         this->m_data = arrayMallocFromNull(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI));
     } else if (typeid == typeid_interval) {
+        IntervalType *CTI = type->m_compoundTypeInfo;
+        if (intervalTypeIsUnspecified(CTI))
+            targetTypeError(type, "Attempt to promote null into unknown type: ");
         this->m_data = intervalTypeMallocDataFromNull();
     } else if (typeid == typeid_tuple) {
         this->m_data = tupleTypeMallocDataFromNull(type->m_compoundTypeInfo);
@@ -312,6 +308,9 @@ void variableInitFromIdentity(Variable *this, Type *type) {
             targetTypeError(type, "Attempt to promote identity into unknown type: ");
         this->m_data = arrayMallocFromIdentity(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI));
     } else if (typeid == typeid_interval) {
+        IntervalType *CTI = type->m_compoundTypeInfo;
+        if (intervalTypeIsUnspecified(CTI))
+            targetTypeError(type, "Attempt to promote null into unknown type: ");
         this->m_data = intervalTypeMallocDataFromIdentity();
     } else if (typeid == typeid_tuple) {
         this->m_data = tupleTypeMallocDataFromIdentity(type->m_compoundTypeInfo);
@@ -321,8 +320,11 @@ void variableInitFromIdentity(Variable *this, Type *type) {
 }
 
 void variableInitFromUnaryOp(Variable *this, Variable *operand, UnaryOpCode opcode) {
-    this->m_type = typeMalloc();
     Type *operandType = operand->m_type;
+    if (!typeIsConcreteType(operandType)) {
+        targetTypeError(operandType, "Attempt to perform unary op on type that is not a concrete type: ");
+    }
+    this->m_type = typeMalloc();
     typeInitFromCopy(this->m_type, operandType);
 
     if (operandType->m_typeId == typeid_interval) {
@@ -381,7 +383,7 @@ void computeIvlIvlBinop(Variable *this, Variable *op1, Variable *op2, BinOpCode 
         typeInitFromArrayType(this->m_type, element_boolean, 0, NULL);
         this->m_data = arrayMallocFromNull(element_boolean, 1);
     } else {
-        typeInitFromIntervalType(this->m_type);
+        typeInitFromIntervalType(this->m_type, integer_base_interval);
         this->m_data = intervalTypeMallocDataFromNull();
     }
     switch(opcode) {
@@ -471,7 +473,7 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
             if (op1Type->m_typeId == typeid_interval && !typeIsVectorOrString(op2Type)
                 || op2Type->m_typeId == typeid_interval && !typeIsVectorOrString(op1Type)) {
                 Type *ivlType = typeMalloc();
-                typeInitFromIntervalType(ivlType);
+                typeInitFromIntervalType(ivlType, integer_base_interval);
                 binopPromoteComputationAndDispose(this, op1, op2, opcode, ivlType, ivlType,
                                                   computeIvlIvlBinop);
                 typeDestructThenFree(ivlType);
@@ -523,7 +525,7 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
         } break;
         case binary_by: {
             Type *ivlType = typeMalloc();
-            typeInitFromIntervalType(ivlType);
+            typeInitFromIntervalType(ivlType, integer_base_interval);
             Type *intType = typeMalloc();
             typeInitFromArrayType(intType, element_integer, 0, NULL);
 
@@ -606,8 +608,10 @@ void variableInitFromBinaryOp(Variable *this, Variable *op1, Variable *op2, BinO
     // this function is responsible for dealing with null/identity/mixed arrays
     Type *op1Type = op1->m_type;
     Type *op2Type = op2->m_type;
-    if (typeIsStream(op1->m_type) || typeIsStream(op2->m_type) || op1Type->m_typeId == typeid_unknown || op2Type->m_typeId == typeid_unknown) {
-        errorAndExit("binary op cannot be performed on stream/unknown object!");
+    if (typeIsStream(op1Type) || typeIsStream(op2Type)) {
+        errorAndExit("binary op cannot be performed on stream object!");
+    } else if (!typeIsConcreteType(op1Type) || !typeIsConcreteType(op2Type)) {
+        errorAndExit("binary op can only be performed on concrete type!");
     }
     Variable *pop1 = op1;
     Variable *pop2 = op2;
@@ -713,7 +717,7 @@ void computeIntervalConstructBinop(Variable *this, Variable *head, Variable *tai
     int *headValue = head->m_data;
     int *tailValue = tail->m_data;
     this->m_type = typeMalloc();
-    typeInitFromIntervalType(this->m_type);
+    typeInitFromIntervalType(this->m_type, integer_base_interval);
     this->m_data = intervalTypeMallocDataFromHeadTail(*headValue, *tailValue);
 }
 

@@ -2,6 +2,15 @@
 #include "Literal.h"
 #include "NDArray.h"
 
+///------------------------------TYPE---------------------------------------------------------------
+
+void typeInitFromUnspecifiedInterval(Type *this) {
+    typeInitFromIntervalType(this, unspecified_base_interval);
+}
+
+
+///------------------------------VARIABLE---------------------------------------------------------------
+
 void variableInitFromBooleanScalar(Variable *this, bool value) {
     this->m_type = typeMalloc();
     typeInitFromArrayType(this->m_type, element_boolean, 0, NULL);
@@ -46,6 +55,24 @@ void variableInitFromIdentityScalar(Variable *this){
     this->m_type = typeMalloc();
     typeInitFromArrayType(this->m_type, element_identity, 0, NULL);
     this->m_data = arrayMallocFromIdentity(element_identity, 1);
+    this->m_fieldPos = -1;
+    this->m_parent = this->m_data;
+}
+
+void variableInitFromStdInput(Variable *this) {
+    this->m_type = typeMalloc();
+    this->m_type->m_compoundTypeInfo = NULL;
+    this->m_type->m_typeId = typeid_stream_in;
+    this->m_data = NULL;
+    this->m_fieldPos = -1;
+    this->m_parent = this->m_data;
+}
+
+void variableInitFromStdOutput(Variable *this) {
+    this->m_type = typeMalloc();
+    this->m_type->m_compoundTypeInfo = NULL;
+    this->m_type->m_typeId = typeid_stream_out;
+    this->m_data = NULL;
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
 }
