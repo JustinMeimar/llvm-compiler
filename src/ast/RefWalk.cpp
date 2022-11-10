@@ -53,6 +53,7 @@ namespace gazprea {
             variableDeclarationSymbol->typeQualifier = t->children[0]->children[0]->parseTree->getText();
         } else {
             if (t->children[0]->children[0]->isNil()) {
+                variableDeclarationSymbol->typeQualifier = "var";  // default type qualifier is var
                 variableDeclarationSymbol->type = t->children[0]->children[1]->type;
             } else {
                 variableDeclarationSymbol->typeQualifier = t->children[0]->children[0]->parseTree->getText();
@@ -90,6 +91,9 @@ namespace gazprea {
         }
         if (typeQualifierExist) {
             variableSymbol->typeQualifier = t->children[3]->parseTree->getText();
+        } else {
+            // Default type qualifier for subroutine parameter is const
+            variableSymbol->typeQualifier = "const";
         }
         if (numSingleTermType == 3) { 
             variableSymbol->type = std::make_shared<IntervalType>(t->children[0]->type);

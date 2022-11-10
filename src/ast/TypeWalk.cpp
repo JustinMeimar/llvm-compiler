@@ -54,6 +54,12 @@ namespace gazprea {
     void TypeWalk::visitVariableDeclaration(std::shared_ptr<AST> t) { 
         //example of function use: character[3] cvec = 'c'; (promote char -> vec of char);
         visitChildren(t);
+        if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
+            auto variableDeclarationSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
+            variableDeclarationSymbol->type = t->children[2]->evalType;
+            return;
+        }
+
         auto varTy = t->children[1]->evalType; 
         auto exprTy = t->children[2]->evalType;
 
@@ -77,12 +83,12 @@ namespace gazprea {
             if(promote != 0) {
                 t->children[2]->promoteToType = t->children[1]->evalType;
                 //uncomment to printout the promotion 
-                std::cout   << "VarDecl promotion:\t"
-                            << t->children[1]->parseTree->getText() <<  " of type "
-                            << t->children[1]->evalType->getTypeId() <<  " caused promotion of "
-                            << t->children[2]->parseTree->getText() << " of type " 
-                            << t->children[2]->evalType->getTypeId() << " into type " 
-                            << t->children[2]->promoteToType->getTypeId() << std::endl;    
+                // std::cout   << "VarDecl promotion:\t"
+                //             << t->children[1]->parseTree->getText() <<  " of type "
+                //             << t->children[1]->evalType->getTypeId() <<  " caused promotion of "
+                //             << t->children[2]->parseTree->getText() << " of type " 
+                //             << t->children[2]->evalType->getTypeId() << " into type " 
+                //             << t->children[2]->promoteToType->getTypeId() << std::endl;    
             }
         }
     }
@@ -162,7 +168,7 @@ namespace gazprea {
         visitChildren(t);
         t->evalType = t->children[0]->evalType;
         t->promoteToType = nullptr; 
-        if (t->evalType->getTypeId() == Type::TUPLE) {
+        if (t->evalType != nullptr && t->evalType->getTypeId() == Type::TUPLE) {
             auto tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
             t->tuplePromoteTypeList = std::vector<std::shared_ptr<Type>>(tupleType->orderedArgs.size());
         }
@@ -288,7 +294,7 @@ namespace gazprea {
     void TypeWalk::visitIdentifier(std::shared_ptr<AST> t) {
         t->evalType = t->symbol->type;
         t->promoteToType = nullptr;
-        if (t->evalType->getTypeId() == Type::TUPLE) {
+        if (t->evalType != nullptr && t->evalType->getTypeId() == Type::TUPLE) {
             auto tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
             t->tuplePromoteTypeList = std::vector<std::shared_ptr<Type>>(tupleType->orderedArgs.size());
         }
