@@ -98,12 +98,12 @@ std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::sha
     //lhs promote type
     int lhsPromoteType = this->promotionFromTo[lhsType][resTypeId];
     if (lhsPromoteType != 0) {
-        lhs->promoteType = newType;      
+        lhs->promoteToType = newType;      
     } 
     //rhs promote type
     int rhsPromoteType = this->promotionFromTo[rhsType][resTypeId];
     if (rhsPromoteType != 0) { 
-        rhs->promoteType = newType; // 
+        rhs->promoteToType = newType; // 
     }
 
     //return eval type

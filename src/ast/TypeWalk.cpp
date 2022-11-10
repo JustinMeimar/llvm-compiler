@@ -62,15 +62,15 @@ namespace gazprea {
 
             if (t->children[2]->children[0]->getNodeType() == GazpreaParser::TUPLE_LITERAL_TOKEN) {
                 auto exprTupleLiteral = t->children[2]->children[0];
-                std::cout << exprTupleLiteral->TuplePromoteTypeList.size() << std::endl; 
+                std::cout << exprTupleLiteral->tuplePromoteTypeList.size() << std::endl; 
             } 
             else if (t->children[2]->children[0]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
                 auto exprTupleId = t->children[2]->children[0]; 
-                std::cout << exprTupleId->TuplePromoteTypeList.size() << std::endl; 
+                std::cout << exprTupleId->tuplePromoteTypeList.size() << std::endl; 
             }
             // std::cout << t->children[2]->getNodeType();
             // std::cout << t->children[2]->children[0]->getNodeType();
-            // std::cout << exprTuple->TuplePromoteTypeList.size();
+            // std::cout << exprTuple->tuplePromoteTypeList.size();
             // auto varTuple  = std::dynamic_pointer_cast<TupleType>(varTy); 
             // auto exprTuple = std::dynamic_pointer_cast<TupleType>(exprTy);
             
@@ -91,7 +91,7 @@ namespace gazprea {
             
             //     if (promote != 0) {
             //         std::cout << "promoted index " << i << " : " <<promote << std::endl;
-            //         exprTupleMember->promoteType = varTuple->orderedArgs[i]->type;
+            //         exprTupleMember->promoteToType = varTuple->orderedArgs[i]->type;
             //     }
             // }
         } else { //all other variable types
@@ -100,37 +100,70 @@ namespace gazprea {
 
             int promote = tp->promotionFromTo[exprTyEnum][varTyEnum];
             if(promote != 0) {
-                t->children[2]->promoteType = t->children[1]->evalType;
+                t->children[2]->promoteToType = t->children[1]->evalType;
                 //uncomment to printout the promotion 
                 std::cout   << "VarDecl promotion:\t"
                             << t->children[1]->parseTree->getText() <<  " of type "
                             << t->children[1]->evalType->getTypeId() <<  " caused promotion of "
                             << t->children[2]->parseTree->getText() << " of type " 
                             << t->children[2]->evalType->getTypeId() << " into type " 
-                            << t->children[2]->promoteType->getTypeId() << std::endl;    
+                            << t->children[2]->promoteToType->getTypeId() << std::endl;    
             }
         }
     }
     
     void TypeWalk::visitIndex(std::shared_ptr<AST> t) {
         visitChildren(t);
-        // auto vectorType = t->children[0]->evalType;
+        int vectorTypeId = t->children[0]->evalType->getTypeId();
+        switch (vectorTypeId)
+        {
+        case Type::BOOLEAN_1:
+            t->evalType = symtab->getType(Type::BOOLEAN);
+            break;
+        case Type::CHARACTER_1:
+            t->evalType = symtab->getType(Type::CHARACTER);
+            break;
+        case Type::INTEGER_1:
+            t->evalType = symtab->getType(Type::INTEGER);
+            break;
+        case Type::REAL_1:
+            t->evalType = symtab->getType(Type::REAL);
+            break;
+        case Type::BOOLEAN_2:
+            t->evalType = symtab->getType(Type::BOOLEAN_1);
+            break;
+        case Type::CHARACTER_2:
+            t->evalType = symtab->getType(Type::CHARACTER_1);
+            break;
+        case Type::INTEGER_2:
+            t->evalType = symtab->getType(Type::INTEGER_1);
+            break;
+        case Type::REAL_2:
+            t->evalType = symtab->getType(Type::REAL_1);
+            break;
+        default:
+            break;
+        }
+        t->promoteToType = nullptr;
+
     }
 
     void TypeWalk::visitFilter(std::shared_ptr<AST> t) {
         visitChildren(t);
-        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("integer"));
-        t->promoteType = nullptr;
+        t->evalType = symtab->getType(Type::INTEGER_1);
+        t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitGenerator(std::shared_ptr<AST> t) {
         visitChildren(t);
-        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("integer"));
-        t->promoteType = nullptr;
+        t->evalType = symtab->getType(Type::INTEGER_1);
+        t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitCast(std::shared_ptr<AST> t) {
         visitChildren(t);
+        t->evalType = t->children[0]->evalType;
+        t->promoteToType = nullptr;
     }
     
     void TypeWalk::visitTupleAccess(std::shared_ptr<AST> t) {
@@ -140,20 +173,20 @@ namespace gazprea {
     void TypeWalk::visitExpression(std::shared_ptr<AST> t) {
         visitChildren(t);
         t->evalType = t->children[0]->evalType;
-        t->promoteType = nullptr; 
+        t->promoteToType = nullptr; 
     } 
 
     void TypeWalk::visitStringConcat(std::shared_ptr<AST> t) {
         visitChildren(t);
         t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("string"));
-        t->promoteType = nullptr;
+        t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitCallInExpr(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto sbrtSymbol = symtab->globals->resolve(t->children[0]->getText()); //get the subroutine symbol
         t->evalType = sbrtSymbol->type; //will be the return type
-        t->promoteType = nullptr;
+        t->promoteToType = nullptr;
     }
     
     void TypeWalk::visitBinaryOp(std::shared_ptr<AST> t) {
@@ -185,17 +218,17 @@ namespace gazprea {
             break; 
         }     
          //uncomment to print what is promoted
-        if (node1->promoteType != nullptr) {
-            std::cout << "BinaryOp promotion:\tpromote node1 " << node1->parseTree->getText() << " to type: "<< node1->promoteType->getTypeId() << std::endl;
-        } else if (node2->promoteType != nullptr) {
-            std::cout << "BinaryOp promotion:\tpromote node2 " << node2->parseTree->getText() << " to type: "<< node2->promoteType->getTypeId() << std::endl; 
+        if (node1->promoteToType != nullptr) {
+            std::cout << "BinaryOp promotion:\tpromote node1 " << node1->parseTree->getText() << " to type: "<< node1->promoteToType->getTypeId() << std::endl;
+        } else if (node2->promoteToType != nullptr) {
+            std::cout << "BinaryOp promotion:\tpromote node2 " << node2->parseTree->getText() << " to type: "<< node2->promoteToType->getTypeId() << std::endl; 
         }
     }
 
     void TypeWalk::visitUnaryOp(std::shared_ptr<AST> t) {
         visitChildren(t);
         t->evalType = t->children[1]->evalType;
-        t->promoteType = nullptr;
+        t->promoteToType = nullptr;
     }
 
     //Compound Types
@@ -211,60 +244,58 @@ namespace gazprea {
             auto baseType = t->children[0]->children[0]->children[0]->evalType;
             t->evalType = std::make_shared<MatrixType>(MatrixType(baseType, 1, t));
         }
-        t->promoteType = nullptr;
+        t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitTupleLiteral(std::shared_ptr<AST> t) {
         visitChildren(t);
         size_t tupleSize = t->children[0]->children.size();
-        t->evalType = std::make_shared<TupleType>(TupleType(currentScope, t, tupleSize));
+        auto tupleType = std::make_shared<TupleType>(TupleType(currentScope, t, tupleSize));
+        t->evalType = tupleType;
         //populate orderedArgs
-        auto tupleEvalType = std::dynamic_pointer_cast<TupleType>(t->evalType);
         for(size_t i = 0; i < tupleSize; i++) { 
             auto tupleMember = t->children[0]->children[i]; //AST of member
-            if (tupleMember->symbol == nullptr) { // tuple memebers ex: (a , 5, [3, 4, x], 'b') need to be initialized into orderedArgs
-                std::string argName = tupleMember->parseTree->getText();
-                auto argType = tupleMember->evalType;
-                t->TuplePromoteTypeList.push_back(argType); //push type of tuple member
-            }
+            tupleType->orderedArgs.push_back(std::make_shared<VariableSymbol>("", tupleMember->evalType));
         }
-        t->promoteType = nullptr;
+        t->tuplePromoteTypeList = std::vector<std::shared_ptr<Type>>(tupleSize);  // Initialize all elements to nullptr
+        t->promoteToType = nullptr;  // will not be used
     }
 
     void TypeWalk::visitIntervalLiteral(std::shared_ptr<AST> t) {
-        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("interval"));
-        t->promoteType = nullptr;
+        // t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("interval"));
+        t->evalType = symtab->getType(Type::INTEGER_INTERVAL);
+        t->promoteToType = nullptr;
     }
     
     //Terminal Types
     void TypeWalk::visitIntegerConstant(std::shared_ptr<AST> t) {
         t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("integer"));
-        t->promoteType = nullptr;
+        t->promoteToType = nullptr;
     }
     
     void TypeWalk::visitRealConstant(std::shared_ptr<AST> t) {
         t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("real"));
-        t->promoteType = nullptr; 
+        t->promoteToType = nullptr; 
     }
     
     void TypeWalk::visitCharacterConstant(std::shared_ptr<AST> t) {
         t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("character"));
-        t->promoteType = nullptr;
+        t->promoteToType = nullptr;
     }
     
     void TypeWalk::visitBooleanConstant(std::shared_ptr<AST> t) {
         t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("boolean"));
-        t->promoteType = nullptr;
+        t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitStringLiteral(std::shared_ptr<AST> t) {
         t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("string"));
-        t->promoteType = nullptr;
+        t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitIdentifier(std::shared_ptr<AST> t) {
         t->evalType = t->symbol->type;
-        t->promoteType = nullptr;
+        t->promoteToType = nullptr;
     }
     
 } // namespace gazprea 
