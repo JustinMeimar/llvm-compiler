@@ -126,6 +126,7 @@ namespace gazprea {
     }
 
     void RefWalk::visitIdentifier(std::shared_ptr<AST> t) {
+        // If the identifier is std_input or std_output, then t->scope->resolve(t->parseTree->getText()) <- nullptr
         t->symbol = t->scope->resolve(t->parseTree->getText());
     }
 

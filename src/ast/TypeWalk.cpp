@@ -39,6 +39,11 @@ namespace gazprea {
                 case GazpreaParser::StringLiteral: visitStringLiteral(t); break;
                 case GazpreaParser::IDENTIFIER_TOKEN: visitIdentifier(t); break;
                 
+                // Other Statements
+                case GazpreaParser::INPUT_STREAM_TOKEN:
+                case GazpreaParser::OUTPUT_STREAM_TOKEN:
+                    visitStreamStatement(t);
+                    break;
                 default: visitChildren(t);
             };
         }
@@ -147,7 +152,7 @@ namespace gazprea {
 
     void TypeWalk::visitCast(std::shared_ptr<AST> t) {
         visitChildren(t);
-        t->evalType = t->children[0]->evalType;
+        t->evalType = t->children[0]->type;
         t->promoteToType = nullptr;
     }
     
@@ -298,6 +303,10 @@ namespace gazprea {
             auto tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
             t->tuplePromoteTypeList = std::vector<std::shared_ptr<Type>>(tupleType->orderedArgs.size());
         }
+    }
+
+    void TypeWalk::visitStreamStatement(std::shared_ptr<AST> t) {
+        visit(t->children[0]);  // Only visiting the expression, not visiting the identifier
     }
     
 } // namespace gazprea 

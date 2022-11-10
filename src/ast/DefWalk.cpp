@@ -67,8 +67,8 @@ namespace gazprea {
         auto vs = std::make_shared<VariableSymbol>(identifierAST->parseTree->getText(), nullptr);
         vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = vs;  // track in AST
+        auto symbol = currentScope->resolve(identifierAST->parseTree->getText());
         currentScope->define(vs);
-        // symtab->globals->define(vs);
         visitChildren(t);
     }
 
