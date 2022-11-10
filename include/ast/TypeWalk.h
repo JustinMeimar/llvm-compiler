@@ -27,15 +27,25 @@ class TypeWalk {
         void visit(std::shared_ptr<AST> t); 
         void visitChildren(std::shared_ptr<AST> t);
 
-        void visitSubroutineDeclDef(std::shared_ptr<AST> t);
-        void visitVariableDeclaration(std::shared_ptr<AST> t);
+        //Top level exprs
+        void visitIndex(std::shared_ptr<AST> t);
+        void visitFilter(std::shared_ptr<AST> t);
+        void visitGenerator(std::shared_ptr<AST> t);
+        void visitCast(std::shared_ptr<AST> t);
         void visitExpression(std::shared_ptr<AST> t);
+        void visitTupleAccess(std::shared_ptr<AST> t);
+        void visitStringConcat(std::shared_ptr<AST> t);
+        void visitVariableDeclaration(std::shared_ptr<AST> t);
+        void visitCallInExpr(std::shared_ptr<AST> t);
+
+        //Operations        
         void visitBinaryOp(std::shared_ptr<AST> t);
+        void visitUnaryOp(std::shared_ptr<AST> t);
 
         //Compound Types
         void visitVectorLiteral(std::shared_ptr<AST> t); //9,10,11,12 
-        void visitTuple(std::shared_ptr<AST> t); //0
-        void visitInterval(std::shared_ptr<AST> t);
+        void visitTupleLiteral(std::shared_ptr<AST> t); //0
+        void visitIntervalLiteral(std::shared_ptr<AST> t);
 
         //Terminal Types
         void visitIntegerConstant(std::shared_ptr<AST> t);

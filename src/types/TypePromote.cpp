@@ -2,7 +2,7 @@
 
 namespace gazprea {
 
-TypePromote::TypePromote() {}
+TypePromote::TypePromote(std::shared_ptr<SymbolTable> symtab) : symtab(symtab) {}
 TypePromote::~TypePromote() {}
 
 // -1 means void type (invalid)
@@ -47,23 +47,23 @@ int TypePromote::relationalResultType[16][16] = { // <=, >=, <, >
 };
 
 int TypePromote::equalityResultType[16][16] = { // ===, !=
-    //                      0    1   2   3   4   5   6   7   8   9   10 11  12  13  14  15
+    //                       0   1    2   3   4   5   6   7   8   9  10  11  1 2  13  14  15
     /*   TUPLE          */ { 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    /*   INTERVAL       */ {-1,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    /*   BOOLEAN        */ {-1, -1,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    /*   CHARACTER      */ {-1, -1, -1,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    /*   INTEGER        */ {-1, -1, -1, -1,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    /*   REAL           */ {-1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    /*   STRING         */ {-1, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    /*   INTERVAL       */ {-1,  2, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1},
+    /*   BOOLEAN        */ {-1, -1,  2, -1, -1, -1, -1, -1,  2, -1, -1, -1,  2, -1, -1, -1},
+    /*   CHARACTER      */ {-1, -1, -1,  2, -1, -1, -1, -1, -1,  2, -1, -1, -1,  2, -1, -1},
+    /*   INTEGER        */ {-1, -1, -1, -1,  2, -1, -1, -1, -1, -1,  2,  2, -1, -1,  2,  2},
+    /*   REAL           */ {-1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1,  2, -1, -1, -1,  2},
+    /*   STRING         */ {-1, -1, -1, -1, -1, -1,  2, -1, -1,  2, -1, -1, -1, -1, -1, -1},
     /*   INTEGER_INTERVAL*/{-1, -1, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1, -1, -1, -1},
-    /*   BOOLEAN_1      */ {-1, -1, -1, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1, -1, -1},
-    /*   CHARACTER_1    */ {-1, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1, -1},
-    /*   INTEGER_1      */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1},
-    /*   REAL_1         */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1},
-    /*   BOOLEAN_2      */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1, -1, -1},
-    /*   CHARACTER_2    */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1, -1},
-    /*   INTEGER_2      */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1},
-    /*   REAL_2         */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2}
+    /*   BOOLEAN_1      */ {-1, -1,  2, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1, -1, -1},
+    /*   CHARACTER_1    */ {-1, -1, -1,  2, -1, -1,  2, -1, -1,  2, -1, -1, -1, -1, -1, -1},
+    /*   INTEGER_1      */ {-1, -1, -1, -1,  2, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1},
+    /*   REAL_1         */ {-1, -1, -1, -1,  2,  2, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1},
+    /*   BOOLEAN_ 2      */{-1, -1,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1, -1, -1},
+    /*   CHARACTER_ 2    */{-1, -1, -1,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1, -1},
+    /*   INTEGER_ 2      */{-1, -1, -1, -1,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1},
+    /*   REAL_ 2         */{-1, -1, -1, -1,  2,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2}
 };
 
 int TypePromote::promotionFromTo[16][16] = { // 0 = nullptr
@@ -90,29 +90,24 @@ std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::sha
 
     int lhsType = lhs->evalType->getTypeId();
     int rhsType = rhs->evalType->getTypeId();
-    int evalType = typeTable[lhsType][rhsType];
-    // CHECK IF EVAL TYPE == -1 IF SO THROW ERROR HERE std::cout << "Eval Type" << evalType << std::endl;
+    int resTypeId = typeTable[lhsType][rhsType];
+    // CHECK IF RESTYPEID == -1 IF SO THROW ERROR HERE std::cout << "Eval Type" << evalType << std::endl;
+    
+    auto newType = this->symtab->getType(resTypeId);
 
     //lhs promote type
-    int lhsPromoteType = this->promotionFromTo[lhsType][evalType];
+    int lhsPromoteType = this->promotionFromTo[lhsType][resTypeId];
     if (lhsPromoteType != 0) {
-        lhs->promoteType = rhs->evalType; // 
+        lhs->promoteType = newType;      
     } 
     //rhs promote type
-    int rhsPromoteType = this->promotionFromTo[rhsType][evalType];
+    int rhsPromoteType = this->promotionFromTo[rhsType][resTypeId];
     if (rhsPromoteType != 0) { 
-        rhs->promoteType = lhs->evalType; // 
+        rhs->promoteType = newType; // 
     }
+
     //return eval type
-    if (lhsType == evalType) {
-        return lhs->evalType;
-    }
-    else if (rhsType == evalType) {
-        return rhs->evalType;
-    }
-    else {
-        return nullptr;
-    }
+    return newType; 
 }
 
 } //namespace gazprea

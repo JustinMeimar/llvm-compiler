@@ -68,6 +68,7 @@ namespace gazprea {
         vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = vs;  // track in AST
         currentScope->define(vs);
+        // symtab->globals->define(vs);
         visitChildren(t);
     }
 

@@ -12,6 +12,8 @@ namespace gazprea {
     public:
         size_t size;
         std::vector<std::shared_ptr<Symbol>> orderedArgs;
+        std::vector<std::shared_ptr<Type>> promoteToTypeList;
+
         std::shared_ptr<AST> def;
 
         TupleType(std::shared_ptr<Scope> enclosingScope, std::shared_ptr<AST> def);

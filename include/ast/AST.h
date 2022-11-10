@@ -56,6 +56,7 @@ namespace gazprea {
 		//TypeWalk
 		std::shared_ptr<Type> evalType;
 		std::shared_ptr<Type> promoteType;
+		std::vector<std::shared_ptr<Type>> TuplePromoteTypeList;
 
         std::shared_ptr<Symbol> symbol; // Populate by Def and Ref pass
         std::shared_ptr<Type> type;  // Solely use for Type Reference in Ref pass
