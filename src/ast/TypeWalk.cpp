@@ -103,8 +103,8 @@ namespace gazprea {
     }
     
     void TypeWalk::visitVariableDeclaration(std::shared_ptr<AST> t) { 
-        //example of function use: character[3] cvec = 'c'; (promote char -> vec of char);
         visitChildren(t);
+        if (t->children[2]->isNil()) { return; } // Decl w/ no def 
         if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
             auto variableDeclarationSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
             variableDeclarationSymbol->type = t->children[2]->evalType;
