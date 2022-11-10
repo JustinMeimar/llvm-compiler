@@ -9,6 +9,8 @@
 #include "AST.h"
 #include "ASTBuilder.h"
 #include "DefWalk.h"
+#include "RefWalk.h"
+#include "TypeWalk.h"
 #include "SymbolTable.h"
 
 #include "DiagnosticErrorListener.h"
@@ -43,6 +45,7 @@ int main(int argc, char **argv) {
 
   // Get the root of the parse tree. Use your base rule name.
   antlr4::tree::ParseTree *tree = parser.compilationUnit();
+  // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
   
   //Build AST
   gazprea::ASTBuilder builder;
@@ -54,8 +57,13 @@ int main(int argc, char **argv) {
   gazprea::DefWalk defwalk(symtab);
   defwalk.visit(ast);
 
-  // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
-  std::cout << "ast:\n" << ast->toStringTree(&parser) << std::endl;
+  gazprea::RefWalk refwalk(symtab);
+  refwalk.visit(ast);
+
+  gazprea::TypeWalk typewalk(symtab);
+  typewalk.visit(ast);
+
+  // std::cout << "ast:\n" << ast->toStringTree(&parser) << std::endl;
 
   return 0;
 }

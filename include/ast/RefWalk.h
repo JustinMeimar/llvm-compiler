@@ -7,18 +7,20 @@
 #include "TypedefTypeSymbol.h"
 #include "LocalScope.h"
 #include "SubroutineSymbol.h"
+
+#include "MatrixType.h"
+#include "IntervalType.h"
 #include "TupleType.h"
 
 namespace gazprea {
 
-class DefWalk {
+class RefWalk {
     private:
         std::shared_ptr<SymbolTable> symtab;
         std::shared_ptr<Scope> currentScope;
-        std::shared_ptr<SubroutineSymbol> currentSubroutineScope;
     public:
-        DefWalk(std::shared_ptr<SymbolTable> symtab);
-        ~DefWalk();
+        RefWalk(std::shared_ptr<SymbolTable> symtab);
+        ~RefWalk();
 
         void visit(std::shared_ptr<AST> t); 
         void visitChildren(std::shared_ptr<AST> t);
@@ -27,21 +29,17 @@ class DefWalk {
         
         void visitTypedefStatement(std::shared_ptr<AST> t);  
         
-        void visitBlock(std::shared_ptr<AST> t);        
-
         void visitIdentifier(std::shared_ptr<AST> t);
 
         void visitVariableDeclaration(std::shared_ptr<AST> t);
 
+        void visitVectorMatrixType(std::shared_ptr<AST> t);
+
+        void visitSingleTokenType(std::shared_ptr<AST> t);
+
+        void visitUnqualifiedType(std::shared_ptr<AST> t);
+
         void visitParameterAtom(std::shared_ptr<AST> t);
-
-        void visitTupleType(std::shared_ptr<AST> t);
-
-        void visitBreak(std::shared_ptr<AST> t);
-        
-        void visitContinue(std::shared_ptr<AST> t);
-
-        void visitReturn(std::shared_ptr<AST> t);
 };
 
-} // namespace gazrepa
+} // namespace gazprea

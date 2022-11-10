@@ -8,7 +8,10 @@
 #include "Symbol.h"
 #include "GlobalScope.h"
 #include "BuiltInScalarTypeSymbol.h"
-#include "BuiltInTypeQualifierSymbol.h"
+#include "Type.h"
+#include "MatrixType.h"
+#include "TupleType.h"
+#include "IntervalType.h"
 
 namespace gazprea {
     class SymbolTable { // single-scope symtab
@@ -18,6 +21,7 @@ namespace gazprea {
         std::shared_ptr<GlobalScope> globals;
         SymbolTable();
 
+        std::shared_ptr<Type> getType(size_t typeEnum);
         std::string toString();
     };
 }

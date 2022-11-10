@@ -34,13 +34,11 @@ tokens {
     TUPLE_TYPE_TOKEN,
     CAST_TOKEN,
     VECTOR_SIZE_DECLARATION_LIST_TOKEN,
-    TUPLE_TYPE_DECLARATION_ATOM_TOKEN,
-    TUPLE_TYPE_DECLARATION_LIST_TOKEN,
+    PARAMETER_ATOM_TOKEN,
+    PARAMETER_LIST_TOKEN,
     SUBROUTINE_EMPTY_BODY_TOKEN,
     SUBROUTINE_EXPRESSION_BODY_TOKEN,
     SUBROUTINE_BLOCK_BODY_TOKEN,
-    FORMAL_PARAMETER_ATOM_TOKEN,
-    FORMAL_PARAMETER_LIST_TOKEN,
     IDENTIFIER_TOKEN,
     EXPLICIT_TYPE_TOKEN,
     INFERRED_TYPE_TOKEN,
@@ -79,20 +77,22 @@ nonBlockStatement: varDeclarationStatement
 vectorSizeDeclarationAtom: '*' | expression ;
 vectorSizeDeclarationList: vectorSizeDeclarationAtom (wS? ',' wS? vectorSizeDeclarationAtom)? ;
 
-tupleTypeDeclarationAtom: singleTermType (wS? singleTermType (wS? singleTermType)?)?;  // for tuple(a b) it's impossible to distinguish if b is a type or an id, parse them together
-tupleTypeDeclarationList: tupleTypeDeclarationAtom (wS? ',' wS? tupleTypeDeclarationAtom)* ;
+parameterAtom: (typeQualifier wS?)? singleTermType (wS? singleTermType (wS? singleTermType)?)?  // for f(a b) it's impossible to distinguish if b is a type or an id, parse them together
+             | typeQualifier
+             ;
+parameterList: parameterAtom (wS? ',' wS? parameterAtom)* ;
 
 singleTokenType: BOOLEAN | CHARACTER | INTEGER | REAL | STRING | INTERVAL | identifier;  // type represented by one token
 singleTermType:
      singleTokenType wS? '[' wS? vectorSizeDeclarationList wS? ']'  # VectorMatrixType
-     | TUPLE wS? '(' wS? tupleTypeDeclarationList wS? ')'           # TupleType
+     | TUPLE wS? '(' wS? parameterList wS? ')'                      # TupleType
      | singleTokenType                                              # SingleTokenTypeAtom
      ;
 
 typeQualifier: VAR | CONST ;
 unqualifiedType: singleTermType (wS? singleTermType)?;
 qualifiedType:
-    (typeQualifier wS?)? unqualifiedType  # ExplcitType
+    (typeQualifier wS?)? unqualifiedType  # ExplicitType
     | typeQualifier                       # InferredType
     ;
 
@@ -105,15 +105,13 @@ assignmentStatement: expressionList wS? '=' wS? expression wS? ';' ;
 
 // Function and Procedure
 expressionList: expression (wS? ',' wS? expression)* ;
-formalParameterAtom: qualifiedType wS? identifier ;
-formalParameterList: formalParameterAtom (wS? ',' wS? formalParameterAtom)* ;
 
 subroutineBody : ';'                    # SubroutineEmptyBody
         | '=' wS? expression wS? ';'    # SubroutineExprBody
         | block                         # SubroutineBlockBody
         ;
 subroutineDeclDef: (PROCEDURE | FUNCTION) wS? identifier wS?
-        '(' (wS? formalParameterList)? wS? ')' (wS? RETURNS wS? unqualifiedType)? wS? subroutineBody;
+        '(' (wS? parameterList)? wS? ')' (wS? RETURNS wS? unqualifiedType)? wS? subroutineBody;
 
 returnStatement: RETURN wS? expression wS? ';';
 
@@ -178,10 +176,12 @@ expr:
     | <assoc=right> expr wS? '||' wS? expr                                          # Concatenation
     | '[' wS? generatorDomainVariableList wS? '|' wS? expression wS? ']'            # Generator
     | '[' wS? identifier wS? IN wS? expression wS? '&' wS? expressionList wS? ']'   # Filter
+    | (TRUE | FALSE )                                                               # BooleanAtom
     | identifier                                                                    # IdentifierAtom
     | IntegerConstant                                                               # IntegerAtom
     | CharacterConstant                                                             # CharacterAtom
     | StringLiteral                                                                 # StringLiteralAtom
+    | (IDENTITY | NULL_LITERAL)                                                             # IdentityOrNullAtom
     ;
 //
 // Generator and Filter
@@ -203,13 +203,16 @@ CONST : 'const' ;
 CONTINUE : 'continue' ;
 E_TOKEN : 'e';
 ELSE : 'else' ;
+FALSE: 'false';
 FUNCTION: 'function' ;
+IDENTITY: 'identity';
 IF: 'if' ;
 IN: 'in' ;
 INTEGER: 'integer' ;
 INTERVAL: 'interval' ;
 LOOP : 'loop' ;
 NOT : 'not' ;
+NULL_LITERAL: 'null';
 OR : 'or' ;
 PROCEDURE : 'procedure' ;
 REAL : 'real' ;
@@ -217,6 +220,7 @@ RETURN : 'return' ;
 RETURNS : 'returns' ;
 STRING : 'string' ;
 TUPLE : 'tuple' ;
+TRUE: 'true';
 TYPEDEF: 'typedef' ;
 VAR : 'var' ;
 WHILE : 'while' ;
@@ -258,6 +262,8 @@ fragment SChar
     ;
 fragment EscapeSequence: '\\' ['"0abnrt\\] ;
 //
+
+BooleanConstant: ('true' | 'false');
 // Comment
 LineComment : '//' ~[\r\n]* -> skip ;
 BlockComment: '/*' .*? '*/' -> skip ;
