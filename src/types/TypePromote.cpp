@@ -92,7 +92,10 @@ std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::sha
     int rhsType = rhs->evalType->getTypeId();
     int resTypeId = typeTable[lhsType][rhsType];
     // CHECK IF RESTYPEID == -1 IF SO THROW ERROR HERE std::cout << "Eval Type" << evalType << std::endl;
-    
+    if (resTypeId == -1 ) { 
+        std::cout << "Compile-Time-Error: TypeTable invalid result\n";
+        return nullptr; 
+    }  
     auto newType = this->symtab->getType(resTypeId);
 
     //lhs promote type

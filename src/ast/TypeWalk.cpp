@@ -121,9 +121,11 @@ namespace gazprea {
                 std::cout << "Compile-time error!" << std::endl;
             }
             for (size_t i = 0; i < tupleTypeInExpression->orderedArgs.size(); i++) {
-                int promote = tp->promotionFromTo[tupleTypeInExpression->orderedArgs[i]->type->getTypeId()][tupleTypeInTypeSpecifier->orderedArgs[i]->type->getTypeId()];
+                int exprTupleElTy = tupleTypeInExpression->orderedArgs[i]->type->getTypeId();
+                int varTupleElTy =  tupleTypeInTypeSpecifier->orderedArgs[i]->type->getTypeId();
+                int promote = tp->promotionFromTo[exprTupleElTy][varTupleElTy]; 
                 if (promote != 0) {
-                    t->children[2]->tuplePromoteTypeList[i] = tupleTypeInTypeSpecifier->orderedArgs[i]->type;
+                    t->children[2]->tuplePromoteTypeList[i] = symtab->getType(promote);
                 }
             }
         } else { //all other variable types
@@ -133,13 +135,6 @@ namespace gazprea {
             int promote = tp->promotionFromTo[exprTyEnum][varTyEnum];
             if(promote != 0) {
                 t->children[2]->promoteToType = t->children[1]->evalType;
-                //uncomment to printout the promotion 
-                std::cout   << "VarDecl promotion:\t"
-                            << t->children[1]->parseTree->getText() <<  " of type "
-                            << t->children[1]->evalType->getTypeId() <<  " caused promotion of "
-                            << t->children[2]->parseTree->getText() << " of type " 
-                            << t->children[2]->evalType->getTypeId() << " into type " 
-                            << t->children[2]->promoteToType->getTypeId() << std::endl;    
             }
         }
     }
@@ -172,7 +167,6 @@ namespace gazprea {
                 int promote = tp->promotionFromTo[RHSTyEnum][LHSTyEnum];
                 if (promote != 0) {
                     t->children[1]->promoteToType = LHSExpressionAST->evalType;
-                    std::cout << t->children[1]->promoteToType->getTypeId() << std::endl;
                 }
             }
         } else {
@@ -313,12 +307,6 @@ namespace gazprea {
                 t->evalType = tp->getResultType(tp->equalityResultType, node1, node2);
             break; 
         }     
-        //uncomment to print what is promoted
-        // if (node1->promoteToType != nullptr) {
-        //     std::cout << "BinaryOp promotion:\tpromote node1 " << node1->parseTree->getText() << " to type: "<< node1->promoteToType->getTypeId() << std::endl;
-        // } else if (node2->promoteToType != nullptr) {
-        //     std::cout << "BinaryOp promotion:\tpromote node2 " << node2->parseTree->getText() << " to type: "<< node2->promoteToType->getTypeId() << std::endl; 
-        // }
     }
 
     void TypeWalk::visitUnaryOp(std::shared_ptr<AST> t) {

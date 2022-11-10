@@ -110,6 +110,9 @@ namespace gazprea {
         } else if (numSingleTermType == 1) {
             auto symbol = symtab->globals->resolve(t->children[0]->parseTree->getText());
             if (t->children[0]->getNodeType() == GazpreaParser::VECTOR_TYPE_TOKEN || t->children[0]->getNodeType() == GazpreaParser::TUPLE_TYPE_TOKEN) {
+                if(t->children[0]->type->getTypeId() == -1) { //string[n] picked up as VECTOR, assign type as string
+                    t->children[0]->type = symtab->getType(Type::STRING); 
+                }
                 variableSymbol->type = t->children[0]->type;
             } else if (symbol == nullptr || !symbol->isType()) {
                 variableSymbol->name = t->children[0]->parseTree->getText();
