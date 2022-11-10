@@ -144,6 +144,15 @@ namespace gazprea {
     
     void TypeWalk::visitTupleAccess(std::shared_ptr<AST> t) {
         visitChildren(t);
+        auto tupleType = std::dynamic_pointer_cast<TupleType>(t->children[0]->evalType);
+        if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
+            auto argSymbol = tupleType->resolve(t->children[1]->parseTree->getText());
+            t->evalType = argSymbol->type;
+        } else {
+            auto index = std::stoi(t->children[1]->parseTree->getText());
+            t->evalType = tupleType->orderedArgs[index - 1]->type;
+        }
+        t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitExpression(std::shared_ptr<AST> t) {
