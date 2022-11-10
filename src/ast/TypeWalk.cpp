@@ -57,43 +57,19 @@ namespace gazprea {
         auto exprTy = t->children[2]->evalType;
 
         if (varTy->isTupleType() && exprTy->isTupleType()) {  //specifically for tuple
-
-            auto varTuple = t->children[1];
-
-            if (t->children[2]->children[0]->getNodeType() == GazpreaParser::TUPLE_LITERAL_TOKEN) {
-                auto exprTupleLiteral = t->children[2]->children[0];
-                std::cout << exprTupleLiteral->tuplePromoteTypeList.size() << std::endl; 
-            } 
-            else if (t->children[2]->children[0]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
-                auto exprTupleId = t->children[2]->children[0]; 
-                std::cout << exprTupleId->tuplePromoteTypeList.size() << std::endl; 
+            auto tupleTypeInTypeSpecifier = std::dynamic_pointer_cast<TupleType>(varTy);
+            auto tupleTypeInExpression = std::dynamic_pointer_cast<TupleType>(exprTy);
+            if (tupleTypeInTypeSpecifier->orderedArgs.size() != tupleTypeInExpression->orderedArgs.size()) {
+                std::cout << "Compile-time error!" << std::endl;
             }
-            // std::cout << t->children[2]->getNodeType();
-            // std::cout << t->children[2]->children[0]->getNodeType();
-            // std::cout << exprTuple->tuplePromoteTypeList.size();
-            // auto varTuple  = std::dynamic_pointer_cast<TupleType>(varTy); 
-            // auto exprTuple = std::dynamic_pointer_cast<TupleType>(exprTy);
-            
-            // std::shared_ptr<AST> exprNode = t->children[2]->children[0]; 
-            // for(int i=0; i < varTuple->size; i++) {
-            //     auto fromType = exprTuple->orderedArgs[i]->type->getTypeId();
-            //     auto toType   = varTuple->orderedArgs[i]->type->getTypeId();
-            //     int promote = tp->promotionFromTo[fromType][toType]; 
-
-            //     // std::cout << t->children[2]->children[0]->getNodeType() << std::endl;
-            //     std::shared_ptr<AST> exprTupleMember; 
-            //     if (exprNode->nodeType == GazpreaParser::TUPLE_LITERAL_TOKEN) {
-            //         exprTupleMember = exprNode->children[0]->children[i]; 
-            //     } else if (exprNode->nodeType == GazpreaParser::IDENTIFIER_TOKEN) {
-            //         auto tupleSymb = currentScope->resolve(exprNode->getText());
-            //         exprTupleMember = tupleSymb->def->children[2]->children[0]->children[0]->children[i]->children[0];
-            //     }
-            
-            //     if (promote != 0) {
-            //         std::cout << "promoted index " << i << " : " <<promote << std::endl;
-            //         exprTupleMember->promoteToType = varTuple->orderedArgs[i]->type;
-            //     }
-            // }
+            for (size_t i = 0; i < tupleTypeInExpression->orderedArgs.size(); i++) {
+                int promote = tp->promotionFromTo[tupleTypeInExpression->orderedArgs[i]->type->getTypeId()][tupleTypeInTypeSpecifier->orderedArgs[i]->type->getTypeId()];
+                if (promote != 0) {
+                    t->children[2]->tuplePromoteTypeList[i] = tupleTypeInTypeSpecifier->orderedArgs[i]->type;
+                } else {
+                    std::cout << "Compile-time error!" << std::endl;
+                }
+            }
         } else { //all other variable types
             int varTyEnum = varTy->getTypeId();
             int exprTyEnum = exprTy->getTypeId(); 
@@ -250,7 +226,7 @@ namespace gazprea {
     void TypeWalk::visitTupleLiteral(std::shared_ptr<AST> t) {
         visitChildren(t);
         size_t tupleSize = t->children[0]->children.size();
-        auto tupleType = std::make_shared<TupleType>(TupleType(currentScope, t, tupleSize));
+        auto tupleType = std::make_shared<TupleType>(currentScope, t, tupleSize);
         t->evalType = tupleType;
         //populate orderedArgs
         for(size_t i = 0; i < tupleSize; i++) { 
