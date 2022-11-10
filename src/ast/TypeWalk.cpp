@@ -19,6 +19,7 @@ namespace gazprea {
                 case GazpreaParser::TUPLE_ACCESS_TOKEN: visitTupleAccess(t); break;
                 case GazpreaParser::STRING_CONCAT_TOKEN: visitStringConcat(t);break;
                 case GazpreaParser::VAR_DECLARATION_TOKEN: visitVariableDeclaration(t); break; 
+                case GazpreaParser::ASSIGNMENT_TOKEN: visitAssignment(t); break;
                 case GazpreaParser::CALL_PROCEDURE_FUNCTION_IN_EXPRESSION: visitCallInExpr(t); break;
             
                 //Operations 
@@ -66,8 +67,6 @@ namespace gazprea {
                 int promote = tp->promotionFromTo[tupleTypeInExpression->orderedArgs[i]->type->getTypeId()][tupleTypeInTypeSpecifier->orderedArgs[i]->type->getTypeId()];
                 if (promote != 0) {
                     t->children[2]->tuplePromoteTypeList[i] = tupleTypeInTypeSpecifier->orderedArgs[i]->type;
-                } else {
-                    std::cout << "Compile-time error!" << std::endl;
                 }
             }
         } else { //all other variable types
@@ -86,6 +85,10 @@ namespace gazprea {
                             << t->children[2]->promoteToType->getTypeId() << std::endl;    
             }
         }
+    }
+
+    void TypeWalk::visitAssignment(std::shared_ptr<AST> t) {
+        visitChildren(t);
     }
     
     void TypeWalk::visitIndex(std::shared_ptr<AST> t) {
@@ -159,6 +162,10 @@ namespace gazprea {
         visitChildren(t);
         t->evalType = t->children[0]->evalType;
         t->promoteToType = nullptr; 
+        if (t->evalType->getTypeId() == Type::TUPLE) {
+            auto tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
+            t->tuplePromoteTypeList = std::vector<std::shared_ptr<Type>>(tupleType->orderedArgs.size());
+        }
     } 
 
     void TypeWalk::visitStringConcat(std::shared_ptr<AST> t) {
@@ -281,6 +288,10 @@ namespace gazprea {
     void TypeWalk::visitIdentifier(std::shared_ptr<AST> t) {
         t->evalType = t->symbol->type;
         t->promoteToType = nullptr;
+        if (t->evalType->getTypeId() == Type::TUPLE) {
+            auto tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
+            t->tuplePromoteTypeList = std::vector<std::shared_ptr<Type>>(tupleType->orderedArgs.size());
+        }
     }
     
 } // namespace gazprea 

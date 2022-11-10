@@ -36,6 +36,7 @@ class TypeWalk {
         void visitTupleAccess(std::shared_ptr<AST> t);
         void visitStringConcat(std::shared_ptr<AST> t);
         void visitVariableDeclaration(std::shared_ptr<AST> t);
+        void visitAssignment(std::shared_ptr<AST> t);
         void visitCallInExpr(std::shared_ptr<AST> t);
 
         //Operations        
