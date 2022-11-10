@@ -11,40 +11,86 @@ namespace gazprea {
         if(!t->isNil()){
             switch(t->getNodeType()){
                 //Top level exprs 
-                case GazpreaParser::INDEXING_TOKEN: visitIndex(t); break;
-                case GazpreaParser::FILTER_TOKEN: visitFilter(t); break;
-                case GazpreaParser::GENERATOR_TOKEN: visitGenerator(t); break;
-                case GazpreaParser::CAST_TOKEN: visitCast(t); break;
-                case GazpreaParser::EXPRESSION_TOKEN: visitExpression(t);  break;
-                case GazpreaParser::TUPLE_ACCESS_TOKEN: visitTupleAccess(t); break;
-                case GazpreaParser::STRING_CONCAT_TOKEN: visitStringConcat(t);break;
-                case GazpreaParser::VAR_DECLARATION_TOKEN: visitVariableDeclaration(t); break; 
-                case GazpreaParser::ASSIGNMENT_TOKEN: visitAssignment(t); break;
-                case GazpreaParser::CALL_PROCEDURE_FUNCTION_IN_EXPRESSION: visitCallInExpr(t); break;
+                case GazpreaParser::INDEXING_TOKEN:
+                    visitIndex(t);
+                    break;
+                case GazpreaParser::FILTER_TOKEN:
+                    visitFilter(t);
+                    break;
+                case GazpreaParser::GENERATOR_TOKEN:
+                    visitGenerator(t);
+                    break;
+                case GazpreaParser::CAST_TOKEN:
+                    visitCast(t);
+                    break;
+                case GazpreaParser::EXPRESSION_TOKEN:
+                    visitExpression(t);
+                    break;
+                case GazpreaParser::TUPLE_ACCESS_TOKEN:
+                    visitTupleAccess(t);
+                    break;
+                case GazpreaParser::STRING_CONCAT_TOKEN: 
+                    visitStringConcat(t);
+                    break;
+                case GazpreaParser::VAR_DECLARATION_TOKEN:
+                    visitVariableDeclaration(t);
+                    break; 
+                case GazpreaParser::ASSIGNMENT_TOKEN:
+                    visitAssignment(t);
+                    break;
+                case GazpreaParser::CALL_PROCEDURE_FUNCTION_IN_EXPRESSION:
+                    visitCallInExpr(t);
+                    break;
             
                 //Operations 
-                case GazpreaParser::UNARY_TOKEN: visitUnaryOp(t); break;
-                case GazpreaParser::BINARY_OP_TOKEN: visitBinaryOp(t); break;
+                case GazpreaParser::UNARY_TOKEN:
+                    visitUnaryOp(t);
+                    break;
+                case GazpreaParser::BINARY_OP_TOKEN:
+                    visitBinaryOp(t);
+                    break;
 
                 //Compound Literal Types
-                case GazpreaParser::VECTOR_LITERAL_TOKEN: visitVectorLiteral(t); break;
-                case GazpreaParser::TUPLE_LITERAL_TOKEN: visitTupleLiteral(t); break;
-                case GazpreaParser::INTERVAL: visitIntervalLiteral(t); break;
+                case GazpreaParser::VECTOR_LITERAL_TOKEN:
+                    visitVectorLiteral(t);
+                    break;
+                case GazpreaParser::TUPLE_LITERAL_TOKEN:
+                    visitTupleLiteral(t);
+                    break;
+                case GazpreaParser::INTERVAL:
+                    visitIntervalLiteral(t);
+                    break;
 
                 //Literal Types
-                case GazpreaParser::IntegerConstant: visitIntegerConstant(t); break;
-                case GazpreaParser::CharacterConstant: visitCharacterConstant(t); break;
-                case GazpreaParser::BooleanConstant: visitBooleanConstant(t); break;
-                case GazpreaParser::REAL_CONSTANT_TOKEN: visitRealConstant(t); break;
-                case GazpreaParser::StringLiteral: visitStringLiteral(t); break;
-                case GazpreaParser::IDENTIFIER_TOKEN: visitIdentifier(t); break;
+                case GazpreaParser::IntegerConstant:
+                    visitIntegerConstant(t);
+                    break;
+                case GazpreaParser::CharacterConstant:
+                    visitCharacterConstant(t);
+                    break;
+                case GazpreaParser::BooleanConstant:
+                    visitBooleanConstant(t);
+                    break;
+                case GazpreaParser::REAL_CONSTANT_TOKEN:
+                    visitRealConstant(t);
+                    break;
+                case GazpreaParser::StringLiteral:
+                    visitStringLiteral(t);
+                    break;
+                case GazpreaParser::IDENTIFIER_TOKEN:
+                    visitIdentifier(t);
+                    break;
                 
                 // Other Statements
                 case GazpreaParser::INPUT_STREAM_TOKEN:
                 case GazpreaParser::OUTPUT_STREAM_TOKEN:
                     visitStreamStatement(t);
                     break;
-                default: visitChildren(t);
+                case GazpreaParser::TYPEDEF:
+                    visitTypedefStatement(t);
+                    break;
+                default:
+                    visitChildren(t);
             };
         }
         else {
@@ -88,51 +134,98 @@ namespace gazprea {
             if(promote != 0) {
                 t->children[2]->promoteToType = t->children[1]->evalType;
                 //uncomment to printout the promotion 
-                // std::cout   << "VarDecl promotion:\t"
-                //             << t->children[1]->parseTree->getText() <<  " of type "
-                //             << t->children[1]->evalType->getTypeId() <<  " caused promotion of "
-                //             << t->children[2]->parseTree->getText() << " of type " 
-                //             << t->children[2]->evalType->getTypeId() << " into type " 
-                //             << t->children[2]->promoteToType->getTypeId() << std::endl;    
+                std::cout   << "VarDecl promotion:\t"
+                            << t->children[1]->parseTree->getText() <<  " of type "
+                            << t->children[1]->evalType->getTypeId() <<  " caused promotion of "
+                            << t->children[2]->parseTree->getText() << " of type " 
+                            << t->children[2]->evalType->getTypeId() << " into type " 
+                            << t->children[2]->promoteToType->getTypeId() << std::endl;    
             }
         }
     }
 
     void TypeWalk::visitAssignment(std::shared_ptr<AST> t) {
         visitChildren(t);
+        auto RHSTy = t->children[1]->evalType;
+        auto numLHSExpressions = t->children[0]->children.size();
+        if (numLHSExpressions == 1) {
+            auto LHSExpressionAST = t->children[0]->children[0];
+
+            if (LHSExpressionAST->evalType->getTypeId() == Type::TUPLE && RHSTy->getTypeId() == Type::TUPLE) {
+                auto tupleTypeInRHSExpression = std::dynamic_pointer_cast<TupleType>(RHSTy);
+                auto tupleTypeInLHSExpression = std::dynamic_pointer_cast<TupleType>(LHSExpressionAST->evalType);
+
+                if (tupleTypeInRHSExpression->orderedArgs.size() != tupleTypeInLHSExpression->orderedArgs.size()) {
+                    std::cout << "Compile-time error!" << std::endl;
+                    return;
+                }
+
+                for (size_t i = 0; i < tupleTypeInRHSExpression->orderedArgs.size(); i++) {
+                    int promote = tp->promotionFromTo[tupleTypeInRHSExpression->orderedArgs[i]->type->getTypeId()][tupleTypeInLHSExpression->orderedArgs[i]->type->getTypeId()];
+                    if (promote != 0) {
+                        t->children[1]->tuplePromoteTypeList[i] = tupleTypeInLHSExpression->orderedArgs[i]->type;
+                    }
+                }
+            } else {
+                int LHSTyEnum = LHSExpressionAST->evalType->getTypeId();
+                int RHSTyEnum = RHSTy->getTypeId();
+                int promote = tp->promotionFromTo[RHSTyEnum][LHSTyEnum];
+                if (promote != 0) {
+                    t->children[1]->promoteToType = LHSExpressionAST->evalType;
+                    std::cout << t->children[1]->promoteToType->getTypeId() << std::endl;
+                }
+            }
+        } else {
+            // Tuple Parallel Assignment
+            if (RHSTy->getTypeId() != Type::TUPLE) {
+                std::cout << "Compile-time error! - RHS must be a tuple in Parallel Assignment" << std::endl;
+                return;
+            }
+            // RHS must be a tuple
+            auto tupleTypeInRHSExpression = std::dynamic_pointer_cast<TupleType>(RHSTy);
+            if (numLHSExpressions != tupleTypeInRHSExpression->orderedArgs.size()) {
+                std::cout << "Compile-time error! - Incompatible type assignment" << std::endl;
+                return;
+            }
+            for (size_t i = 0; i < numLHSExpressions; i++) {
+                auto LHSExpressionAtomAST = t->children[0]->children[i];
+                int promote = tp->promotionFromTo[tupleTypeInRHSExpression->orderedArgs[i]->type->getTypeId()][LHSExpressionAtomAST->evalType->getTypeId()];
+                if (promote != 0) {
+                    t->children[1]->tuplePromoteTypeList[i] = LHSExpressionAtomAST->evalType;
+                }
+            }
+        }
     }
     
     void TypeWalk::visitIndex(std::shared_ptr<AST> t) {
         visitChildren(t);
-        int vectorTypeId = t->children[0]->evalType->getTypeId();
-        switch (vectorTypeId)
-        {
-        case Type::BOOLEAN_1:
-            t->evalType = symtab->getType(Type::BOOLEAN);
-            break;
-        case Type::CHARACTER_1:
-            t->evalType = symtab->getType(Type::CHARACTER);
-            break;
-        case Type::INTEGER_1:
-            t->evalType = symtab->getType(Type::INTEGER);
-            break;
-        case Type::REAL_1:
-            t->evalType = symtab->getType(Type::REAL);
-            break;
-        case Type::BOOLEAN_2:
-            t->evalType = symtab->getType(Type::BOOLEAN_1);
-            break;
-        case Type::CHARACTER_2:
-            t->evalType = symtab->getType(Type::CHARACTER_1);
-            break;
-        case Type::INTEGER_2:
-            t->evalType = symtab->getType(Type::INTEGER_1);
-            break;
-        case Type::REAL_2:
-            t->evalType = symtab->getType(Type::REAL_1);
-            break;
-        default:
-            break;
+        switch (t->children[0]->evalType->getTypeId()) {
+            case Type::BOOLEAN_1:
+                t->evalType = symtab->getType(Type::BOOLEAN);
+                break;
+            case Type::CHARACTER_1:
+                t->evalType = symtab->getType(Type::CHARACTER);
+                break;
+            case Type::INTEGER_1:
+                t->evalType = symtab->getType(Type::INTEGER);
+                break;
+            case Type::REAL_1:
+                t->evalType = symtab->getType(Type::REAL);
+                break;
+            case Type::BOOLEAN_2:
+                t->evalType = symtab->getType(Type::BOOLEAN_1);
+                break;
+            case Type::CHARACTER_2:
+                t->evalType = symtab->getType(Type::CHARACTER_1);
+                break;
+            case Type::INTEGER_2:
+                t->evalType = symtab->getType(Type::INTEGER_1);
+                break;
+            case Type::REAL_2:
+                t->evalType = symtab->getType(Type::REAL_1);
+                break;
+            default:
+                break;
         }
         t->promoteToType = nullptr;
 
@@ -157,7 +250,7 @@ namespace gazprea {
     }
     
     void TypeWalk::visitTupleAccess(std::shared_ptr<AST> t) {
-        visitChildren(t);
+        visit(t->children[0]);
         auto tupleType = std::dynamic_pointer_cast<TupleType>(t->children[0]->evalType);
         if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
             auto argSymbol = tupleType->resolve(t->children[1]->parseTree->getText());
@@ -188,7 +281,7 @@ namespace gazprea {
     void TypeWalk::visitCallInExpr(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto sbrtSymbol = symtab->globals->resolve(t->children[0]->getText()); //get the subroutine symbol
-        t->evalType = sbrtSymbol->type; //will be the return type
+        t->evalType = sbrtSymbol->type;  //will be the return type
         t->promoteToType = nullptr;
     }
     
@@ -220,12 +313,12 @@ namespace gazprea {
                 t->evalType = tp->getResultType(tp->equalityResultType, node1, node2);
             break; 
         }     
-         //uncomment to print what is promoted
-        if (node1->promoteToType != nullptr) {
-            std::cout << "BinaryOp promotion:\tpromote node1 " << node1->parseTree->getText() << " to type: "<< node1->promoteToType->getTypeId() << std::endl;
-        } else if (node2->promoteToType != nullptr) {
-            std::cout << "BinaryOp promotion:\tpromote node2 " << node2->parseTree->getText() << " to type: "<< node2->promoteToType->getTypeId() << std::endl; 
-        }
+        //uncomment to print what is promoted
+        // if (node1->promoteToType != nullptr) {
+        //     std::cout << "BinaryOp promotion:\tpromote node1 " << node1->parseTree->getText() << " to type: "<< node1->promoteToType->getTypeId() << std::endl;
+        // } else if (node2->promoteToType != nullptr) {
+        //     std::cout << "BinaryOp promotion:\tpromote node2 " << node2->parseTree->getText() << " to type: "<< node2->promoteToType->getTypeId() << std::endl; 
+        // }
     }
 
     void TypeWalk::visitUnaryOp(std::shared_ptr<AST> t) {
@@ -265,34 +358,33 @@ namespace gazprea {
     }
 
     void TypeWalk::visitIntervalLiteral(std::shared_ptr<AST> t) {
-        // t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("interval"));
         t->evalType = symtab->getType(Type::INTEGER_INTERVAL);
         t->promoteToType = nullptr;
     }
     
     //Terminal Types
     void TypeWalk::visitIntegerConstant(std::shared_ptr<AST> t) {
-        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("integer"));
+        t->evalType = symtab->getType(Type::INTEGER);
         t->promoteToType = nullptr;
     }
     
     void TypeWalk::visitRealConstant(std::shared_ptr<AST> t) {
-        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("real"));
+        t->evalType = symtab->getType(Type::REAL);
         t->promoteToType = nullptr; 
     }
     
     void TypeWalk::visitCharacterConstant(std::shared_ptr<AST> t) {
-        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("character"));
+        t->evalType = symtab->getType(Type::CHARACTER);
         t->promoteToType = nullptr;
     }
     
     void TypeWalk::visitBooleanConstant(std::shared_ptr<AST> t) {
-        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("boolean"));
+        t->evalType = symtab->getType(Type::BOOLEAN);
         t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitStringLiteral(std::shared_ptr<AST> t) {
-        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("string"));
+        t->evalType = symtab->getType(Type::STRING);
         t->promoteToType = nullptr;
     }
 
@@ -307,6 +399,10 @@ namespace gazprea {
 
     void TypeWalk::visitStreamStatement(std::shared_ptr<AST> t) {
         visit(t->children[0]);  // Only visiting the expression, not visiting the identifier
+    }
+
+    void TypeWalk::visitTypedefStatement(std::shared_ptr<AST> t) {
+        visit(t->children[0]);
     }
     
 } // namespace gazprea 

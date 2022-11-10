@@ -58,6 +58,7 @@ class TypeWalk {
 
         //Other Statements
         void visitStreamStatement(std::shared_ptr<AST> t);
+        void visitTypedefStatement(std::shared_ptr<AST> t);
 };
 
 } // namespace gazprea

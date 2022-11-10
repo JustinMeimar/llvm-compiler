@@ -59,7 +59,7 @@ namespace gazprea {
 		std::vector<std::shared_ptr<Type>> tuplePromoteTypeList;
 
         std::shared_ptr<Symbol> symbol; // Populate by Def and Ref pass
-        std::shared_ptr<Type> type;  // Solely use for Type Reference in Ref pass
+        std::shared_ptr<Type> type;  // Only use for visitUnqualifiedType() and its subrules in Ref pass
         std::shared_ptr<Scope> scope;  // Populate by Def pass
     };
 }
