@@ -10,9 +10,13 @@ namespace gazprea {
     private:
         std::shared_ptr<Scope> enclosingScope;
     public:
-        std::vector<std::shared_ptr<Symbol>> orderedArgs;
         std::shared_ptr<AST> def;
+        size_t size;
+        std::vector<std::shared_ptr<Symbol>> orderedArgs;
+
         TupleType(std::shared_ptr<Scope> enclosingScope, std::shared_ptr<AST> def);
+        TupleType(std::shared_ptr<Scope> enclosingScope, std::shared_ptr<AST> def, size_t size);
+
         bool isTypedefType() {
             return false;
         }

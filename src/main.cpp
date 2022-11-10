@@ -10,6 +10,7 @@
 #include "ASTBuilder.h"
 #include "DefWalk.h"
 #include "RefWalk.h"
+#include "TypeWalk.h"
 #include "SymbolTable.h"
 
 #include "DiagnosticErrorListener.h"
@@ -58,8 +59,11 @@ int main(int argc, char **argv) {
   gazprea::RefWalk refwalk(symtab);
   refwalk.visit(ast);
 
+  gazprea::TypeWalk typewalk(symtab);
+  typewalk.visit(ast);
+
   // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
-  std::cout << "ast:\n" << ast->toStringTree(&parser) << std::endl;
+  // std::cout << "ast:\n" << ast->toStringTree(&parser) << std::endl;
 
   return 0;
 }

@@ -8,6 +8,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/ASTBuilder.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/DefWalk.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/ast/RefWalk.cpp" 
+    "${CMAKE_CURRENT_SOURCE_DIR}/ast/TypeWalk.cpp" 
     #scopes 
     "${CMAKE_CURRENT_SOURCE_DIR}/scopes/BaseScope.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/scopes/GlobalScope.cpp"
@@ -25,6 +26,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/types/MatrixType.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/types/TupleType.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/types/Type.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/types/TypePromote.cpp"
 
 )
 

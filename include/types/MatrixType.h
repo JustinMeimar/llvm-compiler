@@ -10,7 +10,10 @@ namespace gazprea {
         std::shared_ptr<Type> baseType;
         int dimension;  // 1 for Vector, 2 for 2D-matrix
         std::shared_ptr<AST> def;
+
+        MatrixType(std::shared_ptr<Type> baseType, int dimension);
         MatrixType(std::shared_ptr<Type> baseType, int dimension, std::shared_ptr<AST> def);
+        
         bool isTypedefType() {
             return false;
         }

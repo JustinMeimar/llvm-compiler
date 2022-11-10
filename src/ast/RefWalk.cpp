@@ -53,6 +53,7 @@ namespace gazprea {
             variableDeclarationSymbol->typeQualifier = t->children[0]->children[0]->parseTree->getText();
         } else {
             if (t->children[0]->children[0]->isNil()) {
+                variableDeclarationSymbol->typeQualifier = "var";  // default type qualifier is var
                 variableDeclarationSymbol->type = t->children[0]->children[1]->type;
             } else {
                 variableDeclarationSymbol->typeQualifier = t->children[0]->children[0]->parseTree->getText();
@@ -72,8 +73,7 @@ namespace gazprea {
                 newArgs.push_back(subroutineSymbol->orderedArgs[i]);
             }
             subroutineSymbol->orderedArgs = newArgs;
-        }
-        
+        } 
     }
 
     void RefWalk::visitParameterAtom(std::shared_ptr<AST> t) {
@@ -91,6 +91,9 @@ namespace gazprea {
         }
         if (typeQualifierExist) {
             variableSymbol->typeQualifier = t->children[3]->parseTree->getText();
+        } else {
+            // Default type qualifier for subroutine parameter is const
+            variableSymbol->typeQualifier = "const";
         }
         if (numSingleTermType == 3) { 
             variableSymbol->type = std::make_shared<IntervalType>(t->children[0]->type);
@@ -107,6 +110,9 @@ namespace gazprea {
         } else if (numSingleTermType == 1) {
             auto symbol = symtab->globals->resolve(t->children[0]->parseTree->getText());
             if (t->children[0]->getNodeType() == GazpreaParser::VECTOR_TYPE_TOKEN || t->children[0]->getNodeType() == GazpreaParser::TUPLE_TYPE_TOKEN) {
+                if(t->children[0]->type->getTypeId() == -1) { //string[n] picked up as VECTOR, assign type as string
+                    t->children[0]->type = symtab->getType(Type::STRING); 
+                }
                 variableSymbol->type = t->children[0]->type;
             } else if (symbol == nullptr || !symbol->isType()) {
                 variableSymbol->name = t->children[0]->parseTree->getText();
@@ -123,6 +129,7 @@ namespace gazprea {
     }
 
     void RefWalk::visitIdentifier(std::shared_ptr<AST> t) {
+        // If the identifier is std_input or std_output, then t->scope->resolve(t->parseTree->getText()) <- nullptr
         t->symbol = t->scope->resolve(t->parseTree->getText());
     }
 

@@ -322,7 +322,7 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitStringLiteralAtom(GazpreaParser::StringLiteralAtomContext *ctx) {
-        return std::make_shared<AST>(ctx->StringLiteral());
+        return std::make_shared<AST>(GazpreaParser::StringLiteral, ctx);
     }
 
     std::any ASTBuilder::visitTupleLiteral(GazpreaParser::TupleLiteralContext *ctx) {
@@ -338,7 +338,7 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitCharacterAtom(GazpreaParser::CharacterAtomContext *ctx) {
-        return std::make_shared<AST>(ctx->CharacterConstant());
+        return std::make_shared<AST>(GazpreaParser::CharacterConstant, ctx);
     }
 
     std::any ASTBuilder::visitGenerator(GazpreaParser::GeneratorContext *ctx) {
@@ -359,7 +359,7 @@ namespace gazprea {
         std::shared_ptr<AST> t = std::make_shared<AST>(GazpreaParser::BINARY_OP_TOKEN, ctx);
         t->addChild(visit(ctx->expr(0)));
         t->addChild(visit(ctx->expr(1)));
-        t->addChild(std::make_shared<AST>(ctx->op->getType()));
+        t->addChild(std::make_shared<AST>(ctx->op->getType())); 
         return t;
     }
 
@@ -432,6 +432,11 @@ namespace gazprea {
 
     std::any ASTBuilder::visitRealConstant(GazpreaParser::RealConstantContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::REAL_CONSTANT_TOKEN, ctx);
+        return t;
+    }
+    
+    std::any ASTBuilder::visitBooleanAtom(GazpreaParser::BooleanAtomContext *ctx) {
+        auto t = std::make_shared<AST>(GazpreaParser::BooleanConstant, ctx);
         return t;
     }
 }
