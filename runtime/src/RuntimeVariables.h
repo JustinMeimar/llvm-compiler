@@ -52,10 +52,7 @@ void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step)
 void variableDestructor(Variable *this);
 void variableDestructThenFree(Variable *this);
 
-void variableBinOpBothSidesPromotion(Variable *this, Variable *op1, Variable *op2, Type *op1Target, Type *op2Target);
 bool variableAliasWith(Variable *this, Variable *other);  // return ture if the two variable alias
+void variableAssignment(Variable *this, Variable *rhs);
 void variableVectorIndexAssignment(Variable *vector, Variable *index, Variable *rhs);
 void variableMatrixIndexAssignment(Variable *vector, Variable *rowIndex, Variable *colIndex, Variable *rhs);
-
-// debug print to stdout
-void variableDebugPrint(Type *this);

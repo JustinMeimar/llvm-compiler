@@ -1,4 +1,5 @@
 #include "RuntimeErrors.h"
+#include "VariableStdio.h"
 
 void errorAndExit(const char *errorMsg) {
     fprintf(stderr, "%s", errorMsg);

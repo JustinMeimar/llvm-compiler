@@ -709,22 +709,20 @@ void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed
     this->m_parent = this->m_data;
 }
 
+void computeIntervalConstructBinop(Variable *this, Variable *head, Variable *tail, BinOpCode opcode) {
+    int *headValue = head->m_data;
+    int *tailValue = tail->m_data;
+    this->m_type = typeMalloc();
+    typeInitFromIntervalType(this->m_type);
+    this->m_data = intervalTypeMallocDataFromHeadTail(*headValue, *tailValue);
+}
+
 void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail) {
     Type *intType = typeMalloc();
     typeInitFromArrayType(intType, element_integer, 0, NULL);
-    Variable *op1Promoted = variableMalloc();
-    Variable *op2Promoted = variableMalloc();
-    variableInitFromPromotion(op1Promoted, intType, head);
-    variableInitFromPromotion(op2Promoted, intType, tail);
-
-    int *headValue = op1Promoted->m_data;
-    int *tailValue = op2Promoted->m_data;
-    this->m_type = typeMalloc();
-    typeInitFromIntervalType(this->m_type);
-    int32_t *data = intervalTypeMallocDataFromHeadTail(*headValue, *tailValue);
-    this->m_data = data;
-    this->m_parent = this->m_data;
-    this->m_fieldPos = -1;
+    binopPromoteComputationAndDispose(this, head, tail, binary_range_construct,
+                                      intType, intType, computeIntervalConstructBinop);
+    typeDestructThenFree(intType);
 }
 
 void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step) {
@@ -783,4 +781,26 @@ void variableDestructor(Variable *this) {
 void variableDestructThenFree(Variable *this) {
     variableDestructor(this);
     free(this);
+}
+
+bool variableAliasWith(Variable *this, Variable *other) {
+    // a variable with no data never alias to anything
+    if (this->m_parent == NULL || other->m_parent == NULL)
+        return false;
+    if (this->m_parent == other->m_parent) {
+        // -1 means the variable is not a tuple field, thus same parents implies alias
+        return this->m_fieldPos == -1 || other->m_fieldPos == -1 || this->m_fieldPos == other->m_fieldPos;
+    }
+    return false;
+}
+
+void variableAssignment(Variable *this, Variable *rhs) {
+    Variable *result = variableMalloc();
+    variableInitFromAssign(result, this->m_type, rhs);
+
+    // TODO: reference assignment for array and tuple
+    variableDestructor(this);
+    variableInitFromMemcpy(this, result);
+
+    variableDestructThenFree(result);
 }

@@ -2,7 +2,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "Enums.h"
-#include "RuntimeVariables.h"
 
 // forward declaration
 typedef struct struct_gazprea_variable Variable;
@@ -41,9 +40,6 @@ bool typeIsMixedArray(Type *this);
 bool typeIsIdentical(Type *this, Type *other);  // checks if the two types are describing the same types
 
 int64_t typeGetMemorySize(Type *this);
-
-// debug print to stdout
-void typeDebugPrint(Type *this);
 
 ///------------------------------COMPOUND TYPE INFO---------------------------------------------------------------
 // ArrayType---------------------------------------------------------------------------------------------

@@ -15,6 +15,8 @@ set(
   "${CMAKE_CURRENT_SOURCE_DIR}/FreeList.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/Literal.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/Literal.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/VariableStdio.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/VariableStdio.h"
 )
 
 # Build our executable from the source files.

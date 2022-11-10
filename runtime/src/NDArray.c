@@ -342,7 +342,6 @@ void elementMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, void 
             case binary_divide:
                 *result = arrayMallocFromRealValue(1, v1 / v2); break;
             case binary_remainder:
-                // TODO: verify this satisfies spec
                 *result = arrayMallocFromRealValue(1, fmodf(v1, v2)); break;
             case binary_plus:
                 *result = arrayMallocFromRealValue(1, v1 + v2); break;
