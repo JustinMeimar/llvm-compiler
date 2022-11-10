@@ -176,10 +176,10 @@ expr:
     | <assoc=right> expr wS? '||' wS? expr                                          # Concatenation
     | '[' wS? generatorDomainVariableList wS? '|' wS? expression wS? ']'            # Generator
     | '[' wS? identifier wS? IN wS? expression wS? '&' wS? expressionList wS? ']'   # Filter
+    | (TRUE | FALSE )                                                               # BooleanAtom
     | identifier                                                                    # IdentifierAtom
     | IntegerConstant                                                               # IntegerAtom
     | CharacterConstant                                                             # CharacterAtom
-    | BooleanConstant                                                               # BooleanAtom
     | StringLiteral                                                                 # StringLiteralAtom
     ;
 //
@@ -202,7 +202,9 @@ CONST : 'const' ;
 CONTINUE : 'continue' ;
 E_TOKEN : 'e';
 ELSE : 'else' ;
+FALSE: 'false';
 FUNCTION: 'function' ;
+IDENTITY: 'identity';
 IF: 'if' ;
 IN: 'in' ;
 INTEGER: 'integer' ;
@@ -216,6 +218,7 @@ RETURN : 'return' ;
 RETURNS : 'returns' ;
 STRING : 'string' ;
 TUPLE : 'tuple' ;
+TRUE: 'true';
 TYPEDEF: 'typedef' ;
 VAR : 'var' ;
 WHILE : 'while' ;
@@ -257,7 +260,8 @@ fragment SChar
     ;
 fragment EscapeSequence: '\\' ['"0abnrt\\] ;
 //
-BooleanConstant: 'true' | 'false';
+
+BooleanConstant: ('true' | 'false');
 // Comment
 LineComment : '//' ~[\r\n]* -> skip ;
 BlockComment: '/*' .*? '*/' -> skip ;
