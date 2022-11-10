@@ -29,6 +29,9 @@ namespace gazprea {
         bool isTupleType() {
             return true;
         }
+        bool isIdentityType() {
+            return false;
+        }
         int getTypeId();
 
         std::string getName() {
