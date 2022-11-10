@@ -5,10 +5,10 @@
 #include "AST.h"
 
 namespace gazprea {
-    class IdentityType : public Type {
+    class IdentityNullType : public Type {
     public:
         std::shared_ptr<Type> baseType;
-        IdentityType(std::shared_ptr<Type> baseType);
+        IdentityNullType(std::shared_ptr<Type> baseType);
         bool isTypedefType() {
             return false;
         }
@@ -21,11 +21,11 @@ namespace gazprea {
         bool isTupleType() {
             return false;
         }
-        bool isIdentityType() {
+        bool isIdentityNullType() {
             return true;
         }
         std::string getName() {
-            return "identity";
+            return "identityNull";
         }
 
         int getTypeId();

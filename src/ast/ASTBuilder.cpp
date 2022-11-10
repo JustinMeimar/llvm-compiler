@@ -441,8 +441,13 @@ namespace gazprea {
         return t;
     }
 
-    std::any ASTBuilder::visitIdentityAtom(GazpreaParser::IdentityAtomContext *ctx) {
-        auto t = std::make_shared<AST>(GazpreaParser::IDENTITY, ctx);
+    std::any ASTBuilder::visitIdentityOrNullAtom(GazpreaParser::IdentityOrNullAtomContext *ctx) {
+        std::shared_ptr<AST> t; 
+        if (ctx->NULL_LITERAL()) { 
+            t = std::make_shared<AST>(GazpreaParser::NULL_LITERAL, ctx);
+        } else {
+            t = std::make_shared<AST>(GazpreaParser::IDENTITY, ctx);
+        }
         return t;
     }
 

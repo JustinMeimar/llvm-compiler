@@ -181,7 +181,7 @@ expr:
     | IntegerConstant                                                               # IntegerAtom
     | CharacterConstant                                                             # CharacterAtom
     | StringLiteral                                                                 # StringLiteralAtom
-    | IDENTITY                                                                      # IdentityAtom
+    | (IDENTITY | NULL_LITERAL)                                                             # IdentityOrNullAtom
     ;
 //
 // Generator and Filter
@@ -212,6 +212,7 @@ INTEGER: 'integer' ;
 INTERVAL: 'interval' ;
 LOOP : 'loop' ;
 NOT : 'not' ;
+NULL_LITERAL: 'null';
 OR : 'or' ;
 PROCEDURE : 'procedure' ;
 REAL : 'real' ;

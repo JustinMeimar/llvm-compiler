@@ -81,7 +81,8 @@ namespace gazprea {
                     visitIdentifier(t);
                     break;
                 case GazpreaParser::IDENTITY:
-                    visitIdentity(t);
+                case GazpreaParser::NULL_LITERAL:
+                    visitIdentityOrNull(t);
                     break;
                 
                 // Other Statements
@@ -117,8 +118,7 @@ namespace gazprea {
         auto varTy = t->children[1]->evalType; 
         auto exprTy = t->children[2]->evalType;
         
-        if (exprTy == symtab->getType(Type::IDENTITY)) {
-            t->children[2]->identity = true;
+        if (exprTy->getTypeId() == Type::IDENTITYNULL) {
             t->children[2]->promoteToType = varTy;
 
         } else if (varTy->isTupleType() && exprTy->isTupleType()) {  //specifically for tuple
@@ -168,9 +168,8 @@ namespace gazprea {
                         t->children[1]->tuplePromoteTypeList[i] = tupleTypeInLHSExpression->orderedArgs[i]->type;
                     }
                 }
-            } else if (RHSTy->getTypeId() == Type::IDENTITY) { //assign promoteToType of IDENTITY to LHS Type
+            } else if (RHSTy->getTypeId() == Type::IDENTITYNULL) { //assign promoteToType of IDENTITY to LHS Type
                 t->children[1]->promoteToType = LHSExpressionAST->evalType;
-                t->children[1]->identity = true;
             } else {
                 int LHSTyEnum = LHSExpressionAST->evalType->getTypeId();
                 int RHSTyEnum = RHSTy->getTypeId();
@@ -395,8 +394,8 @@ namespace gazprea {
         }
     }
     
-    void TypeWalk::visitIdentity(std::shared_ptr<AST> t) {
-        t->evalType = symtab->getType(Type::IDENTITY); //esentially until used in a context 
+    void TypeWalk::visitIdentityOrNull(std::shared_ptr<AST> t) {
+        t->evalType = symtab->getType(Type::IDENTITYNULL); //esentially until used in a context 
         t->promoteToType = nullptr;
     }
 

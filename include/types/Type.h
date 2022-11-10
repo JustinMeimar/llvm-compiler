@@ -22,7 +22,7 @@ namespace gazprea {
             CHARACTER_2 = 13,
             INTEGER_2 = 14,
             REAL_2 = 15,
-            IDENTITY = 16,
+            IDENTITYNULL = 16,
         };
         virtual ~Type(); 
         virtual std::string getName() = 0;

@@ -22,7 +22,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/symbols/TypedefTypeSymbol.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/symbols/VariableSymbol.cpp"
     #types 
-    "${CMAKE_CURRENT_SOURCE_DIR}/types/IdentityType.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/types/IdentityNullType.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/types/IntervalType.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/types/MatrixType.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/types/TupleType.cpp"

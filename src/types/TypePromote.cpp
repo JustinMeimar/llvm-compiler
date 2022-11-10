@@ -90,18 +90,16 @@ std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::sha
     int lhsType = lhs->evalType->getTypeId();
     int rhsType = rhs->evalType->getTypeId();
 
-    if (lhsType == Type::IDENTITY && rhsType == Type::IDENTITY) {
+    if (lhsType == Type::IDENTITYNULL && rhsType == Type::IDENTITYNULL) {
         std::cout << "Compile-Time-Error! unable to infer type of two identities";
         return nullptr;
     } 
-    else if (lhsType == Type::IDENTITY && rhsType != Type::IDENTITY ) {
+    else if (lhsType == Type::IDENTITYNULL && rhsType != Type::IDENTITYNULL ) {
         lhs->promoteToType = rhs->evalType;
-        lhs->identity = true;
         return rhs->evalType;
     } 
-    else if (lhsType != Type::IDENTITY && rhsType == Type::IDENTITY ) {
+    else if (lhsType != Type::IDENTITYNULL && rhsType == Type::IDENTITYNULL ) {
         rhs->promoteToType = lhs->evalType;
-        rhs->identity = true;
         return lhs->evalType;
 
     } else { 

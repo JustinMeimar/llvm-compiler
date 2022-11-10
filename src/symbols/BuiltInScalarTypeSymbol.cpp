@@ -20,8 +20,8 @@ namespace gazprea {
             return Type::STRING;
         } else if (name == "interval") {
             return Type::INTERVAL;  // will not be used
-        } else if (name == "identity") {
-            return Type::IDENTITY;  // will not be used
+        } else if (name == "identityNull") {
+            return Type::IDENTITYNULL;  // will not be used
         }
         return -1;
     }

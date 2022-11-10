@@ -54,8 +54,6 @@ namespace gazprea {
         virtual ~AST();
 		
 		//TypeWalk
-		bool identity = false;
-
 		std::shared_ptr<Type> evalType;
 		std::shared_ptr<Type> promoteToType;
 		std::vector<std::shared_ptr<Type>> tuplePromoteTypeList;
