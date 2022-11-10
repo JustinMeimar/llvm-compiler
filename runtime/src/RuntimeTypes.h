@@ -11,7 +11,12 @@ typedef enum enum_vectovec_rhssize_restriction VecToVecRHSSizeRestriction;
 
 ///------------------------------TYPE---------------------------------------------------------------
 
-Type *typeMalloc();
+typedef struct struct_gazprea_type {
+    TypeID m_typeId;
+    void *m_compoundTypeInfo;  // for compound type only
+} Type;
+
+Type *typeMalloc();                                  /// INTERFACE
 
 void typeInitFromCopy(Type *this, Type *other);
 void typeInitFromTwoSingleTerms(Type *this, Type *first, Type *second);
@@ -21,9 +26,10 @@ void typeInitFromIntervalType(Type *this, IntervalTypeBaseTypeID id);
 void typeInitFromArrayType(Type *this, ElementTypeID eid, int8_t nDim, int64_t *dims);
 
 
-void typeDestructor(Type *this);
-void typeDestructThenFree(Type *this);
+void typeDestructor(Type *this);                     /// INTERFACE
+void typeDestructThenFree(Type *this);               /// INTERFACE
 
+/// INTERFACE
 bool typeIsConcreteType(Type *this);  // if the type does not have any unknown/unspecified part i.e. a variable can have this type
 bool typeIsStream(Type *this);
 bool typeIsScalar(Type *this);

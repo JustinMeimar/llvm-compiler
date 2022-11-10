@@ -4,28 +4,28 @@
 #include "string.h"
 
 bool elementIsMixedType(ElementTypeID id) {
-    return id == element_mixed;
+    return id == ELEMENT_MIXED;
 }
 
 bool elementIsNullIdentity(ElementTypeID id) {
-    return id == element_null || id == element_identity;
+    return id == ELEMENT_NULL || id == ELEMENT_IDENTITY;
 }
 
 bool elementIsBasicType(ElementTypeID id) {
-    return id == element_boolean || id == element_character || id == element_integer || id == element_real;
+    return id == ELEMENT_BOOLEAN || id == ELEMENT_CHARACTER || id == ELEMENT_INTEGER || id == ELEMENT_REAL;
 }
 
 int64_t elementGetSize(ElementTypeID id) {
     switch (id) {
-        case element_real:
+        case ELEMENT_REAL:
             return sizeof(float);
-        case element_integer:
+        case ELEMENT_INTEGER:
             return sizeof(int32_t);
-        case element_character:
+        case ELEMENT_CHARACTER:
             return sizeof(int8_t);
-        case element_boolean:
+        case ELEMENT_BOOLEAN:
             return sizeof(bool);
-        case element_mixed:
+        case ELEMENT_MIXED:
             return sizeof(MixedTypeElement);
         default:
             break;
@@ -35,7 +35,7 @@ int64_t elementGetSize(ElementTypeID id) {
 
 bool elementCanBeCastedFrom(ElementTypeID to, ElementTypeID from) {
     if (elementIsBasicType(to) && elementIsBasicType(from)) {
-        if (from == element_real && (to == element_boolean || to == element_character))
+        if (from == ELEMENT_REAL && (to == ELEMENT_BOOLEAN || to == ELEMENT_CHARACTER))
             return false;
         return true;
     }
@@ -51,7 +51,7 @@ bool elementCanBePromotedFrom(ElementTypeID to, ElementTypeID from) {
 
     // from and to are different types
     if (elementIsBasicType(to))
-        return elementIsNullIdentity(from) || (from == element_integer && to == element_real);
+        return elementIsNullIdentity(from) || (from == ELEMENT_INTEGER && to == ELEMENT_REAL);
 }
 
 bool elementCanBePromotedBetween(ElementTypeID op1, ElementTypeID op2, ElementTypeID *resultType) {
@@ -66,13 +66,13 @@ bool elementCanBePromotedBetween(ElementTypeID op1, ElementTypeID op2, ElementTy
 }
 
 bool elementCanUseUnaryOp(ElementTypeID id, UnaryOpCode opcode) {
-    if (!elementIsBasicType(id) || id == element_character)
+    if (!elementIsBasicType(id) || id == ELEMENT_CHARACTER)
         return false;
-    if (id == element_boolean) {
-        return opcode == unary_not;
+    if (id == ELEMENT_BOOLEAN) {
+        return opcode == UNARY_NOT;
     } else {
         // integer and real
-        return opcode == unary_plus || opcode == unary_minus;
+        return opcode == UNARY_PLUS || opcode == UNARY_MINUS;
     }
 }
 
@@ -80,25 +80,25 @@ bool elementBinOpResultType(ElementTypeID id, BinOpCode opcode, ElementTypeID *r
     // first filter the ops that are not always between two elements of same type
     // or not returning an element
     switch(opcode) {
-        case binary_index:
-        case binary_range_construct:
-        case binary_dot_product:
-        case binary_concat:
+        case BINARY_INDEX:
+        case BINARY_RANGE_CONSTRUCT:
+        case BINARY_DOT_PRODUCT:
+        case BINARY_CONCAT:
             return false;
         default:
             break;
     }
     // no character, null, identity or mixed type can be used in binop without some transformation e.g. promotion
-    if (!elementIsBasicType(id) || id == element_character)
+    if (!elementIsBasicType(id) || id == ELEMENT_CHARACTER)
         return false;
-    if (id == element_boolean) {
+    if (id == ELEMENT_BOOLEAN) {
         switch(opcode) {
-            case binary_eq:
-            case binary_ne:
-            case binary_and:
-            case binary_or:
-            case binary_xor:
-                *resultType = element_boolean;
+            case BINARY_EQ:
+            case BINARY_NE:
+            case BINARY_AND:
+            case BINARY_OR:
+            case BINARY_XOR:
+                *resultType = ELEMENT_BOOLEAN;
                 return true;
             default:
                 return false;
@@ -106,20 +106,20 @@ bool elementBinOpResultType(ElementTypeID id, BinOpCode opcode, ElementTypeID *r
     } else {
         // integer and real
         switch(opcode) {
-            case binary_eq:
-            case binary_ne:
-            case binary_lt:
-            case binary_bt:
-            case binary_leq:
-            case binary_beq:
-                *resultType = element_boolean;
+            case BINARY_EQ:
+            case BINARY_NE:
+            case BINARY_LT:
+            case BINARY_BT:
+            case BINARY_LEQ:
+            case BINARY_BEQ:
+                *resultType = ELEMENT_BOOLEAN;
                 return true;
-            case binary_exponent:
-            case binary_multiply:
-            case binary_divide:
-            case binary_remainder:
-            case binary_plus:
-            case binary_minus:
+            case BINARY_EXPONENT:
+            case BINARY_MULTIPLY:
+            case BINARY_DIVIDE:
+            case BINARY_REMAINDER:
+            case BINARY_PLUS:
+            case BINARY_MINUS:
                 *resultType = id;  // same as the original element type
                 return true;
             default:
@@ -138,11 +138,11 @@ void elementMallocFromPromotion(ElementTypeID resultID, ElementTypeID srcID, voi
     }
 
     if (elementIsBasicType(resultID)) {
-        if (srcID == element_null)
+        if (srcID == ELEMENT_NULL)
             *result = arrayMallocFromNull(resultID, 1);
-        else if (srcID == element_identity)
+        else if (srcID == ELEMENT_IDENTITY)
             *result = arrayMallocFromIdentity(resultID, 1);
-        else if (srcID == element_integer && resultID == element_real) {  // the only remaining case is promoting from integer to real
+        else if (srcID == ELEMENT_INTEGER && resultID == ELEMENT_REAL) {  // the only remaining case is promoting from integer to real
             // TODO: Check if the promotion satisfy spec
             *result = arrayMallocFromRealValue(1, (float)*((int32_t *)src));
         } else {
@@ -168,53 +168,53 @@ void elementMallocFromCast(ElementTypeID resultID, ElementTypeID srcID, void *sr
         elementMallocFromAssignment(resultID, src, result);
         return;
     }
-    if (resultID == element_boolean) {
+    if (resultID == ELEMENT_BOOLEAN) {
         bool *resultBool = malloc(sizeof(bool));
         *result = resultBool;
         switch (srcID) {
-            case element_character:
+            case ELEMENT_CHARACTER:
                 *resultBool = *((int8_t *)src) == 0; break;
-            case element_integer:
+            case ELEMENT_INTEGER:
                 *resultBool = *((int32_t *)src) == 0; break;
-            case element_real:
+            case ELEMENT_REAL:
                 errorAndExit("Attempt to cast real to boolean!"); break;
             default: errorAndExit("This should not happen!"); break;
         }
-    } else if (resultID == element_character) {
+    } else if (resultID == ELEMENT_CHARACTER) {
         int8_t *resultChar = malloc(sizeof(int8_t));
         *result = resultChar;
         switch (srcID) {
-            case element_boolean:
+            case ELEMENT_BOOLEAN:
                 *resultChar = *((bool *)src) ? 1 : 0; break;
-            case element_integer:
+            case ELEMENT_INTEGER:
                 *resultChar = integerToCharacter(*((int32_t *)src)); break;
-            case element_real:
+            case ELEMENT_REAL:
                 errorAndExit("Attempt to cast real to character!"); break;
             default: errorAndExit("This should not happen!"); break;
         }
-    } else if (resultID == element_integer) {
+    } else if (resultID == ELEMENT_INTEGER) {
         int32_t *resultInt = malloc(sizeof(int32_t));
         *result = resultInt;
         switch (srcID) {
-            case element_boolean:
+            case ELEMENT_BOOLEAN:
                 *resultInt = *((bool *)src) ? 1 : 0; break;
-            case element_character:
+            case ELEMENT_CHARACTER:
                 *resultInt = (int32_t)*((int32_t *)src); break;
-            case element_real:
+            case ELEMENT_REAL:
                 // TODO: spec check
                 *resultInt = (int32_t)*((float *)src); break;
             default: errorAndExit("This should not happen!"); break;
         }
-    } else if (resultID == element_real) {
+    } else if (resultID == ELEMENT_REAL) {
         float *resultFloat = malloc(sizeof(float));
         *result = resultFloat;
         switch (srcID) {
-            case element_boolean:
+            case ELEMENT_BOOLEAN:
                 *resultFloat = *((bool *)src) ? 1.0f : 0.0f; break;
-            case element_character:
+            case ELEMENT_CHARACTER:
                 // TODO: spec check
                 *resultFloat = (float)*((int8_t *)src); break;
-            case element_integer:
+            case ELEMENT_INTEGER:
                 // TODO: spec check
                 *resultFloat = (float)*((int32_t *)src); break;
             default: errorAndExit("This should not happen!"); break;
@@ -231,14 +231,14 @@ void elementMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, v
     if(!elementCanUseUnaryOp(id, opcode)) {
         errorAndExit("Invalid unary operand type!");
     }
-    if (id == element_boolean) {
+    if (id == ELEMENT_BOOLEAN) {
         *result = arrayMallocFromBoolValue(1, !*((bool *)src));
-    } else if (id == element_integer) {
+    } else if (id == ELEMENT_INTEGER) {
         int32_t value = *((int32_t *)src);
-        *result = arrayMallocFromIntegerValue(1, (opcode == unary_minus) ? -value : value);
-    } else if (id == element_real) {
+        *result = arrayMallocFromIntegerValue(1, (opcode == UNARY_MINUS) ? -value : value);
+    } else if (id == ELEMENT_REAL) {
         float value = *((float *)src);
-        *result = arrayMallocFromRealValue(1, (opcode == unary_minus) ? -value : value);
+        *result = arrayMallocFromRealValue(1, (opcode == UNARY_MINUS) ? -value : value);
     } else {
         errorAndExit("This should not happen!");
     }
@@ -268,84 +268,84 @@ int32_t integerExponentiation(int32_t base, int32_t exp) {
 
 // binary operation may not return the same type e.g. 1 == 2
 void elementMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, void *op2, void **result) {
-    if (id == element_boolean) {
+    if (id == ELEMENT_BOOLEAN) {
         bool v1 = *((bool *)op1);
         bool v2 = *((bool *)op2);
         bool *resultBool = malloc(sizeof(bool));
         *result = resultBool;
         switch(opcode) {
-            case binary_eq:
+            case BINARY_EQ:
                 *resultBool = v1 == v2; break;
-            case binary_ne:
+            case BINARY_NE:
                 *resultBool = v1 != v2; break;
-            case binary_and:
+            case BINARY_AND:
                 *resultBool = v1 && v2; break;
-            case binary_or:
+            case BINARY_OR:
                 *resultBool = v1 || v2; break;
-            case binary_xor:
+            case BINARY_XOR:
                 *resultBool = v1 ^ v2; break;  // ^ is bitwise, but doesn't matter since all bits in bool are 0 except the last bit
             default:
                 errorAndExit("This should not happen!"); break;
         }
-    } else if (id == element_integer) {
+    } else if (id == ELEMENT_INTEGER) {
         int32_t v1 = *((int32_t *)op1);
         int32_t v2 = *((int32_t *)op2);
         switch (opcode) {
-            case binary_eq:
+            case BINARY_EQ:
                 *result = arrayMallocFromBoolValue(1, v1 == v2); break;
-            case binary_ne:
+            case BINARY_NE:
                 *result = arrayMallocFromBoolValue(1, v1 != v2); break;
-            case binary_lt:
+            case BINARY_LT:
                 *result = arrayMallocFromBoolValue(1, v1 < v2); break;
-            case binary_bt:
+            case BINARY_BT:
                 *result = arrayMallocFromBoolValue(1, v1 > v2); break;
-            case binary_leq:
+            case BINARY_LEQ:
                 *result = arrayMallocFromBoolValue(1, v1 <= v2); break;
-            case binary_beq:
+            case BINARY_BEQ:
                 *result = arrayMallocFromBoolValue(1, v1 >= v2); break;
-            case binary_exponent:
+            case BINARY_EXPONENT:
                 *result = arrayMallocFromIntegerValue(1, integerExponentiation(v1, v2)); break;
-            case binary_multiply:
+            case BINARY_MULTIPLY:
                 *result = arrayMallocFromIntegerValue(1, v1 * v2); break;
-            case binary_divide:
+            case BINARY_DIVIDE:
                 *result = arrayMallocFromIntegerValue(1, v1 / v2); break;
-            case binary_remainder:
+            case BINARY_REMAINDER:
                 *result = arrayMallocFromIntegerValue(1, v1 % v2); break;
-            case binary_plus:
+            case BINARY_PLUS:
                 *result = arrayMallocFromIntegerValue(1, v1 + v2); break;
-            case binary_minus:
+            case BINARY_MINUS:
                 *result = arrayMallocFromIntegerValue(1, v1 - v2); break;
             default:
                 errorAndExit("This should not happen!"); break;
         }
-    } else if (id == element_real) {
+    } else if (id == ELEMENT_REAL) {
         float v1 = *((float *)op1);
         float v2 = *((float *)op2);
         // integer and real
         switch (opcode) {
-            case binary_eq:
+            case BINARY_EQ:
                 *result = arrayMallocFromBoolValue(1, v1 == v2); break;
-            case binary_ne:
+            case BINARY_NE:
                 *result = arrayMallocFromBoolValue(1, v1 != v2); break;
-            case binary_lt:
+            case BINARY_LT:
                 *result = arrayMallocFromBoolValue(1, v1 < v2); break;
-            case binary_bt:
+            case BINARY_BT:
                 *result = arrayMallocFromBoolValue(1, v1 > v2); break;
-            case binary_leq:
+            case BINARY_LEQ:
                 *result = arrayMallocFromBoolValue(1, v1 <= v2); break;
-            case binary_beq:
+            case BINARY_BEQ:
                 *result = arrayMallocFromBoolValue(1, v1 >= v2); break;
-            case binary_exponent:
+            case BINARY_EXPONENT:
                 *result = arrayMallocFromRealValue(1, powf(v1, v2)); break;
-            case binary_multiply:
+            case BINARY_MULTIPLY:
                 *result = arrayMallocFromRealValue(1, v1 * v2); break;
-            case binary_divide:
+            case BINARY_DIVIDE:
                 *result = arrayMallocFromRealValue(1, v1 / v2); break;
-            case binary_remainder:
+            case BINARY_REMAINDER:
                 *result = arrayMallocFromRealValue(1, fmodf(v1, v2)); break;
-            case binary_plus:
+            case BINARY_PLUS:
                 *result = arrayMallocFromRealValue(1, v1 + v2); break;
-            case binary_minus:
+            case BINARY_MINUS:
                 *result = arrayMallocFromRealValue(1, v1 - v2); break;
             default:
                 errorAndExit("This should not happen!"); break;
@@ -360,13 +360,13 @@ void elementMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, void 
 
 void *arrayMallocFromNull(ElementTypeID id, int64_t size) {
     switch (id) {
-        case element_boolean:
+        case ELEMENT_BOOLEAN:
             return arrayMallocFromBoolValue(size, false);
-        case element_integer:
+        case ELEMENT_INTEGER:
             return arrayMallocFromIntegerValue(size, 0);
-        case element_character:
+        case ELEMENT_CHARACTER:
             return arrayMallocFromCharacterValue(size, 0);
-        case element_real:
+        case ELEMENT_REAL:
             return arrayMallocFromRealValue(size, 0.0f);
         default: break;
     }
@@ -375,13 +375,13 @@ void *arrayMallocFromNull(ElementTypeID id, int64_t size) {
 
 void *arrayMallocFromIdentity(ElementTypeID id, int64_t size) {
     switch (id) {
-        case element_boolean:
+        case ELEMENT_BOOLEAN:
             return arrayMallocFromBoolValue(size, true);
-        case element_integer:
+        case ELEMENT_INTEGER:
             return arrayMallocFromIntegerValue(size, 1);
-        case element_character:
+        case ELEMENT_CHARACTER:
             return arrayMallocFromCharacterValue(size, 1);
-        case element_real:
+        case ELEMENT_REAL:
             return arrayMallocFromRealValue(size, 1.0f);
         default:  break;
     }
@@ -480,26 +480,26 @@ void arrayMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, int
     if(!elementCanUseUnaryOp(id, opcode)) {
         errorAndExit("Invalid unary operand type!");
     }
-    if (id == element_boolean) {
+    if (id == ELEMENT_BOOLEAN) {
         bool *resultArray = arrayMallocFromNull(id, length);
         for (int64_t i = 0; i < length; i++)
             resultArray[i] = !arrayGetBoolValue(src, i);
         *result = resultArray;
-    } else if (id == element_integer) {
+    } else if (id == ELEMENT_INTEGER) {
         int32_t *resultArray = arrayMallocFromNull(id, length);
         for (int64_t i = 0; i < length; i++) {
             int32_t value = arrayGetIntegerValue(src, i);
-            resultArray[i] = (opcode == unary_minus) ? -value : value;
+            resultArray[i] = (opcode == UNARY_MINUS) ? -value : value;
         }
         *result = resultArray;
-    } else if (id == element_real) {
+    } else if (id == ELEMENT_REAL) {
         float *resultArray = arrayMallocFromNull(id, length);
         for (int64_t i = 0; i < length; i++) {
             float value = arrayGetRealValue(src, i);
-            resultArray[i] = (opcode == unary_minus) ? -value : value;
+            resultArray[i] = (opcode == UNARY_MINUS) ? -value : value;
         }
         *result = resultArray;
-    } else if (id == element_mixed) {
+    } else if (id == ELEMENT_MIXED) {
         ElementTypeID eid;
         if (!arrayMixedElementCanBePromotedToSameType(src, length, &eid)) {
             errorAndExit("mixed type can not be promoted to the same type!");
@@ -517,29 +517,29 @@ void arrayMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, int
 bool arrayBinopResultType(ElementTypeID id, BinOpCode opcode, ElementTypeID *resultType, bool* resultCollapseToScalar) {
     // first filter the ops that can not be done between two arrays
     // or not returning an array
-    if (opcode == binary_range_construct || opcode == binary_index)
+    if (opcode == BINARY_RANGE_CONSTRUCT || opcode == BINARY_INDEX)
         return false;
     // no null, identity or mixed type can be used in binop without some transformation e.g. promotion
     if (!elementIsBasicType(id))
         return false;
-    if (id == element_boolean) {
+    if (id == ELEMENT_BOOLEAN) {
         switch(opcode) {
-            case binary_eq:
-            case binary_ne:
-                *resultType = element_boolean;
+            case BINARY_EQ:
+            case BINARY_NE:
+                *resultType = ELEMENT_BOOLEAN;
                 *resultCollapseToScalar = true;
                 return true;
-            case binary_and:
-            case binary_or:
-            case binary_xor:
-            case binary_concat:
-                *resultType = element_boolean;
+            case BINARY_AND:
+            case BINARY_OR:
+            case BINARY_XOR:
+            case BINARY_CONCAT:
+                *resultType = ELEMENT_BOOLEAN;
                 *resultCollapseToScalar = false;
                 return true;
             default: break;
         }
-    } else if (id == element_character) {
-        if (opcode == binary_concat) {
+    } else if (id == ELEMENT_CHARACTER) {
+        if (opcode == BINARY_CONCAT) {
             *resultType = id;
             *resultCollapseToScalar = false;
             return true;
@@ -547,29 +547,29 @@ bool arrayBinopResultType(ElementTypeID id, BinOpCode opcode, ElementTypeID *res
     } else {
         // integer and real
         switch(opcode) {
-            case binary_eq:
-            case binary_ne:
-                *resultType = element_boolean;
+            case BINARY_EQ:
+            case BINARY_NE:
+                *resultType = ELEMENT_BOOLEAN;
                 *resultCollapseToScalar = true;
                 return true;
-            case binary_lt:
-            case binary_bt:
-            case binary_leq:
-            case binary_beq:
-                *resultType = element_boolean;
+            case BINARY_LT:
+            case BINARY_BT:
+            case BINARY_LEQ:
+            case BINARY_BEQ:
+                *resultType = ELEMENT_BOOLEAN;
                 *resultCollapseToScalar = false;
                 return true;
-            case binary_exponent:
-            case binary_multiply:
-            case binary_divide:
-            case binary_remainder:
-            case binary_plus:
-            case binary_minus:
-            case binary_concat:
+            case BINARY_EXPONENT:
+            case BINARY_MULTIPLY:
+            case BINARY_DIVIDE:
+            case BINARY_REMAINDER:
+            case BINARY_PLUS:
+            case BINARY_MINUS:
+            case BINARY_CONCAT:
                 *resultType = id;  // same as the original element type
                 *resultCollapseToScalar = false;
                 return true;
-            case binary_dot_product:
+            case BINARY_DOT_PRODUCT:
                 *resultType = id;
                 *resultCollapseToScalar = true;
             default: break;
@@ -594,12 +594,12 @@ void arrayMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, int64_t
     // only differences from scalar binop is that now we have dot-product, concat and boolean; as well as != and ==
     // and the only way we have binop between two boolean arrays is when we concat them
     // op1Size should be the same as op2Size except for concatenation '||'
-    if (opcode == binary_concat) {
+    if (opcode == BINARY_CONCAT) {
         resultArraySize = op1Size + op2Size;
         resultPos = malloc(resultArraySize * elementSize);
         memcpy(resultPos, op1, op1Size * elementSize);
         memcpy(resultPos + op1Size * elementSize, op2, op2Size * elementSize);
-    } else if (opcode == binary_dot_product) {
+    } else if (opcode == BINARY_DOT_PRODUCT) {
         resultArraySize = 1;
 
         void *sum = arrayMallocFromNull(id, 1);
@@ -607,31 +607,31 @@ void arrayMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, int64_t
             // sum += op1[i] * op2[i]
             void *temp;
             void *tempSum;
-            elementMallocFromBinOp(id, binary_multiply, op1Pos + i * elementSize, op2Pos + i * elementSize, &temp);
-            elementMallocFromBinOp(id, binary_plus, sum, temp, &tempSum);
+            elementMallocFromBinOp(id, BINARY_MULTIPLY, op1Pos + i * elementSize, op2Pos + i * elementSize, &temp);
+            elementMallocFromBinOp(id, BINARY_PLUS, sum, temp, &tempSum);
             free(temp);
             free(sum);
             sum = tempSum;
         }
         resultPos = sum;
-    } else if (opcode == binary_eq || opcode == binary_ne) {
+    } else if (opcode == BINARY_EQ || opcode == BINARY_NE) {
         resultArraySize = 1;
 
-        void *aggregate = arrayMallocFromNull(element_boolean, 1);
+        void *aggregate = arrayMallocFromNull(ELEMENT_BOOLEAN, 1);
         for (int64_t i = 0; i < resultArraySize; i++) {
             // aggregate = aggregate and (op1[i] == op2[i])
             void *temp;
             void *tempAggregate;
-            elementMallocFromBinOp(id, binary_eq, op1Pos + i * elementSize, op2Pos + i * elementSize, &temp);
-            elementMallocFromBinOp(element_boolean, binary_and, aggregate, temp, &tempAggregate);
+            elementMallocFromBinOp(id, BINARY_EQ, op1Pos + i * elementSize, op2Pos + i * elementSize, &temp);
+            elementMallocFromBinOp(ELEMENT_BOOLEAN, BINARY_AND, aggregate, temp, &tempAggregate);
             free(temp);
             free(aggregate);
             aggregate = tempAggregate;
         }
-        if (opcode == binary_ne) {
+        if (opcode == BINARY_NE) {
             // negate the result
             void *temp;
-            elementMallocFromUnaryOp(element_boolean, unary_not, aggregate, &temp);
+            elementMallocFromUnaryOp(ELEMENT_BOOLEAN, UNARY_NOT, aggregate, &temp);
             free(aggregate);
             aggregate = temp;
         }
@@ -657,7 +657,7 @@ void arrayMallocFromCastPromote(ElementTypeID resultID, ElementTypeID srcID, int
     int64_t resultElementSize = elementGetSize(resultID);
     char *resultPos = malloc(resultElementSize * size);
 
-    if (srcID == element_mixed) {
+    if (srcID == ELEMENT_MIXED) {
         MixedTypeElement *mixed = src;
         for (int64_t i = 0; i < size; i++) {
             ElementTypeID eid = mixed[i].m_elementTypeID;
@@ -699,7 +699,7 @@ bool arrayMixedElementCanBePromotedToSameType(MixedTypeElement *arr, int64_t siz
 
 // n * m matrix multiply by m * k matrix to produce a n * k matrix
 void arrayMallocFromMatrixMultiplication(ElementTypeID id, void *op1, void *op2, int64_t n, int64_t m, int64_t k, void **result) {
-    if (id == element_integer) {
+    if (id == ELEMENT_INTEGER) {
         int32_t *mat1 = op1;
         int32_t *mat2 = op2;
         int32_t *mat3 = arrayMallocFromNull(id, n * k);
@@ -714,7 +714,7 @@ void arrayMallocFromMatrixMultiplication(ElementTypeID id, void *op1, void *op2,
         }
         *result = mat3;
         return;
-    } else if (id == element_real) {
+    } else if (id == ELEMENT_REAL) {
         float *mat1 = op1;
         float *mat2 = op2;
         float *mat3 = arrayMallocFromNull(id, n * k);

@@ -4,16 +4,13 @@
 #include "RuntimeTypes.h"
 
 ///------------------------------VARIABLE---------------------------------------------------------------
-typedef struct struct_gazprea_type {
-    TypeID m_typeId;
-    void *m_compoundTypeInfo;  // for compound type only
-} Type;
 
 typedef struct struct_gazprea_variable {
     Type *m_type;
-    void *m_parent;  // used to avoid memory location aliasing in case of vector, matrix and tuple
-    int64_t m_fieldPos;  // used to avoid tuple field aliasing
     void *m_data;  // stores the value of the variable
+
+    int64_t m_fieldPos;  // used to avoid tuple field aliasing
+    void *m_parent;  // used to avoid memory location aliasing in case of vector, matrix and tuple
 } Variable;
 
 Variable *variableMalloc();
@@ -39,20 +36,28 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
 void variableInitFromMemcpy(Variable *this, Variable *other);
 void variableInitFromNull(Variable *this, Type *type);
 void variableInitFromIdentity(Variable *this, Type *type);
-void variableInitFromUnaryOp(Variable *this, Variable *operand, UnaryOpCode opcode);
-void variableInitFromBinaryOp(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode);
-void variableInitFromParameter(Variable *this, Type *lhsType, Variable *rhs);
-void variableInitFromCast(Variable *this, Type *lhsType, Variable *rhs);
+void variableInitFromUnaryOp(Variable *this, Variable *operand, UnaryOpCode opcode);  /// INTERFACE
+void variableInitFromBinaryOp(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode);  /// INTERFACE
+
+void variableInitFromParameter(Variable *this, Type *lhsType, Variable *rhs);         /// INTERFACE
+void variableInitFromCast(Variable *this, Type *lhsType, Variable *rhs);              /// INTERFACE
+void variableInitFromDeclaration(Variable *this, Type *lhsType, Variable *rhs);       /// INTERFACE
 void variableInitFromAssign(Variable *this, Type *lhsType, Variable *rhs);
-void variableInitFromDeclaration(Variable *this, Type *lhsType, Variable *rhs);
-void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs);
+void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs);         /// INTERFACE
+
 void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed);
 void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail);
 void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step);  // the new variable is a vector
-void variableDestructor(Variable *this);
-void variableDestructThenFree(Variable *this);
+void variableDestructor(Variable *this);                                              /// INTERFACE
+void variableDestructThenFree(Variable *this);                                        /// INTERFACE
 
-bool variableAliasWith(Variable *this, Variable *other);  // return ture if the two variable alias
+bool variableAliasWith(Variable *this, Variable *other);   /// INTERFACE return ture if the two variable alias
 void variableAssignment(Variable *this, Variable *rhs);
 void variableVectorIndexAssignment(Variable *vector, Variable *index, Variable *rhs);
 void variableMatrixIndexAssignment(Variable *vector, Variable *rowIndex, Variable *colIndex, Variable *rhs);
+
+// as<real>(b);
+// ptr =
+
+// a = b;
+// variableAssignment(a, b);

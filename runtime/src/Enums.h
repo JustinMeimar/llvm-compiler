@@ -10,30 +10,30 @@ const int64_t SIZE_UNSPECIFIED;  // for string only
 /// TYPES
 typedef enum enum_gazprea_typeid {
     /// spec
-    typeid_ndarray,
-    typeid_string,
-    typeid_interval,  // not a compound type because it is always constant size
-    typeid_tuple,
+    TYPEID_NDARRAY,
+    TYPEID_STRING,
+    TYPEID_INTERVAL,  // not a compound type because it is always constant size
+    TYPEID_TUPLE,
 
     /// non-spec
     // basic types
-    typeid_stream_in,
-    typeid_stream_out,
-    typeid_empty_array,     // empty vector or matrix
-    typeid_unknown,         // unknown type is for declaration/parameter atom with inferred type
+    TYPEID_STREAM_IN,
+    TYPEID_STREAM_OUT,
+    TYPEID_EMPTY_ARRAY,     // empty vector or matrix
+    TYPEID_UNKNOWN,         // unknown type is for declaration/parameter atom with inferred type
 
     NUM_TYPE_IDS            // number of ids in the enum
 } TypeID;
 
 /// Element types are data types of elements for scalar, vector and matrix types
 typedef enum enum_gazprea_element_typeid {
-    element_integer,
-    element_real,
-    element_boolean,
-    element_character,
-    element_null,
-    element_identity,
-    element_mixed,
+    ELEMENT_INTEGER,
+    ELEMENT_REAL,
+    ELEMENT_BOOLEAN,
+    ELEMENT_CHARACTER,
+    ELEMENT_NULL,
+    ELEMENT_IDENTITY,
+    ELEMENT_MIXED,
 
     NUM_ELEMENT_TYPES
 } ElementTypeID;
@@ -41,45 +41,45 @@ typedef enum enum_gazprea_element_typeid {
 
 /// Base types of interval type
 typedef enum enum_gazprea_interval_base_typeid {
-    integer_base_interval,
-    unspecified_base_interval,  // the interval alone
+    INTEGER_BASE_INTERVAL,
+    UNSPECIFIED_BASE_INTERVAL,  // the interval alone
 } IntervalTypeBaseTypeID;
 
 
 /// Unary/Binary Ops
 typedef enum enum_unary_op_code {
-    unary_plus,
-    unary_minus,
-    unary_not,
+    UNARY_PLUS,
+    UNARY_MINUS,
+    UNARY_NOT,
 
     NUM_UNARY_OPS
-} UnaryOpCode;
+} UnaryOpCode;                          /// INTERFACE
 
 typedef enum enum_binary_op_code {
-    binary_index,                   // []
-    binary_range_construct,         // ..
-    binary_exponent,                // ^
-    binary_multiply,                // *
-    binary_divide,                  // /
-    binary_remainder,               // %
-    binary_dot_product,             // **
-    binary_plus,                    // +
-    binary_minus,                   // -
-    binary_by,                      // by
+    BINARY_INDEX,                   // []
+    BINARY_RANGE_CONSTRUCT,         // ..
+    BINARY_EXPONENT,                // ^
+    BINARY_MULTIPLY,                // *
+    BINARY_DIVIDE,                  // /
+    BINARY_REMAINDER,               // %
+    BINARY_DOT_PRODUCT,             // **
+    BINARY_PLUS,                    // +
+    BINARY_MINUS,                   // -
+    BINARY_BY,                      // by
 
     // condition ops
-    binary_lt,                      // <
-    binary_bt,                      // >
-    binary_leq,                     // <=
-    binary_beq,                     // >=
-    binary_eq,                      // ==
-    binary_ne,                      // !=
-    binary_and,                     // and
-    binary_or,                      // or
-    binary_xor,                     // xor
+    BINARY_LT,                      // <
+    BINARY_BT,                      // >
+    BINARY_LEQ,                     // <=
+    BINARY_BEQ,                     // >=
+    BINARY_EQ,                      // ==
+    BINARY_NE,                      // !=
+    BINARY_AND,                     // and
+    BINARY_OR,                      // or
+    BINARY_XOR,                     // xor
 
     // concat
-    binary_concat,                  // ||
+    BINARY_CONCAT,                  // ||
 
     NUM_BINARY_OPS
-} BinOpCode;
+} BinOpCode;                            /// INTERFACE

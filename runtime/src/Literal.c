@@ -5,7 +5,7 @@
 ///------------------------------TYPE---------------------------------------------------------------
 
 void typeInitFromUnspecifiedInterval(Type *this) {
-    typeInitFromIntervalType(this, unspecified_base_interval);
+    typeInitFromIntervalType(this, UNSPECIFIED_BASE_INTERVAL);
 }
 
 
@@ -13,7 +13,7 @@ void typeInitFromUnspecifiedInterval(Type *this) {
 
 void variableInitFromBooleanScalar(Variable *this, bool value) {
     this->m_type = typeMalloc();
-    typeInitFromArrayType(this->m_type, element_boolean, 0, NULL);
+    typeInitFromArrayType(this->m_type, ELEMENT_BOOLEAN, 0, NULL);
     this->m_data = arrayMallocFromBoolValue(1, value);
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
@@ -21,7 +21,7 @@ void variableInitFromBooleanScalar(Variable *this, bool value) {
 
 void variableInitFromIntegerScalar(Variable *this, int32_t value){
     this->m_type = typeMalloc();
-    typeInitFromArrayType(this->m_type, element_integer, 0, NULL);
+    typeInitFromArrayType(this->m_type, ELEMENT_INTEGER, 0, NULL);
     this->m_data = arrayMallocFromIntegerValue(1, value);
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
@@ -29,7 +29,7 @@ void variableInitFromIntegerScalar(Variable *this, int32_t value){
 
 void variableInitFromRealScalar(Variable *this, float value){
     this->m_type = typeMalloc();
-    typeInitFromArrayType(this->m_type, element_real, 0, NULL);
+    typeInitFromArrayType(this->m_type, ELEMENT_REAL, 0, NULL);
     this->m_data = arrayMallocFromRealValue(1, value);
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
@@ -37,7 +37,7 @@ void variableInitFromRealScalar(Variable *this, float value){
 
 void variableInitFromCharacterScalar(Variable *this, int8_t value){
     this->m_type = typeMalloc();
-    typeInitFromArrayType(this->m_type, element_character, 0, NULL);
+    typeInitFromArrayType(this->m_type, ELEMENT_CHARACTER, 0, NULL);
     this->m_data = arrayMallocFromCharacterValue(1, value);
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
@@ -45,16 +45,16 @@ void variableInitFromCharacterScalar(Variable *this, int8_t value){
 
 void variableInitFromNullScalar(Variable *this) {
     this->m_type = typeMalloc();
-    typeInitFromArrayType(this->m_type, element_null, 0, NULL);
-    this->m_data = arrayMallocFromNull(element_null, 1);
+    typeInitFromArrayType(this->m_type, ELEMENT_NULL, 0, NULL);
+    this->m_data = arrayMallocFromNull(ELEMENT_NULL, 1);
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
 }
 
 void variableInitFromIdentityScalar(Variable *this){
     this->m_type = typeMalloc();
-    typeInitFromArrayType(this->m_type, element_identity, 0, NULL);
-    this->m_data = arrayMallocFromIdentity(element_identity, 1);
+    typeInitFromArrayType(this->m_type, ELEMENT_IDENTITY, 0, NULL);
+    this->m_data = arrayMallocFromIdentity(ELEMENT_IDENTITY, 1);
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
 }
@@ -62,7 +62,7 @@ void variableInitFromIdentityScalar(Variable *this){
 void variableInitFromStdInput(Variable *this) {
     this->m_type = typeMalloc();
     this->m_type->m_compoundTypeInfo = NULL;
-    this->m_type->m_typeId = typeid_stream_in;
+    this->m_type->m_typeId = TYPEID_STREAM_IN;
     this->m_data = NULL;
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
@@ -71,7 +71,7 @@ void variableInitFromStdInput(Variable *this) {
 void variableInitFromStdOutput(Variable *this) {
     this->m_type = typeMalloc();
     this->m_type->m_compoundTypeInfo = NULL;
-    this->m_type->m_typeId = typeid_stream_out;
+    this->m_type->m_typeId = TYPEID_STREAM_OUT;
     this->m_data = NULL;
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;

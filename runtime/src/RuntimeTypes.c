@@ -16,22 +16,22 @@ void typeInitFromCopy(Type *this, Type *other) {
     TypeID otherID = other->m_typeId;
     this->m_typeId = otherID;
     switch (other->m_typeId) {
-        case typeid_ndarray:
-        case typeid_string:
+        case TYPEID_NDARRAY:
+        case TYPEID_STRING:
             this->m_compoundTypeInfo = arrayTypeMalloc();
             arrayTypeInitFromCopy(this->m_compoundTypeInfo, other->m_compoundTypeInfo);
             break;
-        case typeid_interval:
+        case TYPEID_INTERVAL:
             this->m_compoundTypeInfo = intervalTypeMalloc();
             intervalTypeInitFromCopy(this->m_compoundTypeInfo, other->m_compoundTypeInfo);
             break;
-        case typeid_stream_in:
-        case typeid_stream_out:
-        case typeid_empty_array:
-        case typeid_unknown:
+        case TYPEID_STREAM_IN:
+        case TYPEID_STREAM_OUT:
+        case TYPEID_EMPTY_ARRAY:
+        case TYPEID_UNKNOWN:
             this->m_compoundTypeInfo = NULL;
             break;
-        case typeid_tuple:
+        case TYPEID_TUPLE:
             this->m_compoundTypeInfo = tupleTypeMalloc();
             tupleTypeInitFromCopy(this->m_compoundTypeInfo, other->m_compoundTypeInfo);
             break;
@@ -43,22 +43,22 @@ void typeInitFromCopy(Type *this, Type *other) {
 void typeInitFromTwoSingleTerms(Type *this, Type *first, Type *second) {
     if (!typeIsScalarInteger(first))
         targetTypeError(first, "attempt to init from two single terms where the first term is:");
-    if (second->m_typeId != typeid_interval) {
+    if (second->m_typeId != TYPEID_INTERVAL) {
         targetTypeError(second, "attempt to init from two single terms where the second term is:");
     } else {
         IntervalType *CTI = second->m_compoundTypeInfo;
-        if (CTI->m_baseTypeID != unspecified_base_interval) {
+        if (CTI->m_baseTypeID != UNSPECIFIED_BASE_INTERVAL) {
             targetTypeError(second, "attempt to init from two single terms where the second term is:");
         }
     }
-    typeInitFromIntervalType(this, integer_base_interval);
+    typeInitFromIntervalType(this, INTEGER_BASE_INTERVAL);
 }
 
 void typeInitFromVectorSizeSpecificationFromLiteral(Type *this, int64_t size, Type *baseType) {
     ArrayType *baseTypeCTI = (ArrayType *) baseType->m_compoundTypeInfo;
     this->m_typeId = baseType->m_typeId;  // whether baseType is scalar ndarray or string, the result of specification has the same type as baseType
     if (typeIsScalarBasic(baseType)) {  // do nothing
-    } else if (baseType->m_typeId == typeid_string) {
+    } else if (baseType->m_typeId == TYPEID_STRING) {
         if (baseTypeCTI->m_dims[0] != SIZE_UNSPECIFIED)
             targetTypeError(baseType, "Attempt to specify size for a string that has already specified type! ");
     } else {
@@ -84,34 +84,34 @@ void typeInitFromMatrixSizeSpecificationFromLiteral(Type *this, int64_t nRow, in
 void typeInitFromIntervalType(Type *this, IntervalTypeBaseTypeID id) {
     this->m_compoundTypeInfo = intervalTypeMalloc();
     intervalTypeInitFromBase(this->m_compoundTypeInfo, id);
-    this->m_typeId = typeid_interval;
+    this->m_typeId = TYPEID_INTERVAL;
 }
 
 void typeInitFromArrayType(Type *this, ElementTypeID eid, int8_t nDim, int64_t *dims) {
-    this->m_typeId = typeid_ndarray;
+    this->m_typeId = TYPEID_NDARRAY;
     this->m_compoundTypeInfo = arrayTypeMalloc();
     arrayTypeInitFromDims(this->m_compoundTypeInfo, eid, nDim, dims);
 }
 
 void typeDestructor(Type *this) {
     switch (this->m_typeId) {
-        case typeid_ndarray:
-        case typeid_string:
+        case TYPEID_NDARRAY:
+        case TYPEID_STRING:
             arrayTypeDestructor(this->m_compoundTypeInfo);
             free(this->m_compoundTypeInfo);
             break;
-        case typeid_tuple: {
+        case TYPEID_TUPLE: {
             TupleType *tupleType = this->m_compoundTypeInfo;
             tupleTypeDestructor(tupleType);
             free(tupleType);
         }    break;  // m_data is ignored for these types
-        case typeid_interval: {
+        case TYPEID_INTERVAL: {
             free(this->m_compoundTypeInfo);
         }
-        case typeid_stream_in:
-        case typeid_stream_out:
-        case typeid_empty_array:
-        case typeid_unknown:
+        case TYPEID_STREAM_IN:
+        case TYPEID_STREAM_OUT:
+        case TYPEID_EMPTY_ARRAY:
+        case TYPEID_UNKNOWN:
             break;
         case NUM_TYPE_IDS:
         default:
@@ -131,17 +131,17 @@ void typeDestructThenFree(Type *this) {
 bool typeIsConcreteType(Type *this) {
     switch (this->m_typeId) {
 
-        case typeid_ndarray:
-        case typeid_string:
+        case TYPEID_NDARRAY:
+        case TYPEID_STRING:
             return !arrayTypeHasUnknownSize(this->m_compoundTypeInfo);
-        case typeid_interval:
+        case TYPEID_INTERVAL:
             return !intervalTypeIsUnspecified(this->m_compoundTypeInfo);
-        case typeid_tuple:
-        case typeid_stream_in:
-        case typeid_stream_out:
-        case typeid_empty_array:
+        case TYPEID_TUPLE:
+        case TYPEID_STREAM_IN:
+        case TYPEID_STREAM_OUT:
+        case TYPEID_EMPTY_ARRAY:
             return true;
-        case typeid_unknown:
+        case TYPEID_UNKNOWN:
         default:
             return false;
     }
@@ -149,12 +149,12 @@ bool typeIsConcreteType(Type *this) {
 }
 
 bool typeIsStream(Type *this) {
-    return this->m_typeId == typeid_stream_in || this->m_typeId == typeid_stream_out;
+    return this->m_typeId == TYPEID_STREAM_IN || this->m_typeId == TYPEID_STREAM_OUT;
 }
 
 bool typeIsScalar(Type *this) {
     TypeID id = this->m_typeId;
-    if (id != typeid_ndarray)
+    if (id != TYPEID_NDARRAY)
         return false;
     ArrayType *CTI = this->m_compoundTypeInfo;
     return CTI->m_nDim == 0;
@@ -162,65 +162,65 @@ bool typeIsScalar(Type *this) {
 
 bool typeIsScalarBasic(Type *this) {
     TypeID id = this->m_typeId;
-    if (id != typeid_ndarray)
+    if (id != TYPEID_NDARRAY)
         return false;
     ArrayType *CTI = this->m_compoundTypeInfo;
-    if (CTI->m_elementTypeID == element_mixed || CTI->m_elementTypeID == element_null || CTI->m_elementTypeID == element_identity)
+    if (CTI->m_elementTypeID == ELEMENT_MIXED || CTI->m_elementTypeID == ELEMENT_NULL || CTI->m_elementTypeID == ELEMENT_IDENTITY)
         return false;
     return CTI->m_nDim == 0;
 }
 
 bool typeIsScalarNull(Type *this) {
-    if (this->m_typeId == typeid_ndarray) {
+    if (this->m_typeId == TYPEID_NDARRAY) {
         ArrayType *CTI = this->m_compoundTypeInfo;
-        if (CTI->m_elementTypeID == element_null && CTI->m_nDim == 0)
+        if (CTI->m_elementTypeID == ELEMENT_NULL && CTI->m_nDim == 0)
             return true;
     }
     return false;
 }
 
 bool typeIsScalarIdentity(Type *this) {
-    if (this->m_typeId == typeid_ndarray) {
+    if (this->m_typeId == TYPEID_NDARRAY) {
         ArrayType *CTI = this->m_compoundTypeInfo;
-        if (CTI->m_elementTypeID == element_identity && CTI->m_nDim == 0)
+        if (CTI->m_elementTypeID == ELEMENT_IDENTITY && CTI->m_nDim == 0)
             return true;
     }
     return false;
 }
 
 bool typeIsScalarInteger(Type *this) {
-    if (this->m_typeId == typeid_ndarray) {
+    if (this->m_typeId == TYPEID_NDARRAY) {
         ArrayType *CTI = this->m_compoundTypeInfo;
-        if (CTI->m_elementTypeID == element_integer && CTI->m_nDim == 0)
+        if (CTI->m_elementTypeID == ELEMENT_INTEGER && CTI->m_nDim == 0)
             return true;
     }
     return false;
 }
 
 bool typeIsArrayNull(Type *this) {
-    if (this->m_typeId == typeid_ndarray) {
+    if (this->m_typeId == TYPEID_NDARRAY) {
         ArrayType *CTI = this->m_compoundTypeInfo;
-        if (CTI->m_elementTypeID == element_null)
+        if (CTI->m_elementTypeID == ELEMENT_NULL)
             return true;
     }
     return false;
 }
 
 bool typeIsArrayIdentity(Type *this) {
-    if (this->m_typeId == typeid_ndarray) {
+    if (this->m_typeId == TYPEID_NDARRAY) {
         ArrayType *CTI = this->m_compoundTypeInfo;
-        if (CTI->m_elementTypeID == element_identity)
+        if (CTI->m_elementTypeID == ELEMENT_IDENTITY)
             return true;
     }
     return false;
 }
 
 bool typeIsUnknown(Type *this) {
-    return this->m_typeId == typeid_unknown;
+    return this->m_typeId == TYPEID_UNKNOWN;
 }
 
 bool typeIsArrayOrString(Type *this) {
-    return this->m_typeId == typeid_ndarray || this->m_typeId == typeid_string;
+    return this->m_typeId == TYPEID_NDARRAY || this->m_typeId == TYPEID_STRING;
 }
 
 bool typeIsVectorOrString(Type *this) {
@@ -232,16 +232,16 @@ bool typeIsVectorOrString(Type *this) {
 
 bool typeIsMatrix(Type *this) {
     TypeID id = this->m_typeId;
-    if (id != typeid_ndarray)
+    if (id != TYPEID_NDARRAY)
         return false;
     ArrayType *CTI = this->m_compoundTypeInfo;
     return CTI->m_nDim == 2;
 }
 
 bool typeIsMixedArray(Type *this) {
-    if (this->m_typeId == typeid_ndarray) {
+    if (this->m_typeId == TYPEID_NDARRAY) {
         ArrayType *CTI = this->m_compoundTypeInfo;
-        return CTI->m_elementTypeID == element_mixed;
+        return CTI->m_elementTypeID == ELEMENT_MIXED;
     }
     return false;
 }
@@ -403,7 +403,7 @@ void intervalTypeFreeData(void *data) {
 }
 
 bool intervalTypeIsUnspecified(IntervalType *this) {
-    return this->m_baseTypeID == unspecified_base_interval;
+    return this->m_baseTypeID == UNSPECIFIED_BASE_INTERVAL;
 }
 
 void intervalTypeUnaryPlus(int32_t *result, const int32_t *op) {

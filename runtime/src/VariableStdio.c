@@ -6,28 +6,28 @@
 void typeDebugPrint(Type *this) {
     printf("<");
     switch (this->m_typeId) {
-        case typeid_ndarray:
+        case TYPEID_NDARRAY:
             printf("ndarray");
             break;
-        case typeid_string:
+        case TYPEID_STRING:
             printf("string");
             break;
-        case typeid_interval:
+        case TYPEID_INTERVAL:
             printf("interval");
             break;
-        case typeid_tuple:
+        case TYPEID_TUPLE:
             printf("tuple");
             break;
-        case typeid_stream_in:
+        case TYPEID_STREAM_IN:
             printf("stream_in");
             break;
-        case typeid_stream_out:
+        case TYPEID_STREAM_OUT:
             printf("stream_out");
             break;
-        case typeid_empty_array:
+        case TYPEID_EMPTY_ARRAY:
             printf("empty_arr");
             break;
-        case typeid_unknown:
+        case TYPEID_UNKNOWN:
             printf("unknown");
             break;
         default:
@@ -35,15 +35,15 @@ void typeDebugPrint(Type *this) {
             break;
     }
     switch (this->m_typeId) {
-        case typeid_ndarray:
-        case typeid_string: {
+        case TYPEID_NDARRAY:
+        case TYPEID_STRING: {
             ArrayType *CTI = this->m_compoundTypeInfo;
             printf(",eid=%d,nDim=%d", CTI->m_elementTypeID, CTI->m_nDim);
             for (int8_t i = 0; i < CTI->m_nDim; i++) {
                 printf(",dim[%d]=%ld", i, CTI->m_dims[i]);
             }
         } break;
-        case typeid_tuple: {
+        case TYPEID_TUPLE: {
             TupleType *CTI = this->m_compoundTypeInfo;
             printf(",nField=%ld,idToIdx=[", CTI->m_nField);
             for (int64_t i = 0; i < CTI->m_nField; i++) {
@@ -66,7 +66,7 @@ void typeDebugPrint(Type *this) {
 
 
 void variablePrintToStream(Variable *this, Variable *stream) {
-    if (stream->m_type->m_typeId != typeid_stream_out) {
+    if (stream->m_type->m_typeId != TYPEID_STREAM_OUT) {
         targetTypeError(stream->m_type, "Attempt to print a variable to:");
     }
     variablePrintToStdout(this);
@@ -74,26 +74,26 @@ void variablePrintToStream(Variable *this, Variable *stream) {
 
 void elementPrintToStdout(ElementTypeID id, void *value) {
     switch (id) {
-        case element_integer:
+        case ELEMENT_INTEGER:
             printf("%d", *(int32_t *)value);
             break;
-        case element_real:
+        case ELEMENT_REAL:
             printf("%g", *(float *)value);
             break;
-        case element_boolean:
+        case ELEMENT_BOOLEAN:
             if (*(bool *)value) {
                 printf("T");
             } else {
                 printf("F");
             }
             break;
-        case element_character:
+        case ELEMENT_CHARACTER:
             printf("%c", *(int8_t *)value);
             break;
-        case element_null:
+        case ELEMENT_NULL:
             printf("%c", 0x00);
             break;
-        case element_identity:
+        case ELEMENT_IDENTITY:
             printf("%c", 0x01);
             break;
         default:
@@ -103,14 +103,14 @@ void elementPrintToStdout(ElementTypeID id, void *value) {
 
 void variablePrintToStdout(Variable *this) {
     Type *type = this->m_type;
-    if (type->m_typeId == typeid_string) {
+    if (type->m_typeId == TYPEID_STRING) {
         ArrayType *CTI = type->m_compoundTypeInfo;
         int64_t size = arrayTypeGetTotalLength(CTI);
         int8_t *str = this->m_data;
         for (int64_t i = 0; i < size; i++) {
             printf("%c", str[i]);
         }
-    } else if (type->m_typeId == typeid_ndarray) {
+    } else if (type->m_typeId == TYPEID_NDARRAY) {
         ArrayType *CTI = type->m_compoundTypeInfo;
         ElementTypeID eid = CTI->m_elementTypeID;
         char *dataPos = this->m_data;
@@ -153,16 +153,16 @@ void variableDebugPrint(Variable *this) {
     printf("(Var");
     typeDebugPrint(this->m_type);
     switch(this->m_type->m_typeId) {
-        case typeid_ndarray:
-        case typeid_string: {
+        case TYPEID_NDARRAY:
+        case TYPEID_STRING: {
             // use the spec print method
             variablePrintToStdout(this);
         } break;
-        case typeid_interval: {
+        case TYPEID_INTERVAL: {
             int32_t *interval = this->m_data;
             printf("(%d..%d)", interval[0], interval[1]);
         } break;
-        case typeid_tuple:{
+        case TYPEID_TUPLE:{
             // print recursively
             Variable **vars = this->m_data;
             TupleType *CTI = this->m_type->m_compoundTypeInfo;
@@ -177,19 +177,19 @@ void variableDebugPrint(Variable *this) {
 
 void variableReadFromStdin(Variable *this) {
     TypeID tid = this->m_type->m_typeId;
-    if (tid != typeid_ndarray) {
+    if (tid != TYPEID_NDARRAY) {
         targetTypeError(this->m_type, "Attempt to read from stdin into a variable of type:");
     }
     ArrayType *CTI = this->m_type->m_compoundTypeInfo;
     Variable *rhs = variableMalloc();
     switch (CTI->m_elementTypeID) {
-        case element_integer:
+        case ELEMENT_INTEGER:
             variableInitFromIntegerScalar(rhs, readIntegerFromStdin()); break;
-        case element_real:
+        case ELEMENT_REAL:
             variableInitFromRealScalar(rhs, readRealFromStdin()); break;
-        case element_boolean:
+        case ELEMENT_BOOLEAN:
             variableInitFromBooleanScalar(rhs, readBooleanFromStdin()); break;
-        case element_character:
+        case ELEMENT_CHARACTER:
             variableInitFromCharacterScalar(rhs, readCharacterFromStdin()); break;
         default:
             targetTypeError(this->m_type, "Attempt to read from stdin into a variable of type:"); break;
