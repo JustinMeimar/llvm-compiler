@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
 
   // Get the root of the parse tree. Use your base rule name.
   antlr4::tree::ParseTree *tree = parser.compilationUnit();
+  // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
   
   //Build AST
   gazprea::ASTBuilder builder;
@@ -62,7 +63,6 @@ int main(int argc, char **argv) {
   gazprea::TypeWalk typewalk(symtab);
   typewalk.visit(ast);
 
-  // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
   // std::cout << "ast:\n" << ast->toStringTree(&parser) << std::endl;
 
   return 0;

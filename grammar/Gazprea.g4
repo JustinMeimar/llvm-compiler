@@ -181,6 +181,7 @@ expr:
     | IntegerConstant                                                               # IntegerAtom
     | CharacterConstant                                                             # CharacterAtom
     | StringLiteral                                                                 # StringLiteralAtom
+    | IDENTITY                                                                      # IdentityAtom
     ;
 //
 // Generator and Filter

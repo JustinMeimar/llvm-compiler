@@ -87,30 +87,47 @@ int TypePromote::promotionFromTo[16][16] = { // 0 = nullptr
 };
 
 std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs){
-
     int lhsType = lhs->evalType->getTypeId();
     int rhsType = rhs->evalType->getTypeId();
-    int resTypeId = typeTable[lhsType][rhsType];
-    // CHECK IF RESTYPEID == -1 IF SO THROW ERROR HERE std::cout << "Eval Type" << evalType << std::endl;
-    if (resTypeId == -1 ) { 
-        std::cout << "Compile-Time-Error: TypeTable invalid result\n";
-        return nullptr; 
-    }  
-    auto newType = this->symtab->getType(resTypeId);
 
-    //lhs promote type
-    int lhsPromoteType = this->promotionFromTo[lhsType][resTypeId];
-    if (lhsPromoteType != 0) {
-        lhs->promoteToType = newType;      
+    if (lhsType == Type::IDENTITY && rhsType == Type::IDENTITY) {
+        std::cout << "Compile-Time-Error! unable to infer type of two identities";
+        return nullptr;
     } 
-    //rhs promote type
-    int rhsPromoteType = this->promotionFromTo[rhsType][resTypeId];
-    if (rhsPromoteType != 0) { 
-        rhs->promoteToType = newType; // 
-    }
+    else if (lhsType == Type::IDENTITY && rhsType != Type::IDENTITY ) {
+        lhs->promoteToType = rhs->evalType;
+        lhs->identity = true;
+        return rhs->evalType;
+    } 
+    else if (lhsType != Type::IDENTITY && rhsType == Type::IDENTITY ) {
+        rhs->promoteToType = lhs->evalType;
+        rhs->identity = true;
+        return lhs->evalType;
 
-    //return eval type
-    return newType; 
+    } else { 
+        int resTypeId = typeTable[lhsType][rhsType];
+
+        if (resTypeId == -1 ) { 
+            std::cout << "Compile-Time-Error: TypeTable invalid result\n";
+            return nullptr; 
+        }  
+        auto newType = this->symtab->getType(resTypeId);
+
+        //lhs promote type
+        int lhsPromoteType = this->promotionFromTo[lhsType][resTypeId];
+        if (lhsPromoteType != 0) {
+            lhs->promoteToType = newType;      
+        } 
+        //rhs promote type
+        int rhsPromoteType = this->promotionFromTo[rhsType][resTypeId];
+        if (rhsPromoteType != 0) { 
+            rhs->promoteToType = newType; // 
+        }
+
+        //return eval type
+        return newType;
+        }
+     
 }
 
 } //namespace gazprea

@@ -21,7 +21,8 @@ namespace gazprea {
             BOOLEAN_2 = 12,
             CHARACTER_2 = 13,
             INTEGER_2 = 14,
-            REAL_2 = 15
+            REAL_2 = 15,
+            IDENTITY = 16,
         };
         virtual ~Type(); 
         virtual std::string getName() = 0;

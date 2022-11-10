@@ -8,6 +8,7 @@ namespace gazprea {
         globals->define(std::make_shared<BuiltInScalarTypeSymbol>("string"));
         globals->define(std::make_shared<BuiltInScalarTypeSymbol>("boolean"));
         globals->define(std::make_shared<BuiltInScalarTypeSymbol>("interval"));
+        globals->define(std::make_shared<BuiltInScalarTypeSymbol>("identity"));
     }
 
     SymbolTable::SymbolTable() : globals(std::make_shared<GlobalScope>()) { 
@@ -22,6 +23,7 @@ namespace gazprea {
         auto characterBaseType  = std::dynamic_pointer_cast<Type>(this->globals->resolve("character"));
         auto stringBaseType     = std::dynamic_pointer_cast<Type>(this->globals->resolve("string"));
         auto intervalBaseType   = std::dynamic_pointer_cast<Type>(this->globals->resolve("interval"));
+        auto identityBaseType   = std::dynamic_pointer_cast<Type>(this->globals->resolve("identity"));
 
         switch(typeEnum) {
             case 0:  return nullptr; break;
@@ -40,6 +42,7 @@ namespace gazprea {
             case 13: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(characterBaseType, 2)); break;
             case 14: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(integerBaseType, 2)); break;
             case 15: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(realBaseType, 2)); break;
+            case 16: return identityBaseType; break;
         }
         return nullptr;
     }

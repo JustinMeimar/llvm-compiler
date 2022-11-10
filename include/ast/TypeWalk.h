@@ -55,6 +55,7 @@ class TypeWalk {
         void visitBooleanConstant(std::shared_ptr<AST> t);
         void visitStringLiteral(std::shared_ptr<AST> t);
         void visitIdentifier(std::shared_ptr<AST> t);
+        void visitIdentity(std::shared_ptr<AST> t);
 
         //Other Statements
         void visitStreamStatement(std::shared_ptr<AST> t);
