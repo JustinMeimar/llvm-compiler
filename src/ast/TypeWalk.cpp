@@ -80,6 +80,10 @@ namespace gazprea {
                 case GazpreaParser::IDENTIFIER_TOKEN:
                     visitIdentifier(t);
                     break;
+                case GazpreaParser::IDENTITY:
+                case GazpreaParser::NULL_LITERAL:
+                    visitIdentityOrNull(t);
+                    break;
                 
                 // Other Statements
                 case GazpreaParser::INPUT_STREAM_TOKEN:
@@ -110,11 +114,14 @@ namespace gazprea {
             variableDeclarationSymbol->type = t->children[2]->evalType;
             return;
         }
-
+        
         auto varTy = t->children[1]->evalType; 
         auto exprTy = t->children[2]->evalType;
+        
+        if (exprTy->getTypeId() == Type::IDENTITYNULL) {
+            t->children[2]->promoteToType = varTy;
 
-        if (varTy->isTupleType() && exprTy->isTupleType()) {  //specifically for tuple
+        } else if (varTy->isTupleType() && exprTy->isTupleType()) {  //specifically for tuple
             auto tupleTypeInTypeSpecifier = std::dynamic_pointer_cast<TupleType>(varTy);
             auto tupleTypeInExpression = std::dynamic_pointer_cast<TupleType>(exprTy);
             if (tupleTypeInTypeSpecifier->orderedArgs.size() != tupleTypeInExpression->orderedArgs.size()) {
@@ -161,6 +168,8 @@ namespace gazprea {
                         t->children[1]->tuplePromoteTypeList[i] = tupleTypeInLHSExpression->orderedArgs[i]->type;
                     }
                 }
+            } else if (RHSTy->getTypeId() == Type::IDENTITYNULL) { //assign promoteToType of IDENTITY to LHS Type
+                t->children[1]->promoteToType = LHSExpressionAST->evalType;
             } else {
                 int LHSTyEnum = LHSExpressionAST->evalType->getTypeId();
                 int RHSTyEnum = RHSTy->getTypeId();
@@ -318,7 +327,7 @@ namespace gazprea {
     //Compound Types
     void TypeWalk::visitVectorLiteral(std::shared_ptr<AST> t) {
         visitChildren(t);
-        if (t->children[0]->children.size() == 0) { return; } //null vector
+        if (t->children[0]->children.size() == 0) { return; } //null vector 
         if (t->children[0]->children[0]->children[0]->getNodeType() == GazpreaParser::VECTOR_LITERAL_TOKEN) {
             //literal matrix
             auto baseType =  t->children[0]->children[0]->children[0]->children[0]->children[0]->evalType;
@@ -383,6 +392,11 @@ namespace gazprea {
             auto tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
             t->tuplePromoteTypeList = std::vector<std::shared_ptr<Type>>(tupleType->orderedArgs.size());
         }
+    }
+    
+    void TypeWalk::visitIdentityOrNull(std::shared_ptr<AST> t) {
+        t->evalType = symtab->getType(Type::IDENTITYNULL); //esentially until used in a context 
+        t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitStreamStatement(std::shared_ptr<AST> t) {

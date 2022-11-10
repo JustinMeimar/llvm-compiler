@@ -282,7 +282,7 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitIntegerAtom(GazpreaParser::IntegerAtomContext *ctx) {
-        return std::make_shared<AST>(GazpreaParser::IntegerConstant, ctx->IntegerConstant());
+        return std::make_shared<AST>(GazpreaParser::IntegerConstant, ctx);
     }
     
     std::any ASTBuilder::visitUnaryOp(GazpreaParser::UnaryOpContext *ctx) {
@@ -430,6 +430,7 @@ namespace gazprea {
         return t;
     }
 
+
     std::any ASTBuilder::visitRealConstant(GazpreaParser::RealConstantContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::REAL_CONSTANT_TOKEN, ctx);
         return t;
@@ -439,4 +440,15 @@ namespace gazprea {
         auto t = std::make_shared<AST>(GazpreaParser::BooleanConstant, ctx);
         return t;
     }
+
+    std::any ASTBuilder::visitIdentityOrNullAtom(GazpreaParser::IdentityOrNullAtomContext *ctx) {
+        std::shared_ptr<AST> t; 
+        if (ctx->NULL_LITERAL()) { 
+            t = std::make_shared<AST>(GazpreaParser::NULL_LITERAL, ctx);
+        } else {
+            t = std::make_shared<AST>(GazpreaParser::IDENTITY, ctx);
+        }
+        return t;
+    }
+
 }

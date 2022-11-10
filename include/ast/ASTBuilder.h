@@ -124,6 +124,8 @@ public:
 
   virtual std::any visitBooleanAtom(GazpreaParser::BooleanAtomContext *ctx) override; 
 
+  virtual std::any visitIdentityOrNullAtom(GazpreaParser::IdentityOrNullAtomContext *ctx) override;
+
 };
 
 }  // namespace gazprea
