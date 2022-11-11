@@ -2,6 +2,9 @@
 #include "RuntimeVariables.h"
 #include "RuntimeErrors.h"
 #include "Literal.h"
+#include "stdlib.h"
+#include "ctype.h"
+#include "limits.h"
 
 void typeDebugPrint(Type *this) {
     printf("<");
@@ -175,6 +178,8 @@ void variableDebugPrint(Variable *this) {
     printf(")");
 }
 
+///------------------------------STREAM_STD_INPUT---------------------------------------------------------------
+
 void variableReadFromStdin(Variable *this) {
     TypeID tid = this->m_type->m_typeId;
     if (tid != TYPEID_NDARRAY) {
@@ -198,8 +203,159 @@ void variableReadFromStdin(Variable *this) {
     variableDestructThenFree(rhs);
 }
 
-int32_t readIntegerFromStdin();
-float readRealFromStdin();
-bool readBooleanFromStdin();
-int8_t readCharacterFromStdin();
-int32_t getStdinState();
+int32_t stream_state = 0;  // 0, 1, 2 = success, error, eof
+#define BUFFER_SIZE 1024
+
+/**
+ * only a section of the buffer will be used at any given time
+ * the section is every character starting from cur_pos up to but not include the valid_until pos
+ */
+char circular_buffer[BUFFER_SIZE];  // only a section of the buffer will be used at any given time
+int last_successful_read = 0;  // the position right after the last successful read
+int cur_pos = 0;  // the next character will start reading from here
+int valid_until = 0;
+
+// https://en.cppreference.com/w/c/io/feof
+// return EOF on unsuccessful read, otherwise the result can be converted to char
+int readNextChar() {
+    if (cur_pos == valid_until) {
+        int ch = fgetc(stdin);
+        if (ch != EOF) {
+            cur_pos = (cur_pos + 1) % BUFFER_SIZE;
+            valid_until = (valid_until + 1) % BUFFER_SIZE;
+            if (cur_pos == last_successful_read) {
+                // emit an error
+                errorAndExit("Error: Attempt to read an input longer than the input buffer length 1024!");
+            }
+        }
+        return ch;
+    } else {
+        // just read from the saved buffer
+        char ch = circular_buffer[cur_pos];
+        cur_pos = (cur_pos + 1) % BUFFER_SIZE;
+        return ch;
+    }
+}
+
+void rewindInputBuffer() {
+    cur_pos = last_successful_read;
+}
+
+// on a successful read, we want to register the new rewind point
+void updateRewindPoint(int newRewindPoint) {
+    last_successful_read = newRewindPoint;
+}
+
+// Each of the interface below should always
+// 1. update rewind point when success; rewind when fail
+// 2. set stream state regardless of success or failure
+// 3. return correct result when success; return null when fail
+
+int32_t readIntegerFromStdin() {
+    int ch = ' ';
+    while (isspace(ch)) {
+        ch = readNextChar();
+        if (ch == EOF) {
+            rewindInputBuffer();
+            stream_state = 2;
+            return 0;
+        }
+    }
+    long sign;
+    long integer;
+    if (ch == '+') {
+        sign = 1;
+        integer = 0;
+    } else if (ch == '-') {
+        sign = -1;
+        integer = 0;
+    } else if (!isdigit(ch)) {
+        rewindInputBuffer();
+        stream_state = 1;
+        return 0;
+    } else {
+        sign = 1;
+        integer = ch - '0';
+    }
+
+    // now read the rest of the integer literal until we see a non-digit character
+    while (true) {
+        int temp = cur_pos;
+        ch = readNextChar();
+        if (isdigit(ch)) {
+            integer = integer * 10 + ch - '0';
+            if (sign * integer < INT32_MIN || sign * integer > INT32_MAX) {  // literal is too large
+                rewindInputBuffer();
+                stream_state = 1;
+                return 0;
+            }
+        } else if (ch == EOF) {
+            rewindInputBuffer();
+            stream_state = 2;
+            return 0;
+        } else if (isspace(ch)) {  // successful read
+            updateRewindPoint(temp);
+            rewindInputBuffer();
+            stream_state = 0;
+            return (int32_t)(sign * integer);
+        } else {  // is failure
+            rewindInputBuffer();
+            stream_state = 1;
+            return 0;
+        }
+    }
+}
+
+float readRealFromStdin() {
+    // TODO: read float from stdin
+    return 0.0f;
+}
+
+bool readBooleanFromStdin() {
+    // read until a non-whitespace character is encountered, then read one more character to see if the boolean is valid
+    while (true) {
+        int ch = readNextChar();
+        if (ch == EOF) {
+            rewindInputBuffer();
+            stream_state = 2;
+            return false;
+        } else if (isspace(ch)) {
+            // do nothing
+        } else if (ch == 'T' || ch == 'F') {
+            bool result = ch == 'T';
+            int temp = cur_pos;
+
+            ch = readNextChar();
+            if (isspace(ch)) {  // success
+                updateRewindPoint(temp);  // don't actually eat the space
+                rewindInputBuffer();
+                stream_state = 0;
+                return result;
+            } else {
+                rewindInputBuffer();
+                stream_state = (ch == EOF) ? 2 : 1;
+                return false;
+            }
+        } else {
+            rewindInputBuffer();
+            stream_state = 1;
+            return false;
+        }
+    }
+}
+
+int8_t readCharacterFromStdin() {
+    int ch = readNextChar();
+    updateRewindPoint(cur_pos);  // read character should always success
+    stream_state = 0;
+
+    if (ch == EOF) {
+        return -1;
+    } else {
+        return (int8_t) ch;
+    }
+}
+
+int32_t getStdinState() {
+    return stream_state;
+}
