@@ -115,6 +115,9 @@ namespace gazprea {
                 case GazpreaParser::CALL_PROCEDURE_FUNCTION_IN_EXPRESSION:
                     visitCallSubroutineInExpression(t);
                     break;
+                case GazpreaParser::CALL_PROCEDURE_STATEMENT_TOKEN:
+                    visitCallSubroutineStatement(t);
+                    break;
                 case GazpreaParser::IDENTIFIER_TOKEN:
                     visitIdentifier(t);
                     break;
@@ -435,6 +438,18 @@ namespace gazprea {
         }
         auto llvmReturnValue = ir.CreateCall(subroutineSymbol->llvmFunction, arguments);
         t->llvmValue = llvmReturnValue;
+    }
+
+    void LLVMGen::visitCallSubroutineStatement(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
+        std::vector<llvm::Value *> arguments = std::vector<llvm::Value *>();
+        if (!t->children[1]->isNil()) {
+            for (auto expressionAST : t->children[1]->children) {
+                arguments.push_back(expressionAST->llvmValue);
+            }
+        }
+        ir.CreateCall(subroutineSymbol->llvmFunction, arguments);
     }
 
     void LLVMGen::Print() {

@@ -66,6 +66,7 @@ class LLVMGen {
         // Stream Statements
         void visitInputStreamStatement(std::shared_ptr<AST> t);
         void visitOutputStreamStatement(std::shared_ptr<AST> t);
+        void visitCallSubroutineStatement(std::shared_ptr<AST> t);
 
         // Operations
         void visitBinaryOperation(std::shared_ptr<AST> t);
