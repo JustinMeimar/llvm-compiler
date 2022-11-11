@@ -56,8 +56,9 @@ class LLVMGen {
         void visitIdentityAtom(std::shared_ptr<AST> t);
         void visitNullAtom(std::shared_ptr<AST> t);
         void visitStringLiteral(std::shared_ptr<AST> t);
-
         void visitIdentifier(std::shared_ptr<AST> t);
+        void visitGenerator(std::shared_ptr<AST> t);
+        void visitFilter(std::shared_ptr<AST> t);
 
         // Other Sub-Expression rules
         void visitExpression(std::shared_ptr<AST> t);

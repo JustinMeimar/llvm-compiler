@@ -83,6 +83,12 @@ namespace gazprea {
                 case GazpreaParser::StringLiteral:
                     visitStringLiteral(t);
                     break;
+                case GazpreaParser::GENERATOR_TOKEN:
+                    visitGenerator(t);
+                    break;
+                case GazpreaParser::FILTER_TOKEN:
+                    visitFilter(t);
+                    break;
                 case GazpreaParser::EXPRESSION_TOKEN:
                     numExprAncestors++;
                     visitExpression(t);
@@ -199,16 +205,17 @@ namespace gazprea {
             ir.CreateRet(returnIntegerValue);
             return;
         }
-        // ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[0]->llvmValue));
         ir.CreateRet(t->children[0]->llvmValue);
     }
 
     void LLVMGen::visitVarDeclarationStatement(std::shared_ptr<AST> t) {
         visitChildren(t);
+        // TODO
     }
 
     void LLVMGen::visitAssignmentStatement(std::shared_ptr<AST> t) {
         visitChildren(t);
+        // TODO
     }
 
     void LLVMGen::viistInfiniteLoop(std::shared_ptr<AST> t) {
@@ -241,11 +248,13 @@ namespace gazprea {
     }
     
     void LLVMGen::visitPostPredicatedLoop(std::shared_ptr<AST> t) {
-        
+        visitChildren(t);
+        // TODO
     }
     
     void LLVMGen::visitIteratorLoop(std::shared_ptr<AST> t) {
-
+        visitChildren(t);
+        // TODO
     } 
 
     void LLVMGen::visitBooleanAtom(std::shared_ptr<AST> t) {
@@ -310,6 +319,16 @@ namespace gazprea {
         }   
     }
 
+    void LLVMGen::visitGenerator(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        // TODO
+    }
+
+    void LLVMGen::visitFilter(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        // TODO
+    }
+
     void LLVMGen::visitExpression(std::shared_ptr<AST> t) {
         visitChildren(t);
         t->llvmValue = t->children[0]->llvmValue;
@@ -317,6 +336,7 @@ namespace gazprea {
     
     void LLVMGen::visitCast(std::shared_ptr<AST> t) {
         visitChildren(t);
+        // TODO
     }
 
     void LLVMGen::visitInputStreamStatement(std::shared_ptr<AST> t) {
