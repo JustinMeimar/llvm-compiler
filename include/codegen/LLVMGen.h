@@ -11,8 +11,6 @@
 
 #include "llvm/Support/raw_os_ostream.h"
 
-#include "LLVMTypes.h"
-
 #include "SubroutineSymbol.h"
 #include "LLVMIRFunction.h"
 

@@ -18,9 +18,10 @@ void LLVMIRFunction::declareAllFunctions() {
     llvm::IntegerType * int1Ty = m_builder->getInt1Ty();
     llvm::IntegerType * int8Ty = m_builder->getInt8Ty();
     llvm::IntegerType * int32Ty = m_builder->getInt32Ty();
-    // llvm::IntegerType * int64Ty = m_builder->getInt64Ty();
+    llvm::IntegerType * int64Ty = m_builder->getInt64Ty();
     llvm::Type * floatTy = m_builder->getFloatTy();
 
+    // Expression Atom
     declareFunction(
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), int1Ty}, false),
         "variableInitFromBooleanScalar"
@@ -38,6 +39,10 @@ void LLVMIRFunction::declareAllFunctions() {
         "variableInitFromCharacterScalar"
     );
     declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), int64Ty, int8Ty->getPointerTo() }, false),
+        "variableInitFromString"
+    );
+    declareFunction(
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo()}, false),
         "variableInitFromNullScalar"
     );
@@ -45,6 +50,14 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo()}, false),
         "variableInitFromIdentityScalar"
     );
+    
+    // Other Expression
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeTypeTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
+        "variableInitFromCast"
+    );
+    
+    // Stream Statement
     declareFunction(
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo()}, false),
         "variableReadFromStdin"
@@ -53,13 +66,11 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo()}, false),
         "variablePrintToStdout"
     );
+    
+    // Other
     declareFunction(
         llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), false),
         "variableMalloc"
-    );
-    declareFunction(
-        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeTypeTy->getPointerTo(), runtimeVariableTy->getPointerTo()}, false),
-        "variableInitFromCast"
     );
 }
 

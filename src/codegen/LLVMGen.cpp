@@ -2,31 +2,33 @@
 
 namespace gazprea {
 
-    LLVMGen::LLVMGen(std::shared_ptr<SymbolTable> symtab, std::string& outfile) : 
-        globalCtx(), ir(globalCtx), mod("gazprea", globalCtx), outfile(outfile), llvmFunction(&globalCtx, &ir, &mod) {
-            runtimeTypeTy = llvm::StructType::create(
-                globalCtx,
-                {
-                    ir.getInt32Ty(),
-                    ir.getInt8PtrTy()  // llvm does not have void*, the equivalent is int8*
-                },
-                "RuntimeType"
-            );
-            
-            runtimeVariableTy = llvm::StructType::create(
-                globalCtx, 
-                {
-                    runtimeTypeTy->getPointerTo(), 
-                    ir.getInt8PtrTy(),  // llvm does not have void*, the equivalent is int8*
-                    ir.getInt64Ty(),
-                    ir.getInt8PtrTy()  // llvm does not have void*, the equivalent is int8*
-                }, 
-                "RuntimeVariable"
-            );
-            llvmFunction.runtimeTypeTy = runtimeTypeTy;
-            llvmFunction.runtimeVariableTy = runtimeVariableTy;
-            llvmFunction.declareAllFunctions();
-        }
+    LLVMGen::LLVMGen(
+        std::shared_ptr<SymbolTable> symtab, 
+        std::string& outfile) 
+        : globalCtx(), ir(globalCtx), mod("gazprea", globalCtx), outfile(outfile), llvmFunction(&globalCtx, &ir, &mod) {
+        runtimeTypeTy = llvm::StructType::create(
+            globalCtx,
+            {
+                ir.getInt32Ty(),
+                ir.getInt8PtrTy()  // llvm does not have void*, the equivalent is int8*
+            },
+            "RuntimeType"
+        );
+        
+        runtimeVariableTy = llvm::StructType::create(
+            globalCtx, 
+            {
+                runtimeTypeTy->getPointerTo(), 
+                ir.getInt8PtrTy(),  // llvm does not have void*, the equivalent is int8*
+                ir.getInt64Ty(),
+                ir.getInt8PtrTy()  // llvm does not have void*, the equivalent is int8*
+            }, 
+            "RuntimeVariable"
+        );
+        llvmFunction.runtimeTypeTy = runtimeTypeTy;
+        llvmFunction.runtimeVariableTy = runtimeVariableTy;
+        llvmFunction.declareAllFunctions();
+    }
 
     LLVMGen::~LLVMGen() { 
         Print();
@@ -96,6 +98,8 @@ namespace gazprea {
         llvm::Type *returnType = runtimeVariableTy;
         if (t->children[2]->isNil()) {
             returnType = ir.getVoidTy();
+        } else if (subroutineSymbol->name == "main") {
+            returnType = ir.getInt32Ty();
         }
 
         llvm::FunctionType* subroutineTy = llvm::FunctionType::get(
@@ -134,6 +138,12 @@ namespace gazprea {
 
     void LLVMGen::visitReturn(std::shared_ptr<AST> t) {
         visitChildren(t);
+        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->scope);
+        if (subroutineSymbol->name == "main") {
+            // TODO
+            ir.CreateRet(ir.getInt32(0));  // Need a runtime lib function to convert Variable object to integer
+            return;
+        }
         ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[0]->llvmValue));
     }
 
@@ -166,7 +176,7 @@ namespace gazprea {
     void LLVMGen::visitRealAtom(std::shared_ptr<AST> t) {
         auto realValue = std::stof(t->parseTree->getText());
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
-        // llvmFunction.call("variableInitFromFloatScalar", { runtimeVariableObject, ir.getFloat });
+        llvmFunction.call("variableInitFromFloatScalar", { runtimeVariableObject, llvm::ConstantFP::get(ir.getFloatTy(), realValue) });
         t->llvmValue = runtimeVariableObject;
     }
 
@@ -183,7 +193,13 @@ namespace gazprea {
     }
 
     void LLVMGen::visitStringLiteral(std::shared_ptr<AST> t) {
-        visitChildren(t);
+        // TODO
+        // auto string_value = t->parseTree->getText().substr(1, t->parseTree->getText().length() - 2).c_str();
+        // auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        // auto string_length = t->parseTree->getText().length();
+        
+        // llvmFunction.call("variableInitFromString", { runtimeVariableObject, ir.getInt64(string_length), string_value } );
+        // t->llvmValue = runtimeVariableObject;
     }
 
     void LLVMGen::visitExpression(std::shared_ptr<AST> t) {
@@ -198,9 +214,6 @@ namespace gazprea {
     void LLVMGen::visitInputStreamStatement(std::shared_ptr<AST> t) {
         visitChildren(t);
         // TODO: Runtime function not implemented
-        // auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
-        // llvmFunction.call("variableReadFromStdin", { runtimeVariableObject });
-        // t->children[1]->symbol->llvmPointerToVariableObject = runtimeVariableObject;
     }
 
     void LLVMGen::visitOutputStreamStatement(std::shared_ptr<AST> t) {
@@ -222,7 +235,4 @@ namespace gazprea {
         std::ofstream outFile(outfile);
         outFile << compiledLLFile;
     }
-
-
-
 } // namespace gazprea

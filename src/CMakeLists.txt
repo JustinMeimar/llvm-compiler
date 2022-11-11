@@ -30,7 +30,6 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/types/TypePromote.cpp"
     #llvm
     "${CMAKE_CURRENT_SOURCE_DIR}/codegen/LLVMGen.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/codegen/LLVMTypes.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/codegen/LLVMIRFunction.cpp"
 
 )
