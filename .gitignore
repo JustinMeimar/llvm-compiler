@@ -17,5 +17,7 @@ tests/*
 !tests/input/
 !tests/output/
 !tests/inStream/
-!tests/memory-checker/
+!tests/helpers/test-source
+!tests/helpers/memchk.py
+!tests/helpers/testsplit.py
 !tests/GazpreaConfig.json
