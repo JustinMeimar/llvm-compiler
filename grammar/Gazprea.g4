@@ -181,7 +181,7 @@ expr:
     | IntegerConstant                                                               # IntegerAtom
     | CharacterConstant                                                             # CharacterAtom
     | StringLiteral                                                                 # StringLiteralAtom
-    | (IDENTITY | NULL_LITERAL)                                                             # IdentityOrNullAtom
+    | (IDENTITY | NULL_LITERAL)                                                     # IdentityOrNullAtom
     ;
 //
 // Generator and Filter
