@@ -5,7 +5,10 @@ namespace gazprea {
     LLVMGen::LLVMGen(
         std::shared_ptr<SymbolTable> symtab, 
         std::string& outfile) 
-        : globalCtx(), ir(globalCtx), mod("gazprea", globalCtx), outfile(outfile), llvmFunction(&globalCtx, &ir, &mod) {
+        : globalCtx(), ir(globalCtx), mod("gazprea", globalCtx), outfile(outfile), 
+        llvmFunction(&globalCtx, &ir, &mod), 
+        llvmBranch(&globalCtx, &ir, &mod) {
+        
         runtimeTypeTy = llvm::StructType::create(
             globalCtx,
             {
@@ -46,6 +49,18 @@ namespace gazprea {
                 case GazpreaParser::RETURN:
                     visitReturn(t);
                     break;
+                case GazpreaParser::INFINITE_LOOP_TOKEN:
+                    viistInfiniteLoop(t);
+                    break;
+                case GazpreaParser::PRE_PREDICATE_LOOP_TOKEN:
+                    visitPrePredicatedLoop(t);
+                    break;
+                case GazpreaParser::POST_PREDICATE_LOOP_TOKEN:
+                    visitPostPredicatedLoop(t); 
+                    break;
+                case GazpreaParser::ITERATOR_LOOP_TOKEN:
+                    visitIteratorLoop(t);
+                    break;  
                 case GazpreaParser::BooleanConstant:
                     visitBooleanAtom(t);
                     break;
@@ -147,6 +162,43 @@ namespace gazprea {
         ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[0]->llvmValue));
     }
 
+    void LLVMGen::viistInfiniteLoop(std::shared_ptr<AST> t) {
+        std::cout << "Infinite Loop!\n";
+
+        llvm::Function* parentFunc = ir.GetInsertBlock()->getParent(); 
+        llvm::BasicBlock *EnterBodyBB = llvm::BasicBlock::Create(
+                globalCtx, "InfiniteBody", parentFunc);
+
+        ir.CreateBr(EnterBodyBB);
+        ir.SetInsertPoint(EnterBodyBB);
+        visitChildren(t);
+
+        ir.CreateBr(EnterBodyBB); 
+    }
+    
+    void LLVMGen::visitPrePredicatedLoop(std::shared_ptr<AST> t) {
+        std::cout << "Pre Predicated Loop!\n";
+
+        llvmBranch.createLoopConditionalBB("Loop");
+        visit(t->children[0]);
+        llvm::Value* exprValue = ir.getInt32(1); //llvmValue of AST not populated, temporary true;
+        // llvm::Value* exprValue = t->children[0]->llvmValue; 
+        llvm::Value *condition = ir.CreateICmpNE(exprValue, ir.getInt32(0));
+
+        llvmBranch.createLoopBodyBB(condition);
+        visit(t->children[1]);  // Visit body
+        
+	    llvmBranch.createLoopMergeBB();
+    }
+    
+    void LLVMGen::visitPostPredicatedLoop(std::shared_ptr<AST> t) {
+        
+    }
+    
+    void LLVMGen::visitIteratorLoop(std::shared_ptr<AST> t) {
+
+    } 
+
     void LLVMGen::visitBooleanAtom(std::shared_ptr<AST> t) {
         bool booleanValue;
         if (t->parseTree->getText() == "true") {
@@ -228,7 +280,7 @@ namespace gazprea {
         
         llvm::raw_os_ostream llOut(std::cout);
         llvm::raw_os_ostream llErr(std::cerr);
-        llvm::verifyModule(mod, &llErr);
+        // llvm::verifyModule(mod, &llErr);
     
         mod.print(out, nullptr);
         out.flush();

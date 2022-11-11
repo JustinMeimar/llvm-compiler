@@ -12,8 +12,8 @@
 #include "llvm/Support/raw_os_ostream.h"
 
 #include "SubroutineSymbol.h"
+#include "LLVMIRBranch.h"
 #include "LLVMIRFunction.h"
-
 
 namespace gazprea {
 
@@ -28,6 +28,7 @@ class LLVMGen {
         llvm::StructType *runtimeVariableTy;
         llvm::Function* currentSubroutine;
 
+        LLVMIRBranch llvmBranch;
         LLVMIRFunction llvmFunction;
 
         LLVMGen(std::shared_ptr<SymbolTable> symtab, std::string& outfile);
@@ -38,7 +39,14 @@ class LLVMGen {
         void visitChildren(std::shared_ptr<AST> t);
         void visitSubroutineDeclDef(std::shared_ptr<AST> t); 
         void visitReturn(std::shared_ptr<AST> t);
-        
+
+        // Control Flow
+        void viistInfiniteLoop(std::shared_ptr<AST> t);
+        void visitPrePredicatedLoop(std::shared_ptr<AST> t);
+        void visitPostPredicatedLoop(std::shared_ptr<AST> t);
+        void visitIteratorLoop(std::shared_ptr<AST> t);
+        // void visitBlock(std::shared_ptr<AST> t);
+
         // Expression Atom
         void visitBooleanAtom(std::shared_ptr<AST> t);
         void visitCharacterAtom(std::shared_ptr<AST> t);
