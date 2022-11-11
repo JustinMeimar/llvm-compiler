@@ -34,6 +34,7 @@ typedef struct struct_gazprea_pcadp_config {
 
 void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCADPConfig *config);
 void variableInitFromMemcpy(Variable *this, Variable *other);
+void variableInitFromIdentifier(Variable *this, Variable *other);                           /// INTERFACE
 void variableInitFromNull(Variable *this, Type *type);
 void variableInitFromIdentity(Variable *this, Type *type);
 void variableInitFromUnaryOp(Variable *this, Variable *operand, UnaryOpCode opcode);  /// INTERFACE
@@ -56,6 +57,8 @@ void variableDestructThenFree(Variable *this);                                  
 void variableEmptyInitFromTypeID(Variable *this, TypeID id);  // a helper function for other inits
 // promote to integer scalar and return the value as int32_t
 int32_t variableGetIntegerValue(Variable *this);                                     /// INTERFACE
+bool variableGetBooleanValue(Variable *this);                                        /// INTERFACE
+int64_t variableGetNumFieldInTuple(Variable *this);                                  /// INTERFACE
 bool variableAliasWith(Variable *this, Variable *other);                             /// INTERFACE return ture if the two variable alias
 void variableAssignment(Variable *this, Variable *rhs);
 void variableVectorIndexAssignment(Variable *vector, Variable *index, Variable *rhs);
