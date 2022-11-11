@@ -64,6 +64,13 @@ class LLVMGen {
         void visitInputStreamStatement(std::shared_ptr<AST> t);
         void visitOutputStreamStatement(std::shared_ptr<AST> t);
 
+        // Operations
+        void visitBinaryOperation(std::shared_ptr<AST> t);
+        void visitUnaryOperation(std::shared_ptr<AST> t);
+        void visitIndexing(std::shared_ptr<AST> t);
+        void visitInterval(std::shared_ptr<AST> t);
+        void visitStringConcatenation(std::shared_ptr<AST> t);
+
         //Helper Methods 
         void Print();
 };

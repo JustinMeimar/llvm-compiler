@@ -94,6 +94,21 @@ namespace gazprea {
                 case GazpreaParser::OUTPUT_STREAM_TOKEN:
                     visitOutputStreamStatement(t);
                     break;
+                case GazpreaParser::UNARY_TOKEN:
+                    visitUnaryOperation(t);
+                    break;
+                case GazpreaParser::BINARY_OP_TOKEN:
+                    visitBinaryOperation(t);
+                    break;
+                case GazpreaParser::INDEXING_TOKEN:
+                    visitIndexing(t);
+                    break;
+                case GazpreaParser::INTERVAL:
+                    visitInterval(t);
+                    break;
+                case GazpreaParser::STRING_CONCAT_TOKEN:
+                    visitStringConcatenation(t);
+                    break;
                 default: // The other nodes we don't care about just have their children visited
                     visitChildren(t);
             }
@@ -228,7 +243,7 @@ namespace gazprea {
     void LLVMGen::visitRealAtom(std::shared_ptr<AST> t) {
         auto realValue = std::stof(t->parseTree->getText());
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
-        llvmFunction.call("variableInitFromFloatScalar", { runtimeVariableObject, llvm::ConstantFP::get(ir.getFloatTy(), realValue) });
+        llvmFunction.call("variableInitFromRealScalar", { runtimeVariableObject, llvm::ConstantFP::get(ir.getFloatTy(), realValue) });
         t->llvmValue = runtimeVariableObject;
     }
 
@@ -273,6 +288,119 @@ namespace gazprea {
         llvmFunction.call("variablePrintToStdout", { t->children[0]->llvmValue });
     }
 
+    void LLVMGen::visitBinaryOperation(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        int opCode;
+        switch (t->children[2]->getNodeType()) {
+            // case GazpreaParser::INDEXING_TOKEN:
+            //     opCode = 0;
+            //     break;
+            // case GazpreaParser::INTERVAL:
+            //     opCode = 1;
+            //     break;
+            case GazpreaParser::CARET: // Character '*'
+                opCode = 2;
+                break;
+            case GazpreaParser::ASTERISK:
+                opCode = 3;
+                break;
+            case GazpreaParser::DIV:
+                opCode = 4;
+                break;
+            case GazpreaParser::MODULO:
+                opCode = 5;
+                break;
+            case GazpreaParser::DOTPRODUCT:
+                opCode = 6;
+                break;
+            case GazpreaParser::PLUS:
+                opCode = 7;
+                break;
+            case GazpreaParser::MINUS:
+                opCode = 8;
+                break;
+            case GazpreaParser::BY:
+                opCode = 9;
+                break;
+            case GazpreaParser::LESSTHAN:
+                opCode = 10;
+                break;
+            case GazpreaParser::GREATERTHAN:
+                opCode = 11;
+                break;
+            case GazpreaParser::LESSTHANOREQUAL:
+                opCode = 12;
+                break;
+            case GazpreaParser::GREATERTHANOREQUAL:
+                opCode = 13;
+                break;
+            case GazpreaParser::ISEQUAL:
+                opCode = 14;
+                break;
+            case GazpreaParser::ISNOTEQUAL:
+                opCode = 15;
+                break;
+            case GazpreaParser::AND:
+                opCode = 16;
+                break;
+            case GazpreaParser::OR:
+                opCode = 17;
+                break;
+            case GazpreaParser::XOR:
+                opCode = 18;
+                break;
+            // case GazpreaParser::STRING_CONCAT_TOKEN:
+            //     opCode = 19;
+            //     break;
+            default:
+                opCode = -1;
+        }
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromBinaryOp", { runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(opCode) });
+        t->llvmValue = runtimeVariableObject;
+    }
+
+    void LLVMGen::visitUnaryOperation(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        int opCode;
+        switch(t->children[0]->getNodeType()) {
+            case GazpreaParser::PLUS:
+                opCode = 0;
+                break;
+            case GazpreaParser::MINUS:
+                opCode = 1;
+                break;
+            default:
+                // "not" operator
+                opCode = 2;
+                break;
+        }
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromUnaryOp", { runtimeVariableObject, t->children[1]->llvmValue, ir.getInt32(opCode) });
+        t->llvmValue = runtimeVariableObject;
+    }
+
+    void LLVMGen::visitIndexing(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromBinaryOp", { runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(0) });
+        t->llvmValue = runtimeVariableObject;
+    }
+
+    void LLVMGen::visitInterval(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromBinaryOp", { runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(1) });
+        t->llvmValue = runtimeVariableObject;
+    }
+
+    void LLVMGen::visitStringConcatenation(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromBinaryOp", { runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(19) });
+        t->llvmValue = runtimeVariableObject;
+    }
+
     void LLVMGen::Print() {
         // write module as .ll file
         std::string compiledLLFile;
@@ -280,7 +408,7 @@ namespace gazprea {
         
         llvm::raw_os_ostream llOut(std::cout);
         llvm::raw_os_ostream llErr(std::cerr);
-        // llvm::verifyModule(mod, &llErr);
+        llvm::verifyModule(mod, &llErr);
     
         mod.print(out, nullptr);
         out.flush();

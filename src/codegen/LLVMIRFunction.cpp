@@ -66,7 +66,17 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo()}, false),
         "variablePrintToStdout"
     );
-    
+
+    // Operations
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int32Ty}, false),
+        "variableInitFromUnaryOp"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int32Ty}, false),
+        "variableInitFromBinaryOp"
+    );
+
     // Other
     declareFunction(
         llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), false),

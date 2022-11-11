@@ -226,12 +226,13 @@ VAR : 'var' ;
 WHILE : 'while' ;
 XOR : 'xor' ;
 //
-DOT: '.';
+DOT: '.' ;
 PLUS: '+' ;
 MINUS: '-' ;
 ASTERISK: '*' ;
 DIV: '/' ;
 MODULO: '%' ;
+CARET: '^' ;
 DOTPRODUCT: '**' ;
 LESSTHAN: '<' ;
 GREATERTHAN: '>' ;
