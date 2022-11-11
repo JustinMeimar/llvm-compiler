@@ -1,5 +1,3 @@
-#pragma once
-
 #include <iostream>
 #include <map>
 #include <Type.h>
@@ -16,6 +14,7 @@ llvm::Type* LLVMTypes::getType(size_t enumTy){
         case Type::INTEGER:     return llvm::Type::getInt32Ty(*context);    break;
         case Type::REAL:        return llvm::Type::getFloatTy(*context);    break;
     }
+    return nullptr;
 }
 
 }

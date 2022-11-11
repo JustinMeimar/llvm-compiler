@@ -13,21 +13,24 @@
 
 #include "LLVMTypes.h"
 
+#include "SubroutineSymbol.h"
+#include "LLVMIRFunction.h"
+
 
 namespace gazprea {
 
 class LLVMGen {
-    private:
-        LLVMTypes types;
-
     public: 
         llvm::LLVMContext globalCtx;
         llvm::IRBuilder<llvm::NoFolder> ir;
         llvm::Module mod;
         std::string outfile;
 
+        llvm::StructType *runtimeTypeTy;
+        llvm::StructType *runtimeVariableTy;
+        llvm::Function* currentSubroutine;
 
-        llvm::Value* currentSubroutine;
+        LLVMIRFunction llvmFunction;
 
         LLVMGen(std::shared_ptr<SymbolTable> symtab, std::string& outfile);
         ~LLVMGen();
@@ -37,6 +40,23 @@ class LLVMGen {
         void visitChildren(std::shared_ptr<AST> t);
         void visitSubroutineDeclDef(std::shared_ptr<AST> t); 
         void visitReturn(std::shared_ptr<AST> t);
+        
+        // Expression Atom
+        void visitBooleanAtom(std::shared_ptr<AST> t);
+        void visitCharacterAtom(std::shared_ptr<AST> t);
+        void visitIntegerAtom(std::shared_ptr<AST> t);
+        void visitRealAtom(std::shared_ptr<AST> t);
+        void visitIdentityAtom(std::shared_ptr<AST> t);
+        void visitNullAtom(std::shared_ptr<AST> t);
+        void visitStringLiteral(std::shared_ptr<AST> t);
+
+        // Other Sub-Expression rules
+        void visitExpression(std::shared_ptr<AST> t);
+        void visitCast(std::shared_ptr<AST> t);
+
+        // Stream Statements
+        void visitInputStreamStatement(std::shared_ptr<AST> t);
+        void visitOutputStreamStatement(std::shared_ptr<AST> t);
 
         //Helper Methods 
         void Print();
