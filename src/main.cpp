@@ -7,11 +7,13 @@
 #include "tree/ParseTreeWalker.h"
 
 #include "AST.h"
+#include "SymbolTable.h"
+
 #include "ASTBuilder.h"
 #include "DefWalk.h"
 #include "RefWalk.h"
 #include "TypeWalk.h"
-#include "SymbolTable.h"
+#include "LLVMGen.h"
 
 #include "DiagnosticErrorListener.h"
 #include "BailErrorStrategy.h"
@@ -52,6 +54,7 @@ int main(int argc, char **argv) {
   auto ast = std::any_cast<std::shared_ptr<gazprea::AST>>(builder.visit(tree));
 
   // Initialize the symbol table
+  std::string outfile(argv[2]);
   auto symtab = std::make_shared<gazprea::SymbolTable>();
 
   gazprea::DefWalk defwalk(symtab);
@@ -63,7 +66,9 @@ int main(int argc, char **argv) {
   gazprea::TypeWalk typewalk(symtab);
   typewalk.visit(ast);
 
+  gazprea::LLVMGen llvmgen(symtab, outfile);
+  llvmgen.visit(ast);
+  
   // std::cout << "ast:\n" << ast->toStringTree(&parser) << std::endl;
-
   return 0;
 }
