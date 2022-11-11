@@ -16,4 +16,6 @@ build/
 tests/*
 !tests/input/
 !tests/output/
+!tests/inStream/
+!tests/helpers/
 !tests/GazpreaConfig.json
