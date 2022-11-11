@@ -23,13 +23,14 @@ void typeInitFromTwoSingleTerms(Type *this, Type *first, Type *second);
 void typeInitFromVectorSizeSpecificationFromLiteral(Type *this, int64_t size, Type *baseType);  // for vector and string
 void typeInitFromMatrixSizeSpecificationFromLiteral(Type *this, int64_t nRow, int64_t nCol, Type *baseType);
 void typeInitFromIntervalType(Type *this, IntervalTypeBaseTypeID id);
-void typeInitFromArrayType(Type *this, ElementTypeID eid, int8_t nDim, int64_t *dims);
+void typeInitFromArrayType(Type *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims);
 
 
 void typeDestructor(Type *this);                     /// INTERFACE
 void typeDestructThenFree(Type *this);               /// INTERFACE
 
 /// INTERFACE
+bool typeIsSpecifiable(Type *this);  // basic types and string
 bool typeIsConcreteType(Type *this);  // if the type does not have any unknown/unspecified part i.e. a variable can have this type
 bool typeIsStream(Type *this);
 bool typeIsScalar(Type *this);
@@ -112,7 +113,7 @@ typedef struct struct_gazprea_tuple_type {
 } TupleType;
 
 TupleType *tupleTypeMalloc();
-void tupleTypeInitFromTypeAndId(TupleType *this, int64_t nField, Type *typeArray, int64_t *stridArray);
+void tupleTypeInitFromTypeAndId(TupleType *this, int64_t nField, Type **typeArray, int64_t *stridArray);
 void tupleTypeInitFromCopy(TupleType *this, TupleType *other);
 void tupleTypeDestructor(TupleType *this);
 
@@ -120,5 +121,6 @@ int64_t tupleTypeResolveId(TupleType *this, int64_t id);
 void *tupleTypeMallocDataFromNull(TupleType *this);
 void *tupleTypeMallocDataFromIdentity(TupleType *this);
 void *tupleTypeMallocDataFromCopy(TupleType *this, void *otherTupleData);
+void *tupleTypeMallocDataFromCopyVariableArray(TupleType *this, Variable **vars);
 void *tupleTypeMallocDataFromPCADP(TupleType *this, Variable *src, PCADPConfig *config);
 void tupleTypeFreeData(TupleType *this, void *data);

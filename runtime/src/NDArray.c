@@ -246,8 +246,7 @@ void elementMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, v
 
 int32_t integerExponentiation(int32_t base, int32_t exp) {
     if (base == 0 && exp < 0) {
-        return 0;
-        // TODO: division by zero error
+        errorAndExit("Division by zero!");
     } else if (base == -1) {
         return exp % 2 == 0 ? 1 : -1;
     } else if (exp < 0) {
