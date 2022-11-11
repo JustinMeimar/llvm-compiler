@@ -87,9 +87,11 @@ namespace gazprea {
             subroutineSymbol = std::make_shared<SubroutineSymbol>(identiferAST->parseTree->getText(), nullptr, symtab->globals, isProcedure, isBuiltIn);
             subroutineSymbol->declaration = t;
             symtab->globals->define(subroutineSymbol); // def subroutine in globals
+            subroutineSymbol->numTimesDeclare++;
         } else {
             subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(declarationSubroutineSymbol);
             subroutineSymbol->definition = t;
+            subroutineSymbol->numTimesDeclare++;
         }
 
         t->symbol = subroutineSymbol;  // track in AST

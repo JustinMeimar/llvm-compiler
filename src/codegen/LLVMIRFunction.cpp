@@ -66,11 +66,62 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo()}, false),
         "variablePrintToStdout"
     );
-    
+
+    // Operations
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int32Ty}, false),
+        "variableInitFromUnaryOp"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int32Ty}, false),
+        "variableInitFromBinaryOp"
+    );
+
     // Other
     declareFunction(
         llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), false),
         "variableMalloc"
+    );
+
+    declareFunction(
+        llvm::FunctionType::get(runtimeTypeTy->getPointerTo(), false),
+        "typeMalloc"
+    );
+
+    // Var Declaration and Assignment
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), runtimeTypeTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
+        "variableInitFromDeclaration"
+    );
+
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
+        "variableAssignment"
+    );
+
+
+    declareFunction(
+        llvm::FunctionType::get(int32Ty, { runtimeVariableTy->getPointerTo() }, false),
+        "variableGetIntegerValue"
+    );
+
+
+    // TypeInit
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
+        "typeInitFromBooleanScalar"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
+        "typeInitFromIntegerScalar"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
+        "typeInitFromRealScalar"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
+        "typeInitFromCharacterScalar"
     );
 }
 

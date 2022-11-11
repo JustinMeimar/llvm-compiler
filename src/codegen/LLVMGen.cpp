@@ -7,7 +7,8 @@ namespace gazprea {
         std::string& outfile) 
         : globalCtx(), ir(globalCtx), mod("gazprea", globalCtx), outfile(outfile), 
         llvmFunction(&globalCtx, &ir, &mod), 
-        llvmBranch(&globalCtx, &ir, &mod) {
+        llvmBranch(&globalCtx, &ir, &mod),
+        numExprAncestors(0) {
         
         runtimeTypeTy = llvm::StructType::create(
             globalCtx,
@@ -82,8 +83,16 @@ namespace gazprea {
                 case GazpreaParser::StringLiteral:
                     visitStringLiteral(t);
                     break;
+                case GazpreaParser::GENERATOR_TOKEN:
+                    visitGenerator(t);
+                    break;
+                case GazpreaParser::FILTER_TOKEN:
+                    visitFilter(t);
+                    break;
                 case GazpreaParser::EXPRESSION_TOKEN:
+                    numExprAncestors++;
                     visitExpression(t);
+                    numExprAncestors--;
                     break;
                 case GazpreaParser::CAST_TOKEN:
                     visitCast(t);
@@ -93,6 +102,37 @@ namespace gazprea {
                     break;
                 case GazpreaParser::OUTPUT_STREAM_TOKEN:
                     visitOutputStreamStatement(t);
+                    break;
+                case GazpreaParser::UNARY_TOKEN:
+                    visitUnaryOperation(t);
+                    break;
+                case GazpreaParser::BINARY_OP_TOKEN:
+                    visitBinaryOperation(t);
+                    break;
+                case GazpreaParser::INDEXING_TOKEN:
+                    visitIndexing(t);
+                    break;
+                case GazpreaParser::INTERVAL:
+                    visitInterval(t);
+                    break;
+                case GazpreaParser::STRING_CONCAT_TOKEN:
+                    visitStringConcatenation(t);
+                    break;
+                case GazpreaParser::CALL_PROCEDURE_FUNCTION_IN_EXPRESSION:
+                    visitCallSubroutineInExpression(t);
+                    break;
+                case GazpreaParser::CALL_PROCEDURE_STATEMENT_TOKEN:
+                    visitCallSubroutineStatement(t);
+                    break;
+                case GazpreaParser::IDENTIFIER_TOKEN:
+                    visitIdentifier(t);
+                    break;
+                
+                case GazpreaParser::VAR_DECLARATION_TOKEN:
+                    visitVarDeclarationStatement(t);
+                    break;
+                case GazpreaParser::ASSIGNMENT_TOKEN:
+                    visitAssignmentStatement(t);
                     break;
                 default: // The other nodes we don't care about just have their children visited
                     visitChildren(t);
@@ -107,10 +147,10 @@ namespace gazprea {
     void LLVMGen::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->symbol);
         std::vector<llvm::Type *> parameterTypes = std::vector<llvm::Type *>(
-            subroutineSymbol->orderedArgs.size(), runtimeVariableTy
+            subroutineSymbol->orderedArgs.size(), runtimeVariableTy->getPointerTo()
         );
 
-        llvm::Type *returnType = runtimeVariableTy;
+        llvm::Type *returnType = runtimeVariableTy->getPointerTo();
         if (t->children[2]->isNil()) {
             returnType = ir.getVoidTy();
         } else if (subroutineSymbol->name == "main") {
@@ -122,7 +162,8 @@ namespace gazprea {
             parameterTypes,
             false
         );
-        auto subroutine = llvm::cast<llvm::Function>(mod.getOrInsertFunction(subroutineSymbol->name, subroutineTy).getCallee());  
+        auto subroutine = llvm::cast<llvm::Function>(mod.getOrInsertFunction(subroutineSymbol->name, subroutineTy).getCallee());
+        subroutineSymbol->llvmFunction = subroutine; 
         
         if(t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EMPTY_BODY_TOKEN) {
             //subroutine declaration;
@@ -136,7 +177,12 @@ namespace gazprea {
             if (t->children[2]->isNil()) {
                 ir.CreateRetVoid();
             } else {
-                ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[3]->children[0]->llvmValue));
+                if (subroutineSymbol->name == "main") {
+                    auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { t->children[3]->children[0]->llvmValue });
+                    ir.CreateRet(returnIntegerValue);
+                } else {
+                    ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[3]->children[0]->llvmValue));
+                }
             }
         } else {
             //subroutine declaration and definition;
@@ -155,11 +201,44 @@ namespace gazprea {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->scope);
         if (subroutineSymbol->name == "main") {
-            // TODO
-            ir.CreateRet(ir.getInt32(0));  // Need a runtime lib function to convert Variable object to integer
+            auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { t->children[0]->llvmValue });
+            ir.CreateRet(returnIntegerValue);
             return;
         }
-        ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[0]->llvmValue));
+        ir.CreateRet(t->children[0]->llvmValue);
+    }
+
+    void LLVMGen::visitVarDeclarationStatement(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
+        auto runtimeTypeObject = llvmFunction.call("typeMalloc", {});
+        switch (variableSymbol->type->getTypeId()) {
+            case Type::BOOLEAN:
+                llvmFunction.call("typeInitFromBooleanScalar", { runtimeTypeObject });
+                break;
+            case Type::CHARACTER:
+                llvmFunction.call("typeInitFromCharacterScalar", { runtimeTypeObject });
+                break;
+            case Type::INTEGER:
+                llvmFunction.call("typeInitFromIntegerScalar", { runtimeTypeObject });
+                break;
+            case Type::REAL:
+                llvmFunction.call("typeInitFromRealScalar", { runtimeTypeObject });
+                break;
+            case Type::INTEGER_INTERVAL:
+                // TODO
+                break;
+        }
+
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromDeclaration", { runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue });
+        t->llvmValue = runtimeVariableObject;
+        variableSymbol->llvmPointerToVariableObject = runtimeVariableObject;
+    }
+
+    void LLVMGen::visitAssignmentStatement(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        llvmFunction.call("variableAssignment", { t->children[0]->children[0]->llvmValue, t->children[1]->llvmValue });
     }
 
     void LLVMGen::viistInfiniteLoop(std::shared_ptr<AST> t) {
@@ -192,11 +271,13 @@ namespace gazprea {
     }
     
     void LLVMGen::visitPostPredicatedLoop(std::shared_ptr<AST> t) {
-        
+        visitChildren(t);
+        // TODO
     }
     
     void LLVMGen::visitIteratorLoop(std::shared_ptr<AST> t) {
-
+        visitChildren(t);
+        // TODO
     } 
 
     void LLVMGen::visitBooleanAtom(std::shared_ptr<AST> t) {
@@ -228,7 +309,7 @@ namespace gazprea {
     void LLVMGen::visitRealAtom(std::shared_ptr<AST> t) {
         auto realValue = std::stof(t->parseTree->getText());
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
-        llvmFunction.call("variableInitFromFloatScalar", { runtimeVariableObject, llvm::ConstantFP::get(ir.getFloatTy(), realValue) });
+        llvmFunction.call("variableInitFromRealScalar", { runtimeVariableObject, llvm::ConstantFP::get(ir.getFloatTy(), realValue) });
         t->llvmValue = runtimeVariableObject;
     }
 
@@ -254,6 +335,23 @@ namespace gazprea {
         // t->llvmValue = runtimeVariableObject;
     }
 
+    void LLVMGen::visitIdentifier(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        if (numExprAncestors > 0) {
+            t->llvmValue = t->symbol->llvmPointerToVariableObject;
+        }   
+    }
+
+    void LLVMGen::visitGenerator(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        // TODO
+    }
+
+    void LLVMGen::visitFilter(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        // TODO
+    }
+
     void LLVMGen::visitExpression(std::shared_ptr<AST> t) {
         visitChildren(t);
         t->llvmValue = t->children[0]->llvmValue;
@@ -261,6 +359,7 @@ namespace gazprea {
     
     void LLVMGen::visitCast(std::shared_ptr<AST> t) {
         visitChildren(t);
+        // TODO
     }
 
     void LLVMGen::visitInputStreamStatement(std::shared_ptr<AST> t) {
@@ -273,6 +372,144 @@ namespace gazprea {
         llvmFunction.call("variablePrintToStdout", { t->children[0]->llvmValue });
     }
 
+    void LLVMGen::visitBinaryOperation(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        int opCode;
+        switch (t->children[2]->getNodeType()) {
+            // case GazpreaParser::INDEXING_TOKEN:
+            //     opCode = 0;
+            //     break;
+            // case GazpreaParser::INTERVAL:
+            //     opCode = 1;
+            //     break;
+            case GazpreaParser::CARET: // Character '*'
+                opCode = 2;
+                break;
+            case GazpreaParser::ASTERISK:
+                opCode = 3;
+                break;
+            case GazpreaParser::DIV:
+                opCode = 4;
+                break;
+            case GazpreaParser::MODULO:
+                opCode = 5;
+                break;
+            case GazpreaParser::DOTPRODUCT:
+                opCode = 6;
+                break;
+            case GazpreaParser::PLUS:
+                opCode = 7;
+                break;
+            case GazpreaParser::MINUS:
+                opCode = 8;
+                break;
+            case GazpreaParser::BY:
+                opCode = 9;
+                break;
+            case GazpreaParser::LESSTHAN:
+                opCode = 10;
+                break;
+            case GazpreaParser::GREATERTHAN:
+                opCode = 11;
+                break;
+            case GazpreaParser::LESSTHANOREQUAL:
+                opCode = 12;
+                break;
+            case GazpreaParser::GREATERTHANOREQUAL:
+                opCode = 13;
+                break;
+            case GazpreaParser::ISEQUAL:
+                opCode = 14;
+                break;
+            case GazpreaParser::ISNOTEQUAL:
+                opCode = 15;
+                break;
+            case GazpreaParser::AND:
+                opCode = 16;
+                break;
+            case GazpreaParser::OR:
+                opCode = 17;
+                break;
+            case GazpreaParser::XOR:
+                opCode = 18;
+                break;
+            // case GazpreaParser::STRING_CONCAT_TOKEN:
+            //     opCode = 19;
+            //     break;
+            default:
+                opCode = -1;
+        }
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromBinaryOp", { runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(opCode) });
+        t->llvmValue = runtimeVariableObject;
+    }
+
+    void LLVMGen::visitUnaryOperation(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        int opCode;
+        switch(t->children[0]->getNodeType()) {
+            case GazpreaParser::PLUS:
+                opCode = 0;
+                break;
+            case GazpreaParser::MINUS:
+                opCode = 1;
+                break;
+            default:
+                // "not" operator
+                opCode = 2;
+                break;
+        }
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromUnaryOp", { runtimeVariableObject, t->children[1]->llvmValue, ir.getInt32(opCode) });
+        t->llvmValue = runtimeVariableObject;
+    }
+
+    void LLVMGen::visitIndexing(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromBinaryOp", { runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(0) });
+        t->llvmValue = runtimeVariableObject;
+    }
+
+    void LLVMGen::visitInterval(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromBinaryOp", { runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(1) });
+        t->llvmValue = runtimeVariableObject;
+    }
+
+    void LLVMGen::visitStringConcatenation(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromBinaryOp", { runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(19) });
+        t->llvmValue = runtimeVariableObject;
+    }
+
+    void LLVMGen::visitCallSubroutineInExpression(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
+        std::vector<llvm::Value *> arguments = std::vector<llvm::Value *>();
+        if (!t->children[1]->isNil()) {
+            for (auto expressionAST : t->children[1]->children) {
+                arguments.push_back(expressionAST->llvmValue);
+            }
+        }
+        auto llvmReturnValue = ir.CreateCall(subroutineSymbol->llvmFunction, arguments);
+        t->llvmValue = llvmReturnValue;
+    }
+
+    void LLVMGen::visitCallSubroutineStatement(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
+        std::vector<llvm::Value *> arguments = std::vector<llvm::Value *>();
+        if (!t->children[1]->isNil()) {
+            for (auto expressionAST : t->children[1]->children) {
+                arguments.push_back(expressionAST->llvmValue);
+            }
+        }
+        ir.CreateCall(subroutineSymbol->llvmFunction, arguments);
+    }
+
     void LLVMGen::Print() {
         // write module as .ll file
         std::string compiledLLFile;
@@ -280,7 +517,7 @@ namespace gazprea {
         
         llvm::raw_os_ostream llOut(std::cout);
         llvm::raw_os_ostream llErr(std::cerr);
-        // llvm::verifyModule(mod, &llErr);
+        llvm::verifyModule(mod, &llErr);
     
         mod.print(out, nullptr);
         out.flush();

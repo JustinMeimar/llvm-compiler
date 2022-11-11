@@ -12,6 +12,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 
 #include "SubroutineSymbol.h"
+#include "VariableSymbol.h"
 #include "LLVMIRBranch.h"
 #include "LLVMIRFunction.h"
 
@@ -28,8 +29,9 @@ class LLVMGen {
         llvm::StructType *runtimeVariableTy;
         llvm::Function* currentSubroutine;
 
-        LLVMIRBranch llvmBranch;
         LLVMIRFunction llvmFunction;
+        LLVMIRBranch llvmBranch;
+        int numExprAncestors;
 
         LLVMGen(std::shared_ptr<SymbolTable> symtab, std::string& outfile);
         ~LLVMGen();
@@ -55,6 +57,9 @@ class LLVMGen {
         void visitIdentityAtom(std::shared_ptr<AST> t);
         void visitNullAtom(std::shared_ptr<AST> t);
         void visitStringLiteral(std::shared_ptr<AST> t);
+        void visitIdentifier(std::shared_ptr<AST> t);
+        void visitGenerator(std::shared_ptr<AST> t);
+        void visitFilter(std::shared_ptr<AST> t);
 
         // Other Sub-Expression rules
         void visitExpression(std::shared_ptr<AST> t);
@@ -63,6 +68,21 @@ class LLVMGen {
         // Stream Statements
         void visitInputStreamStatement(std::shared_ptr<AST> t);
         void visitOutputStreamStatement(std::shared_ptr<AST> t);
+        void visitCallSubroutineStatement(std::shared_ptr<AST> t);
+
+        // Operations
+        void visitBinaryOperation(std::shared_ptr<AST> t);
+        void visitUnaryOperation(std::shared_ptr<AST> t);
+        void visitIndexing(std::shared_ptr<AST> t);
+        void visitInterval(std::shared_ptr<AST> t);
+        void visitStringConcatenation(std::shared_ptr<AST> t);
+
+        // Call
+        void visitCallSubroutineInExpression(std::shared_ptr<AST> t);
+
+        // Other Statements
+        void visitVarDeclarationStatement(std::shared_ptr<AST> t);
+        void visitAssignmentStatement(std::shared_ptr<AST> t);
 
         //Helper Methods 
         void Print();
