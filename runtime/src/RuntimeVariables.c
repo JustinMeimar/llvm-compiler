@@ -194,8 +194,10 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         ArrayType *CTI = this->m_type->m_compoundTypeInfo;
         int8_t nDim = CTI->m_nDim;
         int64_t *dims = CTI->m_dims;
-        if (!config->m_allowArrToArrDifferentElementTypeConversion) {
-            errorAndExit("No array to array conversion allowed");
+        // TODO: handle mixed array
+        if (!config->m_allowArrToArrDifferentElementTypeConversion && rhsNDim != 0 &&
+            CTI->m_elementTypeID != rhsCTI->m_elementTypeID) {
+            errorAndExit("No vector/matrix to vector/matrix different element type conversion allowed");
         } else if (nDim < rhsNDim) {
             errorAndExit("Cannot convert to a lower dimension array!");
         } else if (nDim == 2 && rhsNDim == 1) {
@@ -740,7 +742,7 @@ void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step)
 void variableInitFromNDArray(Variable *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims,
                              void *value, bool valueIsScalar) {
     this->m_type = typeMalloc();
-    typeInitFromArrayType(this->m_type, typeID, ELEMENT_IDENTITY, nDim, dims);
+    typeInitFromArrayType(this->m_type, typeID, eid, nDim, dims);
     int64_t totalLength = arrayTypeGetTotalLength(this->m_type->m_compoundTypeInfo);
     int64_t elementSize = elementGetSize(eid);
 
