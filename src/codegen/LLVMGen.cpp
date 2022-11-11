@@ -121,6 +121,13 @@ namespace gazprea {
                 case GazpreaParser::IDENTIFIER_TOKEN:
                     visitIdentifier(t);
                     break;
+                
+                case GazpreaParser::VAR_DECLARATION_TOKEN:
+                    visitVarDeclarationStatement(t);
+                    break;
+                case GazpreaParser::ASSIGNMENT_TOKEN:
+                    visitAssignmentStatement(t);
+                    break;
                 default: // The other nodes we don't care about just have their children visited
                     visitChildren(t);
             }
@@ -194,6 +201,14 @@ namespace gazprea {
         }
         // ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[0]->llvmValue));
         ir.CreateRet(t->children[0]->llvmValue);
+    }
+
+    void LLVMGen::visitVarDeclarationStatement(std::shared_ptr<AST> t) {
+        visitChildren(t);
+    }
+
+    void LLVMGen::visitAssignmentStatement(std::shared_ptr<AST> t) {
+        visitChildren(t);
     }
 
     void LLVMGen::viistInfiniteLoop(std::shared_ptr<AST> t) {

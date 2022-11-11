@@ -28,8 +28,8 @@ class LLVMGen {
         llvm::StructType *runtimeVariableTy;
         llvm::Function* currentSubroutine;
 
-        LLVMIRBranch llvmBranch;
         LLVMIRFunction llvmFunction;
+        LLVMIRBranch llvmBranch;
         int numExprAncestors;
 
         LLVMGen(std::shared_ptr<SymbolTable> symtab, std::string& outfile);
@@ -74,8 +74,13 @@ class LLVMGen {
         void visitIndexing(std::shared_ptr<AST> t);
         void visitInterval(std::shared_ptr<AST> t);
         void visitStringConcatenation(std::shared_ptr<AST> t);
+
         // Call
         void visitCallSubroutineInExpression(std::shared_ptr<AST> t);
+
+        // Other Statements
+        void visitVarDeclarationStatement(std::shared_ptr<AST> t);
+        void visitAssignmentStatement(std::shared_ptr<AST> t);
 
         //Helper Methods 
         void Print();

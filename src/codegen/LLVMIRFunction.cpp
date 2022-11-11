@@ -83,6 +83,12 @@ void LLVMIRFunction::declareAllFunctions() {
         "variableMalloc"
     );
 
+    // Var Declaration
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), runtimeTypeTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
+        "variableInitFromDeclaration"
+    );
+
     declareFunction(
         llvm::FunctionType::get(int32Ty, { runtimeVariableTy->getPointerTo() }, false),
         "variableGetIntegerValue"
