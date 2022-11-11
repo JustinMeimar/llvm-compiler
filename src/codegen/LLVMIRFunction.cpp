@@ -82,6 +82,11 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), false),
         "variableMalloc"
     );
+
+    declareFunction(
+        llvm::FunctionType::get(int32Ty, { runtimeVariableTy->getPointerTo() }, false),
+        "variableGetIntegerValue"
+    );
 }
 
 llvm::Function *LLVMIRFunction::declareFunction(llvm::FunctionType *fTy, const std::string &name) {

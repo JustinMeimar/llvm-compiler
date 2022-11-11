@@ -151,7 +151,12 @@ namespace gazprea {
             if (t->children[2]->isNil()) {
                 ir.CreateRetVoid();
             } else {
-                ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[3]->children[0]->llvmValue));
+                if (subroutineSymbol->name == "main") {
+                    auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { t->children[3]->children[0]->llvmValue });
+                    ir.CreateRet(returnIntegerValue);
+                } else {
+                    ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[3]->children[0]->llvmValue));
+                }
             }
         } else {
             //subroutine declaration and definition;
@@ -171,7 +176,8 @@ namespace gazprea {
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->scope);
         if (subroutineSymbol->name == "main") {
             // TODO
-            ir.CreateRet(ir.getInt32(0));  // Need a runtime lib function to convert Variable object to integer
+            auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { t->children[0]->llvmValue });
+            ir.CreateRet(returnIntegerValue);
             return;
         }
         ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[0]->llvmValue));
