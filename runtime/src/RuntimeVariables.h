@@ -48,16 +48,15 @@ void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs);   
 void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed);
 void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail);
 void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step);  // the new variable is a vector
+void variableInitFromNDArray(Variable *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims,
+                             void *value, bool valueIsScalar);
 void variableDestructor(Variable *this);                                              /// INTERFACE
 void variableDestructThenFree(Variable *this);                                        /// INTERFACE
 
-bool variableAliasWith(Variable *this, Variable *other);   /// INTERFACE return ture if the two variable alias
+void variableEmptyInitFromTypeID(Variable *this, TypeID id);  // a helper function for other inits
+// promote to integer scalar and return the value as int32_t
+int32_t variableGetIntegerValue(Variable *this);                                     /// INTERFACE
+bool variableAliasWith(Variable *this, Variable *other);                             /// INTERFACE return ture if the two variable alias
 void variableAssignment(Variable *this, Variable *rhs);
 void variableVectorIndexAssignment(Variable *vector, Variable *index, Variable *rhs);
 void variableMatrixIndexAssignment(Variable *vector, Variable *rowIndex, Variable *colIndex, Variable *rhs);
-
-// as<real>(b);
-// ptr =
-
-// a = b;
-// variableAssignment(a, b);

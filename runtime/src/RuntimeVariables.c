@@ -360,13 +360,13 @@ void computeSameTypeSameSizeArrayArrayBinop(Variable *this, Variable *op1, Varia
     ElementTypeID resultType;
     bool resultCollapseToScalar;
     if (!arrayBinopResultType(op1CTI->m_elementTypeID, opcode, &resultType, &resultCollapseToScalar)) {
-        errorAndExit("Cannot perform binop between two arrays variables!");
+        errorAndExit("Cannot perform binop between two array variables!");
     }
 
     // init type
     this->m_type = typeMalloc();
     if (resultCollapseToScalar) {
-        typeInitFromArrayType(this->m_type, resultType, 0, NULL);
+        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, resultType, 0, NULL);
     } else {
         typeInitFromCopy(this->m_type, op1Type);
     }
@@ -380,7 +380,7 @@ void computeIvlIvlBinop(Variable *this, Variable *op1, Variable *op2, BinOpCode 
     this->m_type = typeMalloc();
     if (opcode == BINARY_EQ || opcode == BINARY_NE) {
         // result is boolean
-        typeInitFromArrayType(this->m_type, ELEMENT_BOOLEAN, 0, NULL);
+        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, ELEMENT_BOOLEAN, 0, NULL);
         this->m_data = arrayMallocFromNull(ELEMENT_BOOLEAN, 1);
     } else {
         typeInitFromIntervalType(this->m_type, INTEGER_BASE_INTERVAL);
@@ -527,7 +527,7 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
             Type *ivlType = typeMalloc();
             typeInitFromIntervalType(ivlType, INTEGER_BASE_INTERVAL);
             Type *intType = typeMalloc();
-            typeInitFromArrayType(intType, ELEMENT_INTEGER, 0, NULL);
+            typeInitFromArrayType(intType, TYPEID_NDARRAY, ELEMENT_INTEGER, 0, NULL);
 
             binopPromoteComputationAndDispose(this, op1, op2, opcode, ivlType, intType, computeIvlByIntBinop);
 
@@ -593,10 +593,10 @@ void variableInitFromConcat(Variable *this, Variable *op1, Variable *op2) {
                          &this->m_data, NULL);
     this->m_type = typeMalloc();
     int64_t dims[1] = {arr1Length + arr2Length};
-    typeInitFromArrayType(this->m_type, resultEID, 1, dims);
-    // if one of the two operands is string then the result is string
+    TypeID tid = TYPEID_NDARRAY;
     if (op1Type->m_typeId == TYPEID_STRING || op2Type->m_typeId == TYPEID_STRING)
-        this->m_type->m_typeId = TYPEID_STRING;
+        tid = TYPEID_STRING;
+    typeInitFromArrayType(this->m_type, tid, resultEID, 1, dims);
 
     freeListFreeAll(freeList, free);
 
@@ -713,20 +713,12 @@ void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed
     this->m_parent = this->m_data;
 }
 
-void computeIntervalConstructBinop(Variable *this, Variable *head, Variable *tail, BinOpCode opcode) {
-    int *headValue = head->m_data;
-    int *tailValue = tail->m_data;
+void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail) {
     this->m_type = typeMalloc();
     typeInitFromIntervalType(this->m_type, INTEGER_BASE_INTERVAL);
-    this->m_data = intervalTypeMallocDataFromHeadTail(*headValue, *tailValue);
-}
-
-void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail) {
-    Type *intType = typeMalloc();
-    typeInitFromArrayType(intType, ELEMENT_INTEGER, 0, NULL);
-    binopPromoteComputationAndDispose(this, head, tail, BINARY_RANGE_CONSTRUCT,
-                                      intType, intType, computeIntervalConstructBinop);
-    typeDestructThenFree(intType);
+    this->m_data = intervalTypeMallocDataFromHeadTail(variableGetIntegerValue(head), variableGetIntegerValue(tail));
+    this->m_fieldPos = -1;
+    this->m_parent = this->m_data;
 }
 
 void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step) {
@@ -735,18 +727,35 @@ void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step)
     if (k <= 0) {
         errorAndExit("ivl by step has a step value of 0 or negative!");
     }
-    int8_t nDim = 1;
+    int32_t value = 0;
     int64_t dims[1] = {(interval[1] - interval[0]) / k + 1};
 
-    this->m_type = typeMalloc();
-    typeInitFromArrayType(this->m_type, ELEMENT_INTEGER, nDim, dims);
-    int32_t *vec = arrayMallocFromNull(ELEMENT_INTEGER, dims[0]);
+    variableInitFromNDArray(this, TYPEID_NDARRAY, ELEMENT_INTEGER, 1, dims, &value, true);
+    int32_t *vec = this->m_data;
     for (int64_t i = 0; i < dims[0]; i++) {
         vec[i] = interval[0] + (int32_t)i * k;
     }
-    this->m_data = vec;
-    this->m_parent = this->m_data;
+}
+
+void variableInitFromNDArray(Variable *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims,
+                             void *value, bool valueIsScalar) {
+    this->m_type = typeMalloc();
+    typeInitFromArrayType(this->m_type, typeID, ELEMENT_IDENTITY, nDim, dims);
+    int64_t totalLength = arrayTypeGetTotalLength(this->m_type->m_compoundTypeInfo);
+    int64_t elementSize = elementGetSize(eid);
+
+    if (value != NULL) {
+        if (valueIsScalar) {
+            this->m_data = arrayMallocFromElementValue(eid, totalLength, value);
+        } else {
+            this->m_data = arrayMallocFromNull(eid, totalLength);
+            memcpy(this->m_data, value, elementSize * totalLength);
+        }
+    } else {
+        this->m_data = arrayMallocFromNull(eid, totalLength);
+    }
     this->m_fieldPos = -1;
+    this->m_parent = this->m_data;
 }
 
 void variableDestructor(Variable *this) {
@@ -785,6 +794,26 @@ void variableDestructor(Variable *this) {
 void variableDestructThenFree(Variable *this) {
     variableDestructor(this);
     free(this);
+}
+
+int32_t variableGetIntegerValue(Variable *this) {
+    Type *intTy = typeMalloc();
+    typeInitFromArrayType(intTy, TYPEID_NDARRAY, ELEMENT_INTEGER, 0, NULL);
+    Variable *intVar = variableMalloc();
+    variableInitFromPromotion(intVar, intTy, this);
+    int32_t result = *(int32_t *)intVar->m_data;
+    variableDestructThenFree(intVar);
+    typeDestructThenFree(intTy);
+    return result;
+}
+
+void variableEmptyInitFromTypeID(Variable *this, TypeID id) {
+    this->m_type = typeMalloc();
+    this->m_type->m_compoundTypeInfo = NULL;
+    this->m_type->m_typeId = id;
+    this->m_data = NULL;
+    this->m_fieldPos = -1;
+    this->m_parent = this->m_data;
 }
 
 bool variableAliasWith(Variable *this, Variable *other) {
