@@ -65,7 +65,19 @@ namespace gazprea {
     void RefWalk::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->symbol);
-        if (subroutineSymbol->type == nullptr) {
+        // if (subroutineSymbol->type == nullptr) {
+        //     subroutineSymbol->type = t->children[2]->type;  // Set return type
+        //     int numArgs = (subroutineSymbol->orderedArgs).size();
+        //     std::vector<std::shared_ptr<Symbol>> newArgs;
+        //     for (int i = numArgs / 2; i < numArgs; i++) {
+        //         newArgs.push_back(subroutineSymbol->orderedArgs[i]);
+        //     }
+        //     subroutineSymbol->orderedArgs = newArgs;
+        // }
+        if (subroutineSymbol->numTimesDeclare == 1) {
+            // visit Forward declaration, or only one definition exists
+            subroutineSymbol->type = t->children[2]->type;  // Set return type
+        } else {
             subroutineSymbol->type = t->children[2]->type;  // Set return type
             int numArgs = (subroutineSymbol->orderedArgs).size();
             std::vector<std::shared_ptr<Symbol>> newArgs;
@@ -73,7 +85,7 @@ namespace gazprea {
                 newArgs.push_back(subroutineSymbol->orderedArgs[i]);
             }
             subroutineSymbol->orderedArgs = newArgs;
-        } 
+        }
     }
 
     void RefWalk::visitParameterAtom(std::shared_ptr<AST> t) {

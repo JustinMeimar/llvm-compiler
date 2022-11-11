@@ -30,6 +30,7 @@ class LLVMGen {
 
         LLVMIRBranch llvmBranch;
         LLVMIRFunction llvmFunction;
+        int numExprAncestors;
 
         LLVMGen(std::shared_ptr<SymbolTable> symtab, std::string& outfile);
         ~LLVMGen();
@@ -56,6 +57,8 @@ class LLVMGen {
         void visitNullAtom(std::shared_ptr<AST> t);
         void visitStringLiteral(std::shared_ptr<AST> t);
 
+        void visitIdentifier(std::shared_ptr<AST> t);
+
         // Other Sub-Expression rules
         void visitExpression(std::shared_ptr<AST> t);
         void visitCast(std::shared_ptr<AST> t);
@@ -70,6 +73,8 @@ class LLVMGen {
         void visitIndexing(std::shared_ptr<AST> t);
         void visitInterval(std::shared_ptr<AST> t);
         void visitStringConcatenation(std::shared_ptr<AST> t);
+        // Call
+        void visitCallSubroutineInExpression(std::shared_ptr<AST> t);
 
         //Helper Methods 
         void Print();

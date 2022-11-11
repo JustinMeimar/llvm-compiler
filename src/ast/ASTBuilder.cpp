@@ -277,6 +277,8 @@ namespace gazprea {
         t->addChild(visit(ctx->identifier()));
         if (ctx->expressionList()) {
             t->addChild(visit(ctx->expressionList()));
+        } else {
+            t->addChild(AST::NewNilNode());
         }
         return t;
     }
