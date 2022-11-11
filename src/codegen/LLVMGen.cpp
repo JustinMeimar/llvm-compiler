@@ -230,8 +230,16 @@ namespace gazprea {
                 break;
         }
 
+        llvm::Value *rhs = nullptr;
+        if (t->children[2]->isNil()) {  // empty rhs means initializing to null
+            rhs = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromNullScalar", {rhs});
+        } else {
+            rhs = t->children[2]->llvmValue;
+        }
+
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
-        llvmFunction.call("variableInitFromDeclaration", { runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue });
+        llvmFunction.call("variableInitFromDeclaration", { runtimeVariableObject, runtimeTypeObject, rhs });
         t->llvmValue = runtimeVariableObject;
         variableSymbol->llvmPointerToVariableObject = runtimeVariableObject;
     }

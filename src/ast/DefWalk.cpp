@@ -10,6 +10,8 @@ namespace gazprea {
         symtab->globals->define(std::make_shared<SubroutineSymbol>("columns", nullptr, symtab->globals, false, isBuiltIn));
         symtab->globals->define(std::make_shared<SubroutineSymbol>("reverse", nullptr, symtab->globals, false, isBuiltIn));
         symtab->globals->define(std::make_shared<SubroutineSymbol>("stream_state", nullptr, symtab->globals, true, isBuiltIn));
+        symtab->globals->define(std::make_shared<VariableSymbol>("std_input", nullptr));
+        symtab->globals->define(std::make_shared<VariableSymbol>("std_output", nullptr));
     }
     DefWalk::~DefWalk() {}
 

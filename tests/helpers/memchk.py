@@ -4,6 +4,9 @@ import time
 import sys
 
 def run_program(args):
+    for arg in args:
+        print(arg, end = " ")
+    print(flush = True)
     return subprocess.check_output(args)
 
 def main():
