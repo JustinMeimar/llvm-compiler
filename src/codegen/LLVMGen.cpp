@@ -412,14 +412,6 @@ namespace gazprea
         t->llvmValue = runtimeTypeObject;
     }
 
-    void LLVMGen::visitBreak(std::shared_ptr<AST> t) {
-        // TODO
-    }
-
-    void LLVMGen::visitContinue(std::shared_ptr<AST> t) {
-        // TODO
-    }
-
     void LLVMGen::visitConditionalStatement(std::shared_ptr<AST> t) {
         //Setup 
         auto *ctx = dynamic_cast<GazpreaParser::ConditionalStatementContext*>(t->parseTree);   
@@ -450,7 +442,7 @@ namespace gazprea
         } else if(ctx->elseStatement()) {
             ir.CreateCondBr(ifCondition, IfBodyBB, ElseBlock); 
         } else {
-            ir.CreateBr(Merge);
+            ir.CreateCondBr(ifCondition, IfBodyBB, Merge); 
         }
         //If Body
         ir.SetInsertPoint(IfBodyBB);
@@ -504,15 +496,48 @@ namespace gazprea
         llvmBranch.blockStack.pop_back();
         ir.SetInsertPoint(Merge);         
     }
-
-    void LLVMGen::viistInfiniteLoop(std::shared_ptr<AST> t) {
+    
+    void LLVMGen::visitBreak(std::shared_ptr<AST> t) {
+        int stackSize = llvmBranch.blockStack.size();
         llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
-        llvm::BasicBlock *EnterBodyBB = llvm::BasicBlock::Create(globalCtx, "InfiniteBody", parentFunc);
+        llvm::BasicBlock* mergeBB = llvmBranch.blockStack[stackSize -1]; 
+        llvm::BasicBlock* breakBlock = llvm::BasicBlock::Create(globalCtx, "BreakBlock", parentFunc);
+        llvm::BasicBlock* resumeLoopBody = llvm::BasicBlock::Create(globalCtx, "ResumeLoop", parentFunc);
 
-        ir.CreateBr(EnterBodyBB);
-        ir.SetInsertPoint(EnterBodyBB);
+        ir.CreateBr(breakBlock);
+        ir.SetInsertPoint(breakBlock);
+        ir.CreateBr(mergeBB);
+        ir.SetInsertPoint(resumeLoopBody);
+    }
+
+    void LLVMGen::visitContinue(std::shared_ptr<AST> t) {
+        int stackSize = llvmBranch.blockStack.size();
+        llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
+        llvm::BasicBlock* loopHeader = llvmBranch.blockStack[stackSize -3]; 
+        llvm::BasicBlock* continueBlock = llvm::BasicBlock::Create(globalCtx, "ContinueBlock", parentFunc);
+        llvm::BasicBlock* resumeLoopBody = llvm::BasicBlock::Create(globalCtx, "ResumeLoop", parentFunc);
+
+        ir.CreateBr(continueBlock);
+        ir.SetInsertPoint(continueBlock);
+        ir.CreateBr(loopHeader);
+        ir.SetInsertPoint(resumeLoopBody);
+    }
+    
+    void LLVMGen::viistInfiniteLoop(std::shared_ptr<AST> t) {
+        // setup
+        llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
+        llvm::BasicBlock *InfiniteBodyBB = llvm::BasicBlock::Create(globalCtx, "InfiniteBody", parentFunc);
+        llvm::BasicBlock *MergeBB = llvm::BasicBlock::Create(globalCtx, "MergeFromInfinteLoop");
+        llvmBranch.blockStack.push_back(MergeBB);
+        // create infinite loop
+        ir.CreateBr(InfiniteBodyBB);
+        ir.SetInsertPoint(InfiniteBodyBB);
         visitChildren(t);
-        ir.CreateBr(EnterBodyBB);
+        parentFunc->getBasicBlockList().push_back(MergeBB);
+        ir.CreateBr(InfiniteBodyBB);
+        ir.SetInsertPoint(MergeBB);
+        // keep stack organized
+        llvmBranch.blockStack.pop_back();
     }
 
     void LLVMGen::visitPrePredicatedLoop(std::shared_ptr<AST> t) {

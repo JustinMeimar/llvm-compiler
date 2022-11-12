@@ -15,6 +15,7 @@ public:
     int numIteratorLoops;
     
     std::vector<llvm::BasicBlock*> blockStack; 
+    std::vector<llvm::BasicBlock*> loopBlockStack; // keep track of which loop to break out of
 
     LLVMIRBranch(
         llvm::LLVMContext *context, 
