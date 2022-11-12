@@ -2,7 +2,7 @@ import os
 import sys
 
 """
-To place #split token to separate .in .out and .inStr files in test cases, 
+To place #split token to separate .in .ins and .out (in order) files in test cases, 
 "#split\n" token should be placed right after the last second ends
 There should be two split token in the file
 """

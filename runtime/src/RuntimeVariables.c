@@ -5,6 +5,7 @@
 #include "FreeList.h"
 #include <string.h>
 #include "Literal.h"
+#include "VariableStdio.h"
 
 ///------------------------------DATA---------------------------------------------------------------
 // below explains how m_data is interpreted in each type of data
@@ -362,22 +363,26 @@ void computeSameTypeSameSizeArrayArrayBinop(Variable *this, Variable *op1, Varia
     Type *op1Type = op1->m_type;
     ArrayType *op1CTI = op1->m_type->m_compoundTypeInfo;
     int64_t arrSize = arrayTypeGetTotalLength(op1CTI);
-    ElementTypeID resultType;
+    ElementTypeID resultEID;
     bool resultCollapseToScalar;
-    if (!arrayBinopResultType(op1CTI->m_elementTypeID, opcode, &resultType, &resultCollapseToScalar)) {
+    if (!arrayBinopResultType(op1CTI->m_elementTypeID, opcode, &resultEID, &resultCollapseToScalar)) {
         errorAndExit("Cannot perform binop between two array variables!");
     }
 
     // init type
     this->m_type = typeMalloc();
     if (resultCollapseToScalar) {
-        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, resultType, 0, NULL);
+        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, resultEID, 0, NULL);
     } else {
-        typeInitFromCopy(this->m_type, op1Type);
+        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, resultEID, op1CTI->m_nDim, op1CTI->m_dims);
+    }
+    ArrayType *CTI = this->m_type->m_compoundTypeInfo;
+    if (CTI->m_elementTypeID != resultEID) {
+        errorAndExit("The newly initialized type has a different eid than the expected result type from arrayBinopResultType!");
     }
 
     // init data
-    arrayMallocFromBinOp(resultType, opcode, op1->m_data, arrSize,
+    arrayMallocFromBinOp(op1CTI->m_elementTypeID, opcode, op1->m_data, arrSize,
                          op2->m_data, arrSize, &this->m_data, NULL);
 }
 

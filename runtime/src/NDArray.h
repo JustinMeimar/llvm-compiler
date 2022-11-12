@@ -33,7 +33,7 @@ void elementMallocFromCast(ElementTypeID resultID, ElementTypeID srcID, void *sr
 void elementMallocFromAssignment(ElementTypeID id, void *src, void **result);
 void elementMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, void **result);
 // binary operation may not return the same type e.g. 1 == 2
-void elementMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, void *op2, void **result);
+void elementMallocFromBinOp(ElementTypeID operandID, BinOpCode opcode, void *op1, void *op2, void **result);
 
 
 ///------------------------------DIMENSIONLESS ARRAY---------------------------------------------------------------
