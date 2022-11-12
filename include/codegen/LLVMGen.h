@@ -12,6 +12,7 @@
 #include "llvm/Support/raw_os_ostream.h"
 
 #include "SubroutineSymbol.h"
+#include "VariableSymbol.h"
 #include "LLVMIRBranch.h"
 #include "LLVMIRFunction.h"
 

@@ -210,12 +210,35 @@ namespace gazprea {
 
     void LLVMGen::visitVarDeclarationStatement(std::shared_ptr<AST> t) {
         visitChildren(t);
-        // TODO
+        auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
+        auto runtimeTypeObject = llvmFunction.call("typeMalloc", {});
+        switch (variableSymbol->type->getTypeId()) {
+            case Type::BOOLEAN:
+                llvmFunction.call("typeInitFromBooleanScalar", { runtimeTypeObject });
+                break;
+            case Type::CHARACTER:
+                llvmFunction.call("typeInitFromCharacterScalar", { runtimeTypeObject });
+                break;
+            case Type::INTEGER:
+                llvmFunction.call("typeInitFromIntegerScalar", { runtimeTypeObject });
+                break;
+            case Type::REAL:
+                llvmFunction.call("typeInitFromRealScalar", { runtimeTypeObject });
+                break;
+            case Type::INTEGER_INTERVAL:
+                // TODO
+                break;
+        }
+
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromDeclaration", { runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue });
+        t->llvmValue = runtimeVariableObject;
+        variableSymbol->llvmPointerToVariableObject = runtimeVariableObject;
     }
 
     void LLVMGen::visitAssignmentStatement(std::shared_ptr<AST> t) {
         visitChildren(t);
-        // TODO
+        llvmFunction.call("variableAssignment", { t->children[0]->children[0]->llvmValue, t->children[1]->llvmValue });
     }
 
     void LLVMGen::viistInfiniteLoop(std::shared_ptr<AST> t) {
