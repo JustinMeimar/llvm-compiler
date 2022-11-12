@@ -76,6 +76,8 @@ namespace gazprea {
                 newArgs.push_back(subroutineSymbol->orderedArgs[i]);
             }
             subroutineSymbol->orderedArgs = newArgs;
+
+            subroutineSymbol->numTimesDeclare--;  // We will eliminate duplicated parameter once (i.e., this else-block will only run once)
         }
     }
 

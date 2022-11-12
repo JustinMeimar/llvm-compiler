@@ -185,15 +185,23 @@ namespace gazprea
         else if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EXPRESSION_BODY_TOKEN) {
             // Expression Body
             currentSubroutine = subroutine;
-
-            // Populate Argument Symbol's llvmValue
-            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
-                subroutineSymbol->orderedArgs[i]->llvmPointerToVariableObject = subroutine->getArg(i);
-            }
-            
             llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
             ir.SetInsertPoint(bb);
-            visitChildren(t);
+
+            // Populate Argument Symbol's llvmValue
+            visit(t->children[1]);
+            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+                auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+                if (variableSymbol->typeQualifier == "const") {
+                    auto runtimeVariableParameterObject = llvmFunction.call("variableMalloc", {});
+                    llvmFunction.call("variableInitFromParameter", { runtimeVariableParameterObject, variableSymbol->llvmPointerToTypeObject, subroutine->getArg(i) });
+                    variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
+                } else {
+                    variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
+                }
+                
+            }
+            visit(t->children[3]);
 
             if (t->children[2]->isNil()) {
                 ir.CreateRetVoid();
@@ -202,7 +210,6 @@ namespace gazprea
                     auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", {t->children[3]->children[0]->llvmValue});
                     ir.CreateRet(returnIntegerValue);
                 } else {
-                    // ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[3]->children[0]->llvmValue));
                     ir.CreateRet(t->children[3]->children[0]->llvmValue);
                 }
             }
@@ -210,15 +217,23 @@ namespace gazprea
         else {
             // subroutine declaration and definition;
             currentSubroutine = subroutine;
-
-            // Populate Argument Symbol's llvmValue
-            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
-                subroutineSymbol->orderedArgs[i]->llvmPointerToVariableObject = subroutine->getArg(i);
-            }
-
             llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
             ir.SetInsertPoint(bb);
-            visitChildren(t);
+
+            // Populate Argument Symbol's llvmValue
+            visit(t->children[1]);
+            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+                auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+                if (variableSymbol->typeQualifier == "const") {
+                    auto runtimeVariableParameterObject = llvmFunction.call("variableMalloc", {});
+                    llvmFunction.call("variableInitFromParameter", { runtimeVariableParameterObject, variableSymbol->llvmPointerToTypeObject, subroutine->getArg(i) });
+                    variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
+                } else {
+                    variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
+                }
+                
+            }
+            visit(t->children[3]);
 
             if (t->children[2]->isNil()) {
                 ir.CreateRetVoid();
@@ -252,10 +267,18 @@ namespace gazprea
             llvmFunction.call("typeInitFromUnknownType", { runtimeTypeObject });
             llvmFunction.call("variableInitFromDeclaration", {runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue});
             variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
+            
+            if (t->children[2]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+                llvmFunction.call("variableDestructThenFree", { t->children[2]->llvmValue });
+            }
         } else {
             auto runtimeTypeObject = t->children[0]->children[1]->llvmValue;
             llvmFunction.call("variableInitFromDeclaration", {runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue});
             variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
+
+            if (t->children[2]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+                llvmFunction.call("variableDestructThenFree", { t->children[2]->llvmValue });
+            }
         }
         
         t->llvmValue = runtimeVariableObject;
@@ -265,6 +288,7 @@ namespace gazprea
     void LLVMGen::visitAssignmentStatement(std::shared_ptr<AST> t) {
         visitChildren(t);
         llvmFunction.call("variableAssignment", {t->children[0]->children[0]->llvmValue, t->children[1]->llvmValue});
+        // TODO: Handle parallel assignment, and free resources
     }
 
     void LLVMGen::visitUnqualifiedType(std::shared_ptr<AST> t) {
@@ -421,13 +445,9 @@ namespace gazprea
         //Initialize If Header and Body
         llvm::BasicBlock* IfHeaderBB = llvm::BasicBlock::Create(globalCtx, "IfHeaderBlock", parentFunc);
         llvm::BasicBlock* IfBodyBB = llvm::BasicBlock::Create(globalCtx, "IfBodyBlock", parentFunc);
-        llvm::BasicBlock* ElseIfHeader = llvm::BasicBlock::Create(globalCtx, "ElseIfHeader");
-        llvm::BasicBlock* ElseBlock = llvm::BasicBlock::Create(globalCtx, "ElseBlock");
-        llvm::BasicBlock* Merge = llvm::BasicBlock::Create(globalCtx, "Merge");
-        // ElseBlock and ElseIfHeader are only created when needed. 
-        llvmBranch.blockStack.push_back(Merge);
-        llvmBranch.blockStack.push_back(ElseBlock);
-        llvmBranch.blockStack.push_back(ElseIfHeader);
+        llvm::BasicBlock* ElseIfHeader = llvm::BasicBlock::Create(globalCtx, "ElseIfHeader"); //only use if needed
+        llvm::BasicBlock* ElseBlock = llvm::BasicBlock::Create(globalCtx, "ElseBlock"); // only use if needed
+        llvm::BasicBlock* Merge = llvm::BasicBlock::Create(globalCtx, "Merge"); //used at end
         // Start inserting at If Header 
         ir.CreateBr(IfHeaderBB);
         ir.SetInsertPoint(IfHeaderBB);
@@ -459,7 +479,7 @@ namespace gazprea
             }
             //Fill header
             visit(elifNode->children[0]); 
-            auto elseIfExprValue = llvmFunction.call("variableGetIntegerValue", {elifNode->children[0]->llvmValue});
+            auto elseIfExprValue = llvmFunction.call("variableGetBooleanValue", {elifNode->children[0]->llvmValue});
             llvm::Value* elseIfCondition = ir.CreateICmpNE(elseIfExprValue, ir.getInt32(0));
             llvm::BasicBlock* elseIfBodyBlock = llvm::BasicBlock::Create(globalCtx, "ElseIfBody", parentFunc);
             // Conditoinal Branch Out (3 Cases)
@@ -489,9 +509,6 @@ namespace gazprea
         }
         // Merge
         parentFunc->getBasicBlockList().push_back(Merge); 
-        llvmBranch.blockStack.pop_back();
-        llvmBranch.blockStack.pop_back();
-        llvmBranch.blockStack.pop_back();
         ir.SetInsertPoint(Merge);         
     }
     
@@ -526,6 +543,8 @@ namespace gazprea
         llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
         llvm::BasicBlock *InfiniteBodyBB = llvm::BasicBlock::Create(globalCtx, "InfiniteBody", parentFunc);
         llvm::BasicBlock *MergeBB = llvm::BasicBlock::Create(globalCtx, "MergeFromInfinteLoop");
+        llvmBranch.blockStack.push_back(InfiniteBodyBB);
+        llvmBranch.blockStack.push_back(nullptr); // maintain index offset to other loop methods
         llvmBranch.blockStack.push_back(MergeBB);
         // create infinite loop
         ir.CreateBr(InfiniteBodyBB);
@@ -536,6 +555,8 @@ namespace gazprea
         ir.SetInsertPoint(MergeBB);
         // keep stack organized
         llvmBranch.blockStack.pop_back();
+        llvmBranch.blockStack.pop_back();
+        llvmBranch.blockStack.pop_back();
     }
 
     void LLVMGen::visitPrePredicatedLoop(std::shared_ptr<AST> t) {
@@ -543,8 +564,8 @@ namespace gazprea
         llvmFunction.call("variableInitFromIntegerScalar", {runtimeVarConstZero, ir.getInt32(0)}); //Type must match for ICmpNE
         llvmBranch.createPrePredConditionalBB("PrePredLoop");
         visit(t->children[0]);      // Conditional Expr
-        llvm::Value *exprValue = t->children[0]->llvmValue;
-        llvm::Value *condition = ir.CreateICmpNE(exprValue, runtimeVarConstZero);
+        auto exprValue = llvmFunction.call("variableGetBooleanValue", {t->children[0]->llvmValue});
+        llvm::Value* condition = ir.CreateICmpNE(exprValue, ir.getInt32(0)); 
         llvmBranch.createPrePredBodyBB(condition);
         visit(t->children[1]);      // Visit body
         llvmBranch.createPrePredMergeBB();
@@ -557,8 +578,8 @@ namespace gazprea
         visit(t->children[0]);      //visit Body 
         llvmBranch.createPostPredConditionalBB(); 
         visit(t->children[1]);      //grab value from post predicate
-        llvm::Value *exprValue = t->children[1]->llvmValue; 
-        llvm::Value *condition = ir.CreateICmpNE(exprValue, runtimeVarConstZero);
+        auto exprValue = llvmFunction.call("variableGetBooleanValue", {t->children[1]->llvmValue});
+        llvm::Value *condition = ir.CreateICmpNE(exprValue, ir.getInt32(0));
         llvmBranch.createPostPredMergeBB(condition);
     }
 
@@ -659,6 +680,9 @@ namespace gazprea
     {
         visitChildren(t);
         llvmFunction.call("variablePrintToStdout", {t->children[0]->llvmValue});
+        if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
+        }
     }
 
     void LLVMGen::visitBinaryOperation(std::shared_ptr<AST> t) {
@@ -731,6 +755,13 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(opCode)});
         t->llvmValue = runtimeVariableObject;
+
+        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
+        }
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
+        }
     }
 
     void LLVMGen::visitUnaryOperation(std::shared_ptr<AST> t) {
@@ -751,6 +782,10 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromUnaryOp", {runtimeVariableObject, t->children[1]->llvmValue, ir.getInt32(opCode)});
         t->llvmValue = runtimeVariableObject;
+
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
+        }
     }
 
     void LLVMGen::visitIndexing(std::shared_ptr<AST> t) {
@@ -758,6 +793,12 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(0)});
         t->llvmValue = runtimeVariableObject;
+        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
+        }
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
+        }
     }
 
     void LLVMGen::visitInterval(std::shared_ptr<AST> t) {
@@ -765,6 +806,13 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(1)});
         t->llvmValue = runtimeVariableObject;
+
+        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
+        }
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
+        }
     }
 
     void LLVMGen::visitStringConcatenation(std::shared_ptr<AST> t) {
@@ -805,7 +853,34 @@ namespace gazprea
 
     void LLVMGen::visitParameterAtom(std::shared_ptr<AST> t) {
         visitChildren(t);
-        // TODO
+        auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
+
+        auto runtimeTypeObject = llvmFunction.call("typeMalloc", {});
+
+        // std::shared_ptr<MatrixType> matrixType;
+        // llvm::Value *baseType;
+        // llvm::Value *dimension1Expression = nullptr;
+        // llvm::Value *dimension2Expression = nullptr;
+
+        switch(variableSymbol->type->getTypeId()) {
+            case Type::BOOLEAN:
+                llvmFunction.call("typeInitFromBooleanScalar", { runtimeTypeObject });
+                break;
+            case Type::CHARACTER:
+                llvmFunction.call("typeInitFromCharacterScalar", { runtimeTypeObject });
+                break;
+            case Type::INTEGER:
+                llvmFunction.call("typeInitFromIntegerScalar", { runtimeTypeObject });
+                break;
+            case Type::REAL:
+                llvmFunction.call("typeInitFromRealScalar", { runtimeTypeObject });
+                break;
+            case Type::INTEGER_INTERVAL:
+                llvmFunction.call("typeInitFromIntegerInterval", { runtimeTypeObject });
+                break;
+            // TODO: Other Types
+        }
+        variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
     }
 
     void LLVMGen::Print() {
