@@ -416,8 +416,6 @@ namespace gazprea
         //Setup 
         auto *ctx = dynamic_cast<GazpreaParser::ConditionalStatementContext*>(t->parseTree);   
         int numChildren = t->children.size();
-        auto runtimeVarConstZero = llvmFunction.call("variableMalloc", {});     //HERE
-        llvmFunction.call("variableInitFromBooleanScalar", {runtimeVarConstZero, ir.getInt32(0)}); //Type must match for ICmpNE 
         //Parent Function 
         llvm::Function* parentFunc = ir.GetInsertBlock()->getParent(); 
         //Initialize If Header and Body
@@ -436,8 +434,7 @@ namespace gazprea
         visit(t->children[0]); 
         // setup branch condition
         auto exprValue = llvmFunction.call("variableGetBooleanValue", {t->children[0]->llvmValue}); //HERE
-        auto constZero = llvmFunction.call("variableGetBooleanValue", {runtimeVarConstZero});       //HERE
-        llvm::Value* ifCondition = ir.CreateICmpNE(exprValue, constZero);
+        llvm::Value* ifCondition = ir.CreateICmpNE(exprValue, ir.getInt32(0));
         if ((!ctx->elseStatement() && numChildren > 2) || (ctx->elseStatement() && numChildren > 3)) {
             ir.CreateCondBr(ifCondition, IfBodyBB, ElseIfHeader); 
         } else if(ctx->elseStatement()) {
@@ -463,7 +460,7 @@ namespace gazprea
             //Fill header
             visit(elifNode->children[0]); 
             auto elseIfExprValue = llvmFunction.call("variableGetIntegerValue", {elifNode->children[0]->llvmValue});
-            llvm::Value* elseIfCondition = ir.CreateICmpNE(elseIfExprValue, constZero);  
+            llvm::Value* elseIfCondition = ir.CreateICmpNE(elseIfExprValue, ir.getInt32(0));
             llvm::BasicBlock* elseIfBodyBlock = llvm::BasicBlock::Create(globalCtx, "ElseIfBody", parentFunc);
             // Conditoinal Branch Out (3 Cases)
             if (!ctx->elseStatement() && elseIfIdx == (numChildren -1)) {           // 1) last else if no else

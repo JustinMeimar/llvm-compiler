@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
+#include "Bool.h"
 #include "NDArray.h"
 
 typedef struct struct_gazprea_variable Variable;

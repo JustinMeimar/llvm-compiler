@@ -7,7 +7,7 @@
  */
 
 #include <stdint.h>
-#include <stdbool.h>
+#include "Bool.h"
 #include "Enums.h"
 
 typedef struct struct_gazprea_mixed_type_element {

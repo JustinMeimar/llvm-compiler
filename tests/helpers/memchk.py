@@ -9,6 +9,15 @@ def run_program(args):
     print(flush = True)
     return subprocess.check_output(args)
 
+def fetch_path_file_pair(dir):
+    pairs = []
+    for tests_dir in os.listdir(dir):
+        for filename in os.listdir(dir + tests_dir):
+            if (filename.endswith(".in")):
+                path = dir + tests_dir + "/" + filename
+                pairs.append( (path, filename) )
+    return pairs
+
 def main():
 
     root_path = "../../"
@@ -17,12 +26,20 @@ def main():
 
     os.environ["LD_PRELOAD"] = libgazrt_path
 
-    test_paths = []
-    for tests_dir in os.listdir(testin_prefix):
-        for test_dir in os.listdir(testin_prefix + tests_dir):
-            test_paths.append(testin_prefix + tests_dir + "/" + test_dir)
+    test_in_paths = fetch_path_file_pair(testin_prefix)
+    
+    selected_tests = [arg[:-5] for arg in sys.argv if arg.endswith(".test")]
 
-    for test_path in test_paths:
+    for test in test_in_paths:
+        test_path, test_name = test
+        if len(selected_tests) >= 1:
+            selected = False
+            for selected_test in selected_tests:
+                if selected_test + ".in" == test_name:
+                    selected = True
+            if not selected:
+                continue
+        
         print("\n\n\ntesting file:" + test_path, file=sys.stderr, flush=True)
 
         try:

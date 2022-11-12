@@ -17,6 +17,7 @@ set(
   "${CMAKE_CURRENT_SOURCE_DIR}/Literal.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/VariableStdio.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/VariableStdio.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Bool.h"
 )
 
 # Build our executable from the source files.

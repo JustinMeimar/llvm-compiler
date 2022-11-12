@@ -1,6 +1,6 @@
 #pragma once
 #include <stdint.h>
-#include <stdbool.h>
+#include "Bool.h"
 #include "Enums.h"
 
 // forward declaration

@@ -105,7 +105,7 @@ void LLVMIRFunction::declareAllFunctions() {
         "variableGetIntegerValue"
     );
     declareFunction(
-        llvm::FunctionType::get(int8Ty, { runtimeVariableTy->getPointerTo() }, false),
+        llvm::FunctionType::get(int32Ty, { runtimeVariableTy->getPointerTo() }, false),
         "variableGetBooleanValue"
     );
 
