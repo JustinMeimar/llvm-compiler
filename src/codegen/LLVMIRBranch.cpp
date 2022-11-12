@@ -1,10 +1,24 @@
 #include "LLVMIRBranch.h"
 
+/* Conditional */
+
+void LLVMIRBranch::createConditionalBasicBlock(llvm::Value* condition, llvm::BasicBlock* merge){
+    llvm::Function *parentFunc = m_builder->GetInsertBlock()->getParent();
+    llvm::BasicBlock* conditionalIfHeader = llvm::BasicBlock::Create(*m_context, "conditionalIfHeader", parentFunc);
+    llvm::BasicBlock* conditionalIfBody = llvm::BasicBlock::Create(*m_context, "conditionalIfBody", parentFunc);
+
+    m_builder->CreateBr(conditionalIfHeader);
+    m_builder->SetInsertPoint(conditionalIfHeader);
+    m_builder->CreateCondBr(condition, conditionalIfBody, merge); 
+    m_builder->SetInsertPoint(conditionalIfBody);
+}
+
+
 /* Pre Predicated Loop 
    order: (condition -> body -> merge) */
 void LLVMIRBranch::createPrePredConditionalBB(const std::string& labelPrefix) {
     // llvm::Function* parentSubrt = m_builder->GetInsertBlock()->getParent(); 
-    llvm::Function* parentFunc = m_builder->GetInsertBlock()->getParent();
+    llvm::Function *parentFunc = m_builder->GetInsertBlock()->getParent();
     llvm::BasicBlock *ConditionalBB = llvm::BasicBlock::Create(
             *m_context, "LoopCondition", parentFunc);
     llvm::BasicBlock *BodyBB = llvm::BasicBlock::Create(

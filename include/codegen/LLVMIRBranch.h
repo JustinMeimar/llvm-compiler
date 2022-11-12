@@ -13,6 +13,8 @@ public:
     int numConditionals;
     int numPredicatedLoops;
     int numIteratorLoops;
+    
+    std::vector<llvm::BasicBlock*> blockStack; 
 
     LLVMIRBranch(
         llvm::LLVMContext *context, 
@@ -20,12 +22,19 @@ public:
         llvm::Module *module
     ): m_context(context), m_builder(builder), m_module(module) {};
 
-    void createPrePredConditionalBB(const std::string& labelPrefix); // CreatePrePredicatedLoopEnterBasicBlock
+    //Conditional Control Flow
+    void createConditionalBasicBlock(llvm::Value* condition, llvm::BasicBlock* merge);
+    // void createConditionalElseIf(llvm::Value* condition, llvm::BasicBlock* commonMerge);
+    // void createConditionalElse();
+
+    //Pre Predicated Loop
+    void createPrePredConditionalBB(const std::string& labelPrefix); // Entry point
     void createPrePredBodyBB(llvm::Value* condition);
     void createPrePredMergeBB();
-    
-    void createPostPredBodyBB();
-    void createPostPredConditionalBB(); // CreatePostPredicatedLoopEnterBasicBlock
+
+    //Post Predicated Loop 
+    void createPostPredBodyBB(); //Entry point is body
+    void createPostPredConditionalBB(); 
     void createPostPredMergeBB(llvm::Value* condition);
 
 private:
@@ -34,5 +43,4 @@ private:
     llvm::IRBuilder<llvm::NoFolder> *m_builder;
     llvm::Module *m_module;
 
-    std::vector<llvm::BasicBlock*> blockStack; 
 };

@@ -43,6 +43,7 @@ class LLVMGen {
         void visitReturn(std::shared_ptr<AST> t);
 
         // Control Flow
+        void visitConditionalStatement(std::shared_ptr<AST> t);
         void viistInfiniteLoop(std::shared_ptr<AST> t);
         void visitPrePredicatedLoop(std::shared_ptr<AST> t);
         void visitPostPredicatedLoop(std::shared_ptr<AST> t);
