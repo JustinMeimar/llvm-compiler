@@ -235,8 +235,10 @@ namespace gazprea
             llvmFunction.call("variableInitFromNullScalar", { rhs });
             llvmFunction.call("variableInitFromDeclaration", { runtimeVariableObject, runtimeTypeObject, rhs });
         } else if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
-            // TODO: Get Variable from expression, then get Type from that variable, and init new Variable
-            return;
+            auto runtimeTypeObject = llvmFunction.call("typeMalloc", {});
+            llvmFunction.call("typeInitFromUnknownType", { runtimeTypeObject });
+            llvmFunction.call("variableInitFromDeclaration", {runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue});
+            variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
         } else {
             auto runtimeTypeObject = t->children[0]->children[1]->llvmValue;
             llvmFunction.call("variableInitFromDeclaration", {runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue});

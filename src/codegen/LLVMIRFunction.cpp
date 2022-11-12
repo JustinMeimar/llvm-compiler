@@ -136,6 +136,11 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeTypeTy->getPointerTo() }, false),
         "typeInitFromMatrixSizeSpecification"
     );
+    
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
+        "typeInitFromUnknownType"
+    );
 }
 
 llvm::Function *LLVMIRFunction::declareFunction(llvm::FunctionType *fTy, const std::string &name) {
