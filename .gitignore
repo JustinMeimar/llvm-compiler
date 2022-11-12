@@ -19,3 +19,7 @@ tests/*
 !tests/inStream/
 !tests/helpers/
 !tests/GazpreaConfig.json
+
+lli-temp.out
+tests/memchk.out
+*.ll
