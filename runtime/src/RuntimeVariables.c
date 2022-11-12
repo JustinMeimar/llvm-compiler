@@ -20,8 +20,6 @@
 // null & identity & [] & stream_in & stream_out - these types do not need to store associated data, m_data is ignored
 // unknown - unknown type should not be associated with a variable
 
-///------------------------------HELPER FUNCTIONS---------------------------------------------------------------
-
 ///------------------------------INTERFACES---------------------------------------------------------------
 
 void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCADPConfig *config) {
@@ -270,6 +268,11 @@ void variableInitFromMemcpy(Variable *this, Variable *other) {
     }
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
+}
+
+void variableInitFromIdentifier(Variable *this, Variable *other) {
+    /// TODO: return a ref in case of an array/tuple
+    variableInitFromMemcpy(this, other);
 }
 
 // <type> var = null;
@@ -807,6 +810,25 @@ int32_t variableGetIntegerValue(Variable *this) {
     variableDestructThenFree(intVar);
     typeDestructThenFree(intTy);
     return result;
+}
+
+bool variableGetBooleanValue(Variable *this) {
+    Type *boolTy = typeMalloc();
+    typeInitFromArrayType(boolTy, TYPEID_NDARRAY, ELEMENT_BOOLEAN, 0, NULL);
+    Variable *intVar = variableMalloc();
+    variableInitFromPromotion(intVar, boolTy, this);
+    bool result = *(bool *)intVar->m_data;
+    variableDestructThenFree(intVar);
+    typeDestructThenFree(boolTy);
+    return result;
+}
+
+int64_t variableGetNumFieldInTuple(Variable *this) {
+    if (this->m_type->m_typeId != TYPEID_TUPLE) {
+        targetTypeError(this->m_type, "The given type is not a tuple: ");
+    }
+    TupleType *CTI = this->m_type->m_compoundTypeInfo;
+    return CTI->m_nField;
 }
 
 void variableEmptyInitFromTypeID(Variable *this, TypeID id) {
