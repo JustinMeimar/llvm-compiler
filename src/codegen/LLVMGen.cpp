@@ -421,41 +421,81 @@ namespace gazprea
     }
 
     void LLVMGen::visitConditionalStatement(std::shared_ptr<AST> t) {
-        auto runtimeVarConstZero = llvmFunction.call("variableMalloc", {});
-        llvm::Function* parentFunc = ir.GetInsertBlock()->getParent(); 
-        llvm::BasicBlock* commonMerge = llvm::BasicBlock::Create(globalCtx, "conditionalMerge");
-        llvmBranch.blockStack.push_back(commonMerge);
+        //Setup 
         auto *ctx = dynamic_cast<GazpreaParser::ConditionalStatementContext*>(t->parseTree);   
-        // If Header and Body BB (always present) 
+        int numChildren = t->children.size();
+        auto runtimeVarConstZero = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromIntegerScalar", {runtimeVarConstZero, ir.getInt32(0)}); //Type must match for ICmpNE 
+        //Parent Function 
+        llvm::Function* parentFunc = ir.GetInsertBlock()->getParent(); 
+        //Initialize If Header and Body
+        llvm::BasicBlock* IfHeaderBB = llvm::BasicBlock::Create(globalCtx, "IfHeaderBlock", parentFunc);
+        llvm::BasicBlock* IfBodyBB = llvm::BasicBlock::Create(globalCtx, "IfBodyBlock", parentFunc);
+        llvm::BasicBlock* ElseIfHeader = llvm::BasicBlock::Create(globalCtx, "ElseIfHeader");
+        llvm::BasicBlock* ElseBlock = llvm::BasicBlock::Create(globalCtx, "ElseBlock");
+        llvm::BasicBlock* Merge = llvm::BasicBlock::Create(globalCtx, "Merge");
+        // ElseBlock and ElseIfHeader are only created when needed. 
+        llvmBranch.blockStack.push_back(Merge);
+        llvmBranch.blockStack.push_back(ElseBlock);
+        llvmBranch.blockStack.push_back(ElseIfHeader);
+        // Start inserting at If Header 
+        ir.CreateBr(IfHeaderBB);
+        ir.SetInsertPoint(IfHeaderBB);
         visit(t->children[0]);
         llvm::Value* exprValue = t->children[0]->llvmValue;
         llvm::Value* ifCondition = ir.CreateICmpNE(exprValue, runtimeVarConstZero);
-        llvmBranch.createConditionalBasicBlock(ifCondition, commonMerge); 
-        visit(t->children[1]); 
-        // Else If Header and Body
-        int elseIfIdx = 2;
-        for (auto elseIfStatement : ctx->elseIfStatement()) {
-            auto elifNode = t->children[elseIfIdx];
-            visit(elifNode->children[0]);
+        ir.CreateCondBr(ifCondition, IfBodyBB, ElseIfHeader); 
+        //If Body
+        ir.SetInsertPoint(IfBodyBB);
+        visit(t->children[1]);
+        ir.CreateBr(Merge);
+        // Handle Arbitrary Number of Else If
+        int elseIfIdx = 2; // 0 is if expr  1 is if body 2 starts else if
+        llvm::BasicBlock* residualElseIfHeader = nullptr; //we declare next else if header in previous itteration because we need it for the conditional branch
+        for (auto elseIfStatement : ctx->elseIfStatement()) { 
+            auto elifNode = t->children[elseIfIdx];            
+            if(residualElseIfHeader != nullptr) { //first else if 
+                ir.SetInsertPoint(residualElseIfHeader);
+            }else {
+                parentFunc->getBasicBlockList().push_back(ElseIfHeader);
+                ir.SetInsertPoint(ElseIfHeader);
+            }
+            //Fill header
+            visit(elifNode->children[0]); 
             llvm::Value* elseIfExprValue = elifNode->children[0]->llvmValue;
-            llvm::Value* elseIfCondition = ir.CreateICmpNE(elseIfExprValue, runtimeVarConstZero); 
-            llvmBranch.createConditionalBasicBlock(elseIfCondition, commonMerge); 
+            llvm::Value* elseIfCondition = ir.CreateICmpNE(elseIfExprValue, runtimeVarConstZero);  
+            llvm::BasicBlock* elseIfBodyBlock = llvm::BasicBlock::Create(globalCtx, "ElseIfBody", parentFunc);
+            // Conditoinal Branch Out (3 Cases)
+            if (!ctx->elseStatement() && elseIfIdx == (numChildren -1)) {           // 1) last else if no else
+                ir.CreateCondBr(elseIfCondition, elseIfBodyBlock, Merge); 
+            } else if (ctx->elseStatement() && elseIfIdx == (numChildren -2)) {     // 2) last else if w/ else
+                ir.CreateCondBr(elseIfCondition, elseIfBodyBlock, ElseBlock);  
+            } else {                                                                // 3) another else if
+                llvm::BasicBlock* nextElseIfHeaderBlock = llvm::BasicBlock::Create(globalCtx, "nextElseIfHeader", parentFunc);
+                ir.CreateCondBr(elseIfCondition, elseIfBodyBlock, nextElseIfHeaderBlock); 
+                residualElseIfHeader = nextElseIfHeaderBlock;
+            } 
+            //Fill Body
+            ir.SetInsertPoint(elseIfBodyBlock);
             visit(elifNode->children[1]);
-            elseIfIdx++;
-        }
+            ir.CreateBr(Merge);
+            elseIfIdx++; //Elif Counter
+        } 
         // Else Caluse (Optional) 
         if (ctx->elseStatement()) {
+            parentFunc->getBasicBlockList().push_back(ElseBlock);
             int elseIdx = t->children.size()-1;
             auto elseNode = t->children[elseIdx]->children[0]; 
-            llvm::Value* elseCondition = ir.CreateICmpNE(runtimeVarConstZero, runtimeVarConstZero); //FALSE
-            llvmBranch.createConditionalBasicBlock(elseCondition, commonMerge);
+            ir.SetInsertPoint(ElseBlock);
             visit(elseNode);
+            ir.CreateBr(Merge);
         }
-        // Common Merge 
-        parentFunc->getBasicBlockList().push_back(commonMerge);
-        ir.CreateBr(commonMerge);
-        ir.SetInsertPoint(commonMerge);
-        llvmBranch.blockStack.pop_back(); 
+        // Merge
+        parentFunc->getBasicBlockList().push_back(Merge); 
+        ir.SetInsertPoint(Merge);         
+        llvmBranch.blockStack.pop_back();
+        llvmBranch.blockStack.pop_back();
+        llvmBranch.blockStack.pop_back();
     }
 
     void LLVMGen::viistInfiniteLoop(std::shared_ptr<AST> t) {
