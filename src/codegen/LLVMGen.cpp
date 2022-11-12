@@ -432,6 +432,7 @@ namespace gazprea
         }
         // Common Merge 
         parentFunc->getBasicBlockList().push_back(commonMerge);
+        ir.CreateBr(commonMerge);
         ir.SetInsertPoint(commonMerge);
         llvmBranch.blockStack.pop_back(); 
     }
