@@ -228,7 +228,12 @@ namespace gazprea
         visitChildren(t);
         auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
-        if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
+        if (t->children[2]->isNil()) {
+            auto runtimeTypeObject = t->children[0]->children[1]->llvmValue;
+            auto rhs = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableMalloc", { runtimeVariableObject });
+            llvmFunction.call("variableInitFromDeclaration", { runtimeVariableObject, runtimeTypeObject, rhs });
+        } else if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
             // TODO: Get Variable from expression, then get Type from that variable, and init new Variable
             return;
         } else {
