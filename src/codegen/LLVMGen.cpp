@@ -416,8 +416,8 @@ namespace gazprea
         //Setup 
         auto *ctx = dynamic_cast<GazpreaParser::ConditionalStatementContext*>(t->parseTree);   
         int numChildren = t->children.size();
-        auto runtimeVarConstZero = llvmFunction.call("variableMalloc", {});
-        llvmFunction.call("variableInitFromIntegerScalar", {runtimeVarConstZero, ir.getInt32(0)}); //Type must match for ICmpNE 
+        auto runtimeVarConstZero = llvmFunction.call("variableMalloc", {});     //HERE
+        llvmFunction.call("variableInitFromBooleanScalar", {runtimeVarConstZero, ir.getInt32(0)}); //Type must match for ICmpNE 
         //Parent Function 
         llvm::Function* parentFunc = ir.GetInsertBlock()->getParent(); 
         //Initialize If Header and Body
@@ -433,10 +433,11 @@ namespace gazprea
         // Start inserting at If Header 
         ir.CreateBr(IfHeaderBB);
         ir.SetInsertPoint(IfHeaderBB);
-        visit(t->children[0]);
-        llvm::Value* exprValue = t->children[0]->llvmValue;
-        llvm::Value* ifCondition = ir.CreateICmpNE(exprValue, runtimeVarConstZero);
-
+        visit(t->children[0]); 
+        // setup branch condition
+        auto exprValue = llvmFunction.call("variableGetBooleanValue", {t->children[0]->llvmValue}); //HERE
+        auto constZero = llvmFunction.call("variableGetBooleanValue", {runtimeVarConstZero});       //HERE
+        llvm::Value* ifCondition = ir.CreateICmpNE(exprValue, constZero);
         if ((!ctx->elseStatement() && numChildren > 2) || (ctx->elseStatement() && numChildren > 3)) {
             ir.CreateCondBr(ifCondition, IfBodyBB, ElseIfHeader); 
         } else if(ctx->elseStatement()) {
@@ -461,8 +462,8 @@ namespace gazprea
             }
             //Fill header
             visit(elifNode->children[0]); 
-            llvm::Value* elseIfExprValue = elifNode->children[0]->llvmValue;
-            llvm::Value* elseIfCondition = ir.CreateICmpNE(elseIfExprValue, runtimeVarConstZero);  
+            auto elseIfExprValue = llvmFunction.call("variableGetIntegerValue", {elifNode->children[0]->llvmValue});
+            llvm::Value* elseIfCondition = ir.CreateICmpNE(elseIfExprValue, constZero);  
             llvm::BasicBlock* elseIfBodyBlock = llvm::BasicBlock::Create(globalCtx, "ElseIfBody", parentFunc);
             // Conditoinal Branch Out (3 Cases)
             if (!ctx->elseStatement() && elseIfIdx == (numChildren -1)) {           // 1) last else if no else
