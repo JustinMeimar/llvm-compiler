@@ -566,3 +566,17 @@ void tupleTypeFreeData(TupleType *this, void *data) {
     }
     free(vars);
 }
+
+// TupleTypeVariableArray---------------------------------------------------------------------------------------------
+
+void *variableArrayMalloc(int64_t size) {
+    return malloc(size * sizeof(Variable *));
+}
+
+void variableArraySet(Variable **arr, int64_t idx, Variable *var) {
+    arr[idx] = var;
+}
+
+void variableArrayFree(Variable **arr) {
+    free(arr);
+}

@@ -34,32 +34,34 @@ typedef struct struct_gazprea_pcadp_config {
 
 void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCADPConfig *config);
 void variableInitFromMemcpy(Variable *this, Variable *other);
-void variableInitFromIdentifier(Variable *this, Variable *other);                           /// INTERFACE
+void variableInitFromIdentifier(Variable *this, Variable *other);                                 /// INTERFACE
 void variableInitFromNull(Variable *this, Type *type);
 void variableInitFromIdentity(Variable *this, Type *type);
-void variableInitFromUnaryOp(Variable *this, Variable *operand, UnaryOpCode opcode);  /// INTERFACE
-void variableInitFromBinaryOp(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode);  /// INTERFACE
+void variableInitFromUnaryOp(Variable *this, Variable *operand, UnaryOpCode opcode);              /// INTERFACE
+void variableInitFromBinaryOp(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode);    /// INTERFACE
 
-void variableInitFromParameter(Variable *this, Type *lhsType, Variable *rhs);         /// INTERFACE
-void variableInitFromCast(Variable *this, Type *lhsType, Variable *rhs);              /// INTERFACE
-void variableInitFromDeclaration(Variable *this, Type *lhsType, Variable *rhs);       /// INTERFACE
+void variableInitFromParameter(Variable *this, Type *lhsType, Variable *rhs);                     /// INTERFACE
+void variableInitFromCast(Variable *this, Type *lhsType, Variable *rhs);                          /// INTERFACE
+void variableInitFromDeclaration(Variable *this, Type *lhsType, Variable *rhs);                   /// INTERFACE
 void variableInitFromAssign(Variable *this, Type *lhsType, Variable *rhs);
-void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs);         /// INTERFACE
+void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs);                     /// INTERFACE
 
 void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed);
 void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail);
 void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step);  // the new variable is a vector
 void variableInitFromNDArray(Variable *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims,
                              void *value, bool valueIsScalar);
-void variableDestructor(Variable *this);                                              /// INTERFACE
-void variableDestructThenFree(Variable *this);                                        /// INTERFACE
+void variableDestructor(Variable *this);                                                          /// INTERFACE
+void variableDestructThenFree(Variable *this);                                                    /// INTERFACE
 
 void variableEmptyInitFromTypeID(Variable *this, TypeID id);  // a helper function for other inits
 // promote to integer scalar and return the value as int32_t
-int32_t variableGetIntegerValue(Variable *this);                                     /// INTERFACE
-bool variableGetBooleanValue(Variable *this);                                        /// INTERFACE
-int64_t variableGetNumFieldInTuple(Variable *this);                                  /// INTERFACE
-bool variableAliasWith(Variable *this, Variable *other);                             /// INTERFACE return ture if the two variable alias
+int32_t variableGetIntegerValue(Variable *this);                                                  /// INTERFACE
+bool variableGetBooleanValue(Variable *this);                                                     /// INTERFACE
+Variable *variableGetTupleField(Variable *tuple, int64_t pos);                                    /// INTERFACE
+Variable *variableGetTupleFieldFromID(Variable *tuple, int64_t id);                               /// INTERFACE
+int64_t variableGetNumFieldInTuple(Variable *this);                                               /// INTERFACE
+bool variableAliasWith(Variable *this, Variable *other);                                          /// INTERFACE return ture if the two variable alias
 void variableAssignment(Variable *this, Variable *rhs);
 void variableVectorIndexAssignment(Variable *vector, Variable *index, Variable *rhs);
 void variableMatrixIndexAssignment(Variable *vector, Variable *rowIndex, Variable *colIndex, Variable *rhs);
