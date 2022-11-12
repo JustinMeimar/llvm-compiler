@@ -20,9 +20,13 @@ public:
         llvm::Module *module
     ): m_context(context), m_builder(builder), m_module(module) {};
 
-    void createLoopConditionalBB(const std::string& labelPrefix);
-    void createLoopBodyBB(llvm::Value* condition);
-    void createLoopMergeBB();
+    void createPrePredConditionalBB(const std::string& labelPrefix); // CreatePrePredicatedLoopEnterBasicBlock
+    void createPrePredBodyBB(llvm::Value* condition);
+    void createPrePredMergeBB();
+    
+    void createPostPredBodyBB();
+    void createPostPredConditionalBB(); // CreatePostPredicatedLoopEnterBasicBlock
+    void createPostPredMergeBB(llvm::Value* condition);
 
 private:
     // access to the context and module
