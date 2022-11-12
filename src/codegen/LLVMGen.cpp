@@ -444,7 +444,14 @@ namespace gazprea
         visit(t->children[0]);
         llvm::Value* exprValue = t->children[0]->llvmValue;
         llvm::Value* ifCondition = ir.CreateICmpNE(exprValue, runtimeVarConstZero);
-        ir.CreateCondBr(ifCondition, IfBodyBB, ElseIfHeader); 
+
+        if ((!ctx->elseStatement() && numChildren > 2) || (ctx->elseStatement() && numChildren > 3)) {
+            ir.CreateCondBr(ifCondition, IfBodyBB, ElseIfHeader); 
+        } else if(ctx->elseStatement()) {
+            ir.CreateCondBr(ifCondition, IfBodyBB, ElseBlock); 
+        } else {
+            ir.CreateBr(Merge);
+        }
         //If Body
         ir.SetInsertPoint(IfBodyBB);
         visit(t->children[1]);
@@ -492,10 +499,10 @@ namespace gazprea
         }
         // Merge
         parentFunc->getBasicBlockList().push_back(Merge); 
+        llvmBranch.blockStack.pop_back();
+        llvmBranch.blockStack.pop_back();
+        llvmBranch.blockStack.pop_back();
         ir.SetInsertPoint(Merge);         
-        llvmBranch.blockStack.pop_back();
-        llvmBranch.blockStack.pop_back();
-        llvmBranch.blockStack.pop_back();
     }
 
     void LLVMGen::viistInfiniteLoop(std::shared_ptr<AST> t) {
