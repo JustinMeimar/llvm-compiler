@@ -16,6 +16,8 @@
 #include "LLVMIRBranch.h"
 #include "LLVMIRFunction.h"
 
+#include "MatrixType.h"
+
 namespace gazprea {
 
 class LLVMGen {
@@ -43,6 +45,7 @@ class LLVMGen {
         void visitReturn(std::shared_ptr<AST> t);
 
         // Control Flow
+        void visitConditionalStatement(std::shared_ptr<AST> t);
         void viistInfiniteLoop(std::shared_ptr<AST> t);
         void visitPrePredicatedLoop(std::shared_ptr<AST> t);
         void visitPostPredicatedLoop(std::shared_ptr<AST> t);
@@ -83,6 +86,12 @@ class LLVMGen {
         // Other Statements
         void visitVarDeclarationStatement(std::shared_ptr<AST> t);
         void visitAssignmentStatement(std::shared_ptr<AST> t);
+        void visitParameterAtom(std::shared_ptr<AST> t);
+        void visitBreak(std::shared_ptr<AST> t);
+        void visitContinue(std::shared_ptr<AST> t);
+
+        // Type
+        void visitUnqualifiedType(std::shared_ptr<AST> t);
 
         //Helper Methods 
         void Print();

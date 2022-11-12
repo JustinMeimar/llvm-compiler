@@ -115,7 +115,7 @@ namespace gazprea {
             return;
         }
         
-        auto varTy = t->children[1]->evalType; 
+        auto varTy = t->children[1]->evalType;  // Filled in by visitChildren(t), and specifically, visitIdentifier(t);
         auto exprTy = t->children[2]->evalType;
         
         if (exprTy->getTypeId() == Type::IDENTITYNULL) {

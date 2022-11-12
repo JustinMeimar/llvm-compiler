@@ -15,7 +15,7 @@ llvm::Value *LLVMIRFunction::call(const std::string& funcName, llvm::ArrayRef<ll
 
 void LLVMIRFunction::declareAllFunctions() {
     llvm::Type * voidTy = m_builder->getVoidTy();
-    llvm::IntegerType * int1Ty = m_builder->getInt1Ty();
+    // llvm::IntegerType * int1Ty = m_builder->getInt1Ty();
     llvm::IntegerType * int8Ty = m_builder->getInt8Ty();
     llvm::IntegerType * int32Ty = m_builder->getInt32Ty();
     llvm::IntegerType * int64Ty = m_builder->getInt64Ty();
@@ -23,7 +23,7 @@ void LLVMIRFunction::declareAllFunctions() {
 
     // Expression Atom
     declareFunction(
-        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), int1Ty}, false),
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), int32Ty}, false),
         "variableInitFromBooleanScalar"
     );
     declareFunction(
@@ -122,6 +122,24 @@ void LLVMIRFunction::declareAllFunctions() {
     declareFunction(
         llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
         "typeInitFromCharacterScalar"
+    );
+    
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
+        "typeInitFromIntegerInterval"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeTypeTy->getPointerTo() }, false),
+        "typeInitFromVectorSizeSpecification"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeTypeTy->getPointerTo() }, false),
+        "typeInitFromMatrixSizeSpecification"
+    );
+    
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
+        "typeInitFromUnknownType"
     );
 }
 
