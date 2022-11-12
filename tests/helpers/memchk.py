@@ -3,11 +3,14 @@ import os
 import time
 import sys
 
-def run_program(args):
+def run_program(args, inFile = None):
     for arg in args:
         print(arg, end = " ")
     print(flush = True)
-    return subprocess.check_output(args)
+    if inFile != None:
+        return subprocess.check_output(args, stdin=inFile, timeout=2)
+    else:
+        return subprocess.check_output(args, timeout=2)
 
 def fetch_path_file_pair(dir):
     pairs = []
@@ -15,13 +18,15 @@ def fetch_path_file_pair(dir):
         for filename in os.listdir(dir + tests_dir):
             if (filename.endswith(".in")):
                 path = dir + tests_dir + "/" + filename
-                pairs.append( (path, filename) )
+                pairs.append( (path, tests_dir, filename) )
     return pairs
 
 def main():
 
     root_path = "../../"
     testin_prefix = root_path + "tests/input/"
+    testins_prefix = root_path + "tests/inStream/"
+    testout_prefix = root_path + "tests/output/"
     libgazrt_path = root_path + "bin/libgazrt.so"
 
     os.environ["LD_PRELOAD"] = libgazrt_path
@@ -31,11 +36,15 @@ def main():
     selected_tests = [arg[:-5] for arg in sys.argv if arg.endswith(".test")]
 
     for test in test_in_paths:
-        test_path, test_name = test
+        test_path, tests_dir, test_name = test
+        stripped_test_name = test_name[:-3]
+        test_ins_path = testins_prefix + tests_dir + "/" + stripped_test_name + ".ins"
+        test_out_path = testins_prefix + tests_dir + "/" + stripped_test_name + ".out"
+
         if len(selected_tests) >= 1:
             selected = False
             for selected_test in selected_tests:
-                if selected_test + ".in" == test_name:
+                if selected_test == stripped_test_name:
                     selected = True
             if not selected:
                 continue
@@ -60,9 +69,9 @@ def main():
 
             # run program
             args = ["valgrind", binaryFile]
-            print(run_program(args).decode("UTF-8"), file=sys.stderr, flush=True)
+            with open(test_ins_path, "r") as inFile:
+                print(run_program(args, inFile).decode("UTF-8"), file=sys.stderr, flush=True)
 
-            time.sleep(0.1)
         except subprocess.CalledProcessError as e:
             print(str(e), file=sys.stderr, flush=True)
 

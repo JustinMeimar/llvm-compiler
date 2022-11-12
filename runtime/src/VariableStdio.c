@@ -1,3 +1,4 @@
+#include <math.h>
 #include "VariableStdio.h"
 #include "RuntimeVariables.h"
 #include "RuntimeErrors.h"
@@ -203,6 +204,8 @@ void variableReadFromStdin(Variable *this) {
     variableDestructThenFree(rhs);
 }
 
+///------------------------------HELPERS---------------------------------------------------------------
+
 int32_t stream_state = 0;  // 0, 1, 2 = success, error, eof
 #define BUFFER_SIZE 1024
 
@@ -211,9 +214,19 @@ int32_t stream_state = 0;  // 0, 1, 2 = success, error, eof
  * the section is every character starting from cur_pos up to but not include the valid_until pos
  */
 char circular_buffer[BUFFER_SIZE];  // only a section of the buffer will be used at any given time
+char token_buffer[BUFFER_SIZE];  // holds the result of readNextToken()
+int result_token_length = 0;
 int last_successful_read = 0;  // the position right after the last successful read
 int cur_pos = 0;  // the next character will start reading from here
 int valid_until = 0;
+
+
+int32_t getStdinState() { return stream_state; }
+int getNextPos(int pos) { return (pos + 1) % BUFFER_SIZE; }
+int getPrevPos(int pos) { return (pos + BUFFER_SIZE - 1) % BUFFER_SIZE; }
+void rewindInputBuffer() { cur_pos = last_successful_read; }
+// on a successful read, we want to register the new rewind point
+void updateRewindPoint(int newRewindPoint) { last_successful_read = newRewindPoint; }
 
 // https://en.cppreference.com/w/c/io/feof
 // return EOF on unsuccessful read, otherwise the result can be converted to char
@@ -221,8 +234,9 @@ int readNextChar() {
     if (cur_pos == valid_until) {
         int ch = fgetc(stdin);
         if (ch != EOF) {
-            cur_pos = (cur_pos + 1) % BUFFER_SIZE;
-            valid_until = (valid_until + 1) % BUFFER_SIZE;
+            circular_buffer[cur_pos] = (char)ch;
+            cur_pos = getNextPos(cur_pos);
+            valid_until = cur_pos;
             if (cur_pos == last_successful_read) {
                 // emit an error
                 errorAndExit("Error: Attempt to read an input longer than the input buffer length 1024!");
@@ -232,19 +246,49 @@ int readNextChar() {
     } else {
         // just read from the saved buffer
         char ch = circular_buffer[cur_pos];
-        cur_pos = (cur_pos + 1) % BUFFER_SIZE;
+        cur_pos = getNextPos(cur_pos);
         return ch;
     }
 }
 
-void rewindInputBuffer() {
-    cur_pos = last_successful_read;
+// will malloc for the token and return one character after the token's last character
+// e.g. this will return a space on success read, 2 on eof and 1 on buffer size limit met
+int readNextToken() {
+    int ch = ' ';
+    while (isspace(ch)) {
+        if (getNextPos(cur_pos) == last_successful_read) {
+            // too many whitespaces
+            result_token_length = 0;
+            return 1;
+        }
+        ch = readNextChar();
+        if (ch == EOF) {  // encounters EOF without seeing a non-space character
+            // no token read
+            result_token_length = 0;
+            return 2;
+        }
+    }
+    // read the entire token, and stop when the next space is encountered
+    int n = 0;
+    while (true) {
+        token_buffer[n] = (char)ch;
+        n += 1;
+        if (getNextPos(cur_pos) == last_successful_read) {
+            // token too long
+            result_token_length = n;
+            return 1;
+        }
+        ch = readNextChar();
+        if (ch == EOF || isspace(ch)) {
+            // success, return the token
+            result_token_length = n;
+            return 0;
+        }
+        // otherwise keep going
+    }
 }
 
-// on a successful read, we want to register the new rewind point
-void updateRewindPoint(int newRewindPoint) {
-    last_successful_read = newRewindPoint;
-}
+///------------------------------STDIN FOR BASIC TYPES---------------------------------------------------------------
 
 // Each of the interface below should always
 // 1. update rewind point when success; rewind when fail
@@ -252,90 +296,193 @@ void updateRewindPoint(int newRewindPoint) {
 // 3. return correct result when success; return null when fail
 
 int32_t readIntegerFromStdin() {
-    int ch = ' ';
-    while (isspace(ch)) {
-        ch = readNextChar();
-        if (ch == EOF) {
-            rewindInputBuffer();
-            stream_state = 2;
-            return 0;
-        }
-    }
-    long sign;
-    long integer;
-    if (ch == '+') {
-        sign = 1;
-        integer = 0;
-    } else if (ch == '-') {
-        sign = -1;
-        integer = 0;
-    } else if (!isdigit(ch)) {
+    int result = readNextToken();
+    if (result == 2) {  // eof
         rewindInputBuffer();
-        stream_state = 1;
-        return 0;
+        stream_state = 2;
+        return false;
+    } else if (result == 1) {  // buffer overflow
+        errorAndExit("Error: Attempt to read an input longer than the input buffer length 1024!");
     } else {
-        sign = 1;
-        integer = ch - '0';
-    }
-
-    // now read the rest of the integer literal until we see a non-digit character
-    while (true) {
-        int temp = cur_pos;
-        ch = readNextChar();
-        if (isdigit(ch)) {
-            integer = integer * 10 + ch - '0';
-            if (sign * integer < INT32_MIN || sign * integer > INT32_MAX) {  // literal is too large
+        char ch = token_buffer[0];
+        long sign;
+        long integer;
+        if (ch == '+' || ch == '-') {
+            sign = ch == '+' ? 1 : -1;
+            integer = 0;
+            if (result_token_length == 1) {  // fail, a single sign is not an integer
                 rewindInputBuffer();
                 stream_state = 1;
                 return 0;
             }
-        } else if (ch == EOF) {
-            rewindInputBuffer();
-            stream_state = 2;
-            return 0;
-        } else if (isspace(ch)) {  // successful read
-            updateRewindPoint(temp);
-            rewindInputBuffer();
-            stream_state = 0;
-            return (int32_t)(sign * integer);
-        } else {  // is failure
+        } else if (!isdigit(ch)) {
             rewindInputBuffer();
             stream_state = 1;
             return 0;
+        } else {
+            sign = 1;
+            integer = ch - '0';
+        }
+
+        int buffer_pos = 1;
+        // now read the rest of the integer literal until we see a non-digit character
+        while (buffer_pos < result_token_length) {
+            ch = token_buffer[buffer_pos];
+            buffer_pos += 1;
+            if (isdigit(ch)) {
+                integer = integer * 10 + ch - '0';
+            }
+            if (!isdigit(ch) || sign * integer < INT32_MIN || sign * integer > INT32_MAX) {  // is failure
+                rewindInputBuffer();
+                stream_state = 1;
+                return 0;
+            }
+        }
+        // success
+        updateRewindPoint(getPrevPos(cur_pos));
+        rewindInputBuffer();
+        stream_state = 0;
+        return (int32_t)(sign * integer);
+    }
+    errorAndExit("This should not happen!");
+}
+
+float readRealFromStdin() {
+    int result = readNextToken();
+    if (result == 2) {  // eof
+        rewindInputBuffer();
+        stream_state = 2;
+        return false;
+    } else if (result == 1) {  // buffer overflow
+        errorAndExit("Error: Attempt to read an input longer than the input buffer length 1024!");
+    } else {
+        // represents the current progress in reading the real number
+        // 0 = expecting the integer part, 'e' or '.'
+        // 1 = just see the '.' but did not see 'e'
+        // 2 = after seeing 'e' but have not seen '+' '-' or first digit following 'e'
+        // 3 = after first char after 'e'
+        int state = 0;
+
+        // read the first character
+        char ch = token_buffer[0];
+        float sign;
+        float value;
+        int mantissa_length = 0;
+        int exp = 0;
+        int expsign = 1;
+        bool see_digit_before_exp = false;  // a valid float should have at least one digit before the exponent part
+        bool see_digit_after_exp = true;  // if 'e' is seen then there must be a digit after that
+        if (ch == '+' || ch == '-') {
+            sign = ch == '+' ? 1.0f : -1.0f;
+            value = 0.0f;
+        } else if (isdigit(ch)) {
+            sign = 1.0f;
+            value = (float) (ch - '0');
+            see_digit_before_exp = true;
+        } else if (ch == '.') {
+            sign = 1.0f;
+            value = 0.0f;
+            state = 1;
+        } else {
+            rewindInputBuffer();
+            stream_state = 1;
+            return 0.0f;
+        }
+
+        int buffer_pos = 1;
+        while (true) {
+            if (buffer_pos >= result_token_length) {
+                break;
+            }
+            ch = token_buffer[buffer_pos];
+            buffer_pos += 1;
+
+            switch (state) {
+                case 0: {  // expecting the integer part or '.'
+                    if (ch == '.') {
+                        state = 1;
+                    } else if (isdigit(ch)) {
+                        value = value * 10.0f + (float)(ch - '0');
+                        see_digit_before_exp = true;
+                    } else if (ch == 'e') {
+                        state = 2;
+                        see_digit_after_exp = false;
+                    } else {
+                        rewindInputBuffer();
+                        stream_state = 1;
+                        return 0.0f;
+                    }
+                } break;
+                case 1: {  // just see the '.' but did not see 'e'
+                    if (isdigit(ch)) {
+                        mantissa_length += 1;
+                        value += (float)(ch - '0') * powf(10, (float)-mantissa_length);
+                        see_digit_before_exp = true;
+                    } else if (ch == 'e') {
+                        state = 2;
+                        see_digit_after_exp = false;
+                    } else {
+                        rewindInputBuffer();
+                        stream_state = 1;
+                        return 0.0f;
+                    }
+                } break;
+                case 2: {  // after seeing 'e' but have not seen '+' '-' or first digit following 'e'
+                    if (ch == '+' || ch == '-') {
+                        expsign = ch == '+' ? 1 : -1;
+                    } else if (isdigit(ch)) {
+                        exp = exp * 10 + (ch - '0');
+                        see_digit_after_exp = true;
+                    } else {
+                        rewindInputBuffer();
+                        stream_state = 1;
+                        return 0.0f;
+                    }
+                    state = 3;
+                } break;
+                case 3: { // after first char after 'e'
+                    if (isdigit(ch)) {
+                        exp = exp * 10 + (ch - '0');
+                        see_digit_after_exp = true;
+                    } else {
+                        rewindInputBuffer();
+                        stream_state = 1;
+                        return 0.0f;
+                    }
+                } break;
+                default:
+                    errorAndExit("This should not happen!");
+            }
+        }
+        if (!see_digit_before_exp || !see_digit_after_exp) {
+            rewindInputBuffer();
+            stream_state = 1;
+            return 0.0f;
+        } else {  // success
+            updateRewindPoint(getPrevPos(cur_pos));  // don't actually eat the space
+            rewindInputBuffer();
+            stream_state = 0;
+            return sign * value * powf(10.0f, (float)(exp * expsign));
         }
     }
 }
 
-float readRealFromStdin() {
-    // TODO: read float from stdin
-    return 0.0f;
-}
-
 bool readBooleanFromStdin() {
     // read until a non-whitespace character is encountered, then read one more character to see if the boolean is valid
-    while (true) {
-        int ch = readNextChar();
-        if (ch == EOF) {
+    int result = readNextToken();
+    if (result == 2) {  // eof
+        rewindInputBuffer();
+        stream_state = 2;
+        return false;
+    } else if (result == 1) {  // buffer overflow
+        errorAndExit("Error: Attempt to read an input longer than the input buffer length 1024!");
+    } else {
+        char ch = token_buffer[0];
+        if (result_token_length == 1 && (ch == 'T' || ch == 'F')) {  // success
+            updateRewindPoint(getPrevPos(cur_pos));  // don't actually eat the space
             rewindInputBuffer();
-            stream_state = 2;
-            return false;
-        } else if (isspace(ch)) {
-            // do nothing
-        } else if (ch == 'T' || ch == 'F') {
-            bool result = ch == 'T';
-            int temp = cur_pos;
-
-            ch = readNextChar();
-            if (isspace(ch)) {  // success
-                updateRewindPoint(temp);  // don't actually eat the space
-                rewindInputBuffer();
-                stream_state = 0;
-                return result;
-            } else {
-                rewindInputBuffer();
-                stream_state = (ch == EOF) ? 2 : 1;
-                return false;
-            }
+            stream_state = 0;
+            return ch == 'T';
         } else {
             rewindInputBuffer();
             stream_state = 1;
@@ -354,8 +501,4 @@ int8_t readCharacterFromStdin() {
     } else {
         return (int8_t) ch;
     }
-}
-
-int32_t getStdinState() {
-    return stream_state;
 }
