@@ -185,6 +185,12 @@ namespace gazprea
         else if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EXPRESSION_BODY_TOKEN) {
             // Expression Body
             currentSubroutine = subroutine;
+
+            // Populate Argument Symbol's llvmValue
+            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+                subroutineSymbol->orderedArgs[i]->llvmPointerToVariableObject = subroutine->getArg(i);
+            }
+            
             llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
             ir.SetInsertPoint(bb);
             visitChildren(t);
@@ -196,13 +202,20 @@ namespace gazprea
                     auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", {t->children[3]->children[0]->llvmValue});
                     ir.CreateRet(returnIntegerValue);
                 } else {
-                    ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[3]->children[0]->llvmValue));
+                    // ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[3]->children[0]->llvmValue));
+                    ir.CreateRet(t->children[3]->children[0]->llvmValue);
                 }
             }
         }
         else {
             // subroutine declaration and definition;
             currentSubroutine = subroutine;
+
+            // Populate Argument Symbol's llvmValue
+            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+                subroutineSymbol->orderedArgs[i]->llvmPointerToVariableObject = subroutine->getArg(i);
+            }
+
             llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
             ir.SetInsertPoint(bb);
             visitChildren(t);
