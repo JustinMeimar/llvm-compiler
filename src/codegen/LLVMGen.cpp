@@ -673,7 +673,7 @@ namespace gazprea
 
     void LLVMGen::visitInputStreamStatement(std::shared_ptr<AST> t) {
         visitChildren(t);
-        // TODO
+        llvmFunction.call("variableReadFromStdin", {t->children[0]->llvmValue});
     }
 
     void LLVMGen::visitOutputStreamStatement(std::shared_ptr<AST> t)
