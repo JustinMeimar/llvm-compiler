@@ -325,6 +325,7 @@ bool arrayTypeHasUnknownSize(ArrayType *this) {
     for (int8_t i = 0; i < this->m_nDim; i++) {
         hasUnknown = hasUnknown || this->m_dims[i] < 0;
     }
+    return hasUnknown;
 }
 
 int64_t arrayTypeElementSize(ArrayType *this) {
