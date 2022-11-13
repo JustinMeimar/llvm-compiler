@@ -267,10 +267,18 @@ namespace gazprea
             llvmFunction.call("typeInitFromUnknownType", { runtimeTypeObject });
             llvmFunction.call("variableInitFromDeclaration", {runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue});
             variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
+            
+            if (t->children[2]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+                llvmFunction.call("variableDestructThenFree", { t->children[2]->llvmValue });
+            }
         } else {
             auto runtimeTypeObject = t->children[0]->children[1]->llvmValue;
             llvmFunction.call("variableInitFromDeclaration", {runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue});
             variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
+
+            if (t->children[2]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+                llvmFunction.call("variableDestructThenFree", { t->children[2]->llvmValue });
+            }
         }
         
         t->llvmValue = runtimeVariableObject;
@@ -280,6 +288,7 @@ namespace gazprea
     void LLVMGen::visitAssignmentStatement(std::shared_ptr<AST> t) {
         visitChildren(t);
         llvmFunction.call("variableAssignment", {t->children[0]->children[0]->llvmValue, t->children[1]->llvmValue});
+        // TODO: Handle parallel assignment, and free resources
     }
 
     void LLVMGen::visitUnqualifiedType(std::shared_ptr<AST> t) {
@@ -671,6 +680,9 @@ namespace gazprea
     {
         visitChildren(t);
         llvmFunction.call("variablePrintToStdout", {t->children[0]->llvmValue});
+        if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
+        }
     }
 
     void LLVMGen::visitBinaryOperation(std::shared_ptr<AST> t) {
@@ -743,6 +755,13 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(opCode)});
         t->llvmValue = runtimeVariableObject;
+
+        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
+        }
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
+        }
     }
 
     void LLVMGen::visitUnaryOperation(std::shared_ptr<AST> t) {
@@ -763,6 +782,10 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromUnaryOp", {runtimeVariableObject, t->children[1]->llvmValue, ir.getInt32(opCode)});
         t->llvmValue = runtimeVariableObject;
+
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
+        }
     }
 
     void LLVMGen::visitIndexing(std::shared_ptr<AST> t) {
@@ -770,6 +793,12 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(0)});
         t->llvmValue = runtimeVariableObject;
+        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
+        }
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
+        }
     }
 
     void LLVMGen::visitInterval(std::shared_ptr<AST> t) {
@@ -777,6 +806,13 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(1)});
         t->llvmValue = runtimeVariableObject;
+
+        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
+        }
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
+        }
     }
 
     void LLVMGen::visitStringConcatenation(std::shared_ptr<AST> t) {
