@@ -100,6 +100,9 @@ namespace gazprea
             case GazpreaParser::CAST_TOKEN:
                 visitCast(t);
                 break;
+            case GazpreaParser::TYPEDEF:
+                visitTypedef(t);
+                break;
             case GazpreaParser::INPUT_STREAM_TOKEN:
                 visitInputStreamStatement(t);
                 break;
@@ -599,7 +602,7 @@ namespace gazprea
 
     void LLVMGen::visitIteratorLoop(std::shared_ptr<AST> t) {
         visitChildren(t);
-        // TODO
+        // TODOBasicBlock 
     }
 
     void LLVMGen::visitBooleanAtom(std::shared_ptr<AST> t) {
@@ -689,6 +692,10 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromCast", { runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue });
         t->llvmValue = runtimeVariableObject;
+    }
+
+    void LLVMGen::visitTypedef(std::shared_ptr<AST> t) {
+        return;
     }
 
     void LLVMGen::visitInputStreamStatement(std::shared_ptr<AST> t) {

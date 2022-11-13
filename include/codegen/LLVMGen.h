@@ -68,6 +68,7 @@ class LLVMGen {
         // Other Sub-Expression rules
         void visitExpression(std::shared_ptr<AST> t);
         void visitCast(std::shared_ptr<AST> t);
+        void visitTypedef(std::shared_ptr<AST> t);
 
         // Stream Statements
         void visitInputStreamStatement(std::shared_ptr<AST> t);
