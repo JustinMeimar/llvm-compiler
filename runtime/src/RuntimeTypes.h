@@ -128,3 +128,11 @@ void tupleTypeFreeData(TupleType *this, void *data);
 void *variableArrayMalloc(int64_t size);                            /// INTERFACE
 void variableArraySet(Variable **arr, int64_t idx, Variable *var);  /// INTERFACE
 void variableArrayFree(Variable **arr);                             /// INTERFACE
+
+void *typeArrayMalloc(int64_t size);                                /// INTERFACE
+void typeArraySet(Type **arr, int64_t idx, Type *var);              /// INTERFACE
+void typeArrayFree(Type **arr);                                     /// INTERFACE
+
+void *stridArrayMalloc(int64_t size);                               /// INTERFACE
+void stridArraySet(int64_t *arr, int64_t idx, int64_t val);         /// INTERFACE
+void stridArrayFree(int64_t *arr);                                  /// INTERFACE

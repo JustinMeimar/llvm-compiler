@@ -568,16 +568,16 @@ void tupleTypeFreeData(TupleType *this, void *data) {
     free(vars);
 }
 
-// TupleTypeVariableArray---------------------------------------------------------------------------------------------
+// Some Utility for LLVM passing parameters---------------------------------------------------------------------------------------------
 
-void *variableArrayMalloc(int64_t size) {
-    return malloc(size * sizeof(Variable *));
-}
+void *variableArrayMalloc(int64_t size) { return malloc(size * sizeof(Variable *)); }
+void variableArraySet(Variable **arr, int64_t idx, Variable *var) { arr[idx] = var; }
+void variableArrayFree(Variable **arr) { free(arr); }
 
-void variableArraySet(Variable **arr, int64_t idx, Variable *var) {
-    arr[idx] = var;
-}
+void *typeArrayMalloc(int64_t size) { return malloc(size * sizeof(Type *)); }
+void typeArraySet(Type **arr, int64_t idx, Type *type) { arr[idx] = type; }
+void typeArrayFree(Type **arr) { free(arr); }
 
-void variableArrayFree(Variable **arr) {
-    free(arr);
-}
+void *stridArrayMalloc(int64_t size) { return malloc(size * sizeof(int64_t)); }
+void stridArraySet(int64_t *arr, int64_t idx, int64_t val) { arr[idx] = val; }
+void stridArrayFree(int64_t *arr) { free(arr); }
