@@ -421,13 +421,9 @@ namespace gazprea
         //Initialize If Header and Body
         llvm::BasicBlock* IfHeaderBB = llvm::BasicBlock::Create(globalCtx, "IfHeaderBlock", parentFunc);
         llvm::BasicBlock* IfBodyBB = llvm::BasicBlock::Create(globalCtx, "IfBodyBlock", parentFunc);
-        llvm::BasicBlock* ElseIfHeader = llvm::BasicBlock::Create(globalCtx, "ElseIfHeader");
-        llvm::BasicBlock* ElseBlock = llvm::BasicBlock::Create(globalCtx, "ElseBlock");
-        llvm::BasicBlock* Merge = llvm::BasicBlock::Create(globalCtx, "Merge");
-        // ElseBlock and ElseIfHeader are only created when needed. 
-        llvmBranch.blockStack.push_back(Merge);
-        llvmBranch.blockStack.push_back(ElseBlock);
-        llvmBranch.blockStack.push_back(ElseIfHeader);
+        llvm::BasicBlock* ElseIfHeader = llvm::BasicBlock::Create(globalCtx, "ElseIfHeader"); //only use if needed
+        llvm::BasicBlock* ElseBlock = llvm::BasicBlock::Create(globalCtx, "ElseBlock"); // only use if needed
+        llvm::BasicBlock* Merge = llvm::BasicBlock::Create(globalCtx, "Merge"); //used at end
         // Start inserting at If Header 
         ir.CreateBr(IfHeaderBB);
         ir.SetInsertPoint(IfHeaderBB);
@@ -459,7 +455,7 @@ namespace gazprea
             }
             //Fill header
             visit(elifNode->children[0]); 
-            auto elseIfExprValue = llvmFunction.call("variableGetIntegerValue", {elifNode->children[0]->llvmValue});
+            auto elseIfExprValue = llvmFunction.call("variableGetBooleanValue", {elifNode->children[0]->llvmValue});
             llvm::Value* elseIfCondition = ir.CreateICmpNE(elseIfExprValue, ir.getInt32(0));
             llvm::BasicBlock* elseIfBodyBlock = llvm::BasicBlock::Create(globalCtx, "ElseIfBody", parentFunc);
             // Conditoinal Branch Out (3 Cases)
@@ -489,9 +485,6 @@ namespace gazprea
         }
         // Merge
         parentFunc->getBasicBlockList().push_back(Merge); 
-        llvmBranch.blockStack.pop_back();
-        llvmBranch.blockStack.pop_back();
-        llvmBranch.blockStack.pop_back();
         ir.SetInsertPoint(Merge);         
     }
     
@@ -526,6 +519,8 @@ namespace gazprea
         llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
         llvm::BasicBlock *InfiniteBodyBB = llvm::BasicBlock::Create(globalCtx, "InfiniteBody", parentFunc);
         llvm::BasicBlock *MergeBB = llvm::BasicBlock::Create(globalCtx, "MergeFromInfinteLoop");
+        llvmBranch.blockStack.push_back(InfiniteBodyBB);
+        llvmBranch.blockStack.push_back(nullptr); // maintain index offset to other loop methods
         llvmBranch.blockStack.push_back(MergeBB);
         // create infinite loop
         ir.CreateBr(InfiniteBodyBB);
@@ -536,6 +531,8 @@ namespace gazprea
         ir.SetInsertPoint(MergeBB);
         // keep stack organized
         llvmBranch.blockStack.pop_back();
+        llvmBranch.blockStack.pop_back();
+        llvmBranch.blockStack.pop_back();
     }
 
     void LLVMGen::visitPrePredicatedLoop(std::shared_ptr<AST> t) {
@@ -543,8 +540,8 @@ namespace gazprea
         llvmFunction.call("variableInitFromIntegerScalar", {runtimeVarConstZero, ir.getInt32(0)}); //Type must match for ICmpNE
         llvmBranch.createPrePredConditionalBB("PrePredLoop");
         visit(t->children[0]);      // Conditional Expr
-        llvm::Value *exprValue = t->children[0]->llvmValue;
-        llvm::Value *condition = ir.CreateICmpNE(exprValue, runtimeVarConstZero);
+        auto exprValue = llvmFunction.call("variableGetBooleanValue", {t->children[0]->llvmValue});
+        llvm::Value* condition = ir.CreateICmpNE(exprValue, ir.getInt32(0)); 
         llvmBranch.createPrePredBodyBB(condition);
         visit(t->children[1]);      // Visit body
         llvmBranch.createPrePredMergeBB();
@@ -557,8 +554,8 @@ namespace gazprea
         visit(t->children[0]);      //visit Body 
         llvmBranch.createPostPredConditionalBB(); 
         visit(t->children[1]);      //grab value from post predicate
-        llvm::Value *exprValue = t->children[1]->llvmValue; 
-        llvm::Value *condition = ir.CreateICmpNE(exprValue, runtimeVarConstZero);
+        auto exprValue = llvmFunction.call("variableGetBooleanValue", {t->children[1]->llvmValue});
+        llvm::Value *condition = ir.CreateICmpNE(exprValue, ir.getInt32(0));
         llvmBranch.createPostPredMergeBB(condition);
     }
 
