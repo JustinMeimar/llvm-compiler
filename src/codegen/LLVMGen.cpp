@@ -149,6 +149,9 @@ namespace gazprea
             case GazpreaParser::CONTINUE:
                 visitContinue(t);
                 break;
+            case GazpreaParser::TUPLE_LITERAL_TOKEN:
+                visitTupleLiteral(t);
+                break;
             default: // The other nodes we don't care about just have their children visited
                 visitChildren(t);
             }
@@ -881,6 +884,10 @@ namespace gazprea
             // TODO: Other Types
         }
         variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
+    }
+
+    void LLVMGen::visitTupleLiteral(std::shared_ptr<AST> t) {
+        visitChildren(t);
     }
 
     void LLVMGen::Print() {

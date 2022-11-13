@@ -63,6 +63,7 @@ class LLVMGen {
         void visitIdentifier(std::shared_ptr<AST> t);
         void visitGenerator(std::shared_ptr<AST> t);
         void visitFilter(std::shared_ptr<AST> t);
+        void visitTupleLiteral(std::shared_ptr<AST> t);
 
         // Other Sub-Expression rules
         void visitExpression(std::shared_ptr<AST> t);
