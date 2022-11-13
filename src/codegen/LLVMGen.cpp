@@ -152,6 +152,9 @@ namespace gazprea
             case GazpreaParser::TUPLE_LITERAL_TOKEN:
                 visitTupleLiteral(t);
                 break;
+            case GazpreaParser::TUPLE_ACCESS_TOKEN: 
+                visitTupleAccess(t);
+                break;
             default: // The other nodes we don't care about just have their children visited
                 visitChildren(t);
             }
@@ -319,6 +322,9 @@ namespace gazprea
             case Type::INTEGER_INTERVAL:
                 llvmFunction.call("typeInitFromIntegerInterval", {runtimeTypeObject});
                 break;
+            case Type::STRING:
+                // TODO
+                break;
             
             case Type::BOOLEAN_1:
                 matrixType = std::dynamic_pointer_cast<MatrixType>(t->type);
@@ -433,6 +439,11 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromRealScalar", {baseType});
                 llvmFunction.call("typeInitFromMatrixSizeSpecification", { runtimeTypeObject, dimension1Expression, dimension2Expression, baseType });
+                break;
+            
+            case Type::TUPLE:
+                auto tupleType = std::dynamic_pointer_cast<TupleType>(t->type);
+                // TODO
                 break;
         }
 
@@ -635,13 +646,19 @@ namespace gazprea
     }
 
     void LLVMGen::visitStringLiteral(std::shared_ptr<AST> t) {
+        visitChildren(t);
         // TODO
         // auto string_value = t->parseTree->getText().substr(1, t->parseTree->getText().length() - 2).c_str();
-        // auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
-        // auto string_length = t->parseTree->getText().length();
+        // auto string_length = t->parseTree->getText().length() - 2;
 
-        // llvmFunction.call("variableInitFromString", { runtimeVariableObject, ir.getInt64(string_length), string_value } );
+        // auto runtimeVariableArray = llvmFunction.call("variableArrayMalloc", { ir.getInt64(string_length) });
+        // for (size_t i = 0; i < string_length; i++) {
+        //     llvmFunction.call("variableArraySet", { runtimeVariableArray, ir.getInt64(i), ir.getInt8(string_value[i]) });
+        // }
+        // auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        // llvmFunction.call("variableInitFromString", { runtimeVariableObject, ir.getInt64(string_length), runtimeVariableArray });
         // t->llvmValue = runtimeVariableObject;
+        // llvmFunction.call("variableArrayFree", { runtimeVariableArray });
     }
 
     void LLVMGen::visitIdentifier(std::shared_ptr<AST> t) {
@@ -881,6 +898,9 @@ namespace gazprea
             case Type::INTEGER_INTERVAL:
                 llvmFunction.call("typeInitFromIntegerInterval", { runtimeTypeObject });
                 break;
+            case Type::TUPLE:
+                // TODO
+                break;
             // TODO: Other Types
         }
         variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
@@ -888,6 +908,40 @@ namespace gazprea
 
     void LLVMGen::visitTupleLiteral(std::shared_ptr<AST> t) {
         visitChildren(t);
+        auto numExpressions = t->children[0]->children.size();
+        auto runtimeVariableArray = llvmFunction.call("variableArrayMalloc", { ir.getInt64(numExpressions) });
+        for (size_t i = 0; i < numExpressions; i++) {
+            llvmFunction.call("variableArraySet", { runtimeVariableArray, ir.getInt64(i), t->children[0]->children[i]->llvmValue });
+        }
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromTupleLiteral", { runtimeVariableObject, ir.getInt64(numExpressions), runtimeVariableArray });
+        t->llvmValue = runtimeVariableObject;
+        llvmFunction.call("variableArrayFree", { runtimeVariableArray });
+
+        // Free all unused variables
+        for (size_t i = 0; i < numExpressions; i++) {
+            if (t->children[0]->children[i]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+                llvmFunction.call("variableDestructThenFree", { t->children[0]->children[i]->llvmValue });
+            }
+        }
+    }
+
+    void LLVMGen::visitTupleAccess(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
+            auto tupleType = std::dynamic_pointer_cast<TupleType>(t->children[0]->evalType);
+            auto identifierName = t->children[1]->parseTree->getText();
+            size_t i;
+            for (i = 0; i < tupleType->orderedArgs.size(); i++) {
+                if (tupleType->orderedArgs[i]->name == identifierName) {
+                    break;
+                }
+            }
+            t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(i + 1) });
+        } else {
+            auto index = std::stoi(t->children[1]->parseTree->getText());
+            t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(index) });
+        }
     }
 
     void LLVMGen::Print() {

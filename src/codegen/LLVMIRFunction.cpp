@@ -165,6 +165,30 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
         "typeDestructThenFree"
     );
+
+    // Tuple
+    declareFunction(
+        llvm::FunctionType::get(runtimeVariableTy->getPointerTo()->getPointerTo(), { int64Ty }, false),
+        "variableArrayMalloc"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo()->getPointerTo(), int64Ty, runtimeVariableTy->getPointerTo() }, false),
+        "variableArraySet"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo()->getPointerTo() }, false),
+        "variableArrayFree"
+    );
+    
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), int64Ty, runtimeVariableTy->getPointerTo()->getPointerTo() }, false),
+        "variableInitFromTupleLiteral"
+    );
+    
+    declareFunction(
+        llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), { runtimeVariableTy->getPointerTo(), int64Ty }, false),
+        "variableGetTupleField"
+    );
 }
 
 llvm::Function *LLVMIRFunction::declareFunction(llvm::FunctionType *fTy, const std::string &name) {

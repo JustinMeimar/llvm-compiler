@@ -94,6 +94,9 @@ class LLVMGen {
         // Type
         void visitUnqualifiedType(std::shared_ptr<AST> t);
 
+        // Tuple
+        void visitTupleAccess(std::shared_ptr<AST> t);
+
         //Helper Methods 
         void Print();
 };
