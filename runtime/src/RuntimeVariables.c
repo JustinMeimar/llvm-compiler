@@ -768,6 +768,23 @@ void variableInitFromNDArray(Variable *this, TypeID typeID, ElementTypeID eid, i
     this->m_parent = this->m_data;
 }
 
+Variable *variableGetTupleField(Variable *tuple, int64_t pos) {
+    TupleType *CTI = tuple->m_type->m_compoundTypeInfo;
+    if (pos <= 0 || pos > CTI->m_nField) {
+        targetTypeError(tuple->m_type->m_compoundTypeInfo, "Tuple index out of range. Tuple type:");
+    }
+    Variable **vars = tuple->m_data;
+    return vars[pos - 1];
+}
+
+Variable *variableGetTupleFieldFromID(Variable *tuple, int64_t id) {
+    int64_t pos = tupleTypeResolveId(tuple->m_type->m_compoundTypeInfo, id);
+    if (pos == -1) {
+        targetTypeError(tuple->m_type->m_compoundTypeInfo, "Cannot resolve tuple field id at runtime. Tuple type:");
+    }
+    return variableGetTupleField(tuple, pos);
+}
+
 void variableDestructor(Variable *this) {
     TypeID id = this->m_type->m_typeId;
 

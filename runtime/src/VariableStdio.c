@@ -372,6 +372,7 @@ float readRealFromStdin() {
         int expsign = 1;
         bool see_digit_before_exp = false;  // a valid float should have at least one digit before the exponent part
         bool see_digit_after_exp = true;  // if 'e' is seen then there must be a digit after that
+        bool see_e_or_dot = false;  // a float must have 'e' or '.' to be valid float
         if (ch == '+' || ch == '-') {
             sign = ch == '+' ? 1.0f : -1.0f;
             value = 0.0f;
@@ -383,6 +384,7 @@ float readRealFromStdin() {
             sign = 1.0f;
             value = 0.0f;
             state = 1;
+            see_e_or_dot = true;
         } else {
             rewindInputBuffer();
             stream_state = 1;
@@ -401,12 +403,14 @@ float readRealFromStdin() {
                 case 0: {  // expecting the integer part or '.'
                     if (ch == '.') {
                         state = 1;
+                        see_e_or_dot = true;
                     } else if (isdigit(ch)) {
                         value = value * 10.0f + (float)(ch - '0');
                         see_digit_before_exp = true;
                     } else if (ch == 'e') {
                         state = 2;
                         see_digit_after_exp = false;
+                        see_e_or_dot = true;
                     } else {
                         rewindInputBuffer();
                         stream_state = 1;
@@ -421,6 +425,7 @@ float readRealFromStdin() {
                     } else if (ch == 'e') {
                         state = 2;
                         see_digit_after_exp = false;
+                        see_e_or_dot = true;
                     } else {
                         rewindInputBuffer();
                         stream_state = 1;
@@ -454,7 +459,7 @@ float readRealFromStdin() {
                     errorAndExit("This should not happen!");
             }
         }
-        if (!see_digit_before_exp || !see_digit_after_exp) {
+        if (!see_digit_before_exp || !see_digit_after_exp || !see_e_or_dot) {
             rewindInputBuffer();
             stream_state = 1;
             return 0.0f;

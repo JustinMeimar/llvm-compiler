@@ -124,3 +124,7 @@ void *tupleTypeMallocDataFromCopy(TupleType *this, void *otherTupleData);
 void *tupleTypeMallocDataFromCopyVariableArray(TupleType *this, Variable **vars);
 void *tupleTypeMallocDataFromPCADP(TupleType *this, Variable *src, PCADPConfig *config);
 void tupleTypeFreeData(TupleType *this, void *data);
+
+void *variableArrayMalloc(int64_t size);                            /// INTERFACE
+void variableArraySet(Variable **arr, int64_t idx, Variable *var);  /// INTERFACE
+void variableArrayFree(Variable **arr);                             /// INTERFACE
