@@ -292,7 +292,7 @@ namespace gazprea {
         visitChildren(t); 
         auto node1 = t->children[0];
         auto node2 = t->children[1]; 
-
+        
         //getResultType automatically populates promotType of children
         switch(t->children[2]->getNodeType()){ 
             case GazpreaParser::MODULO:
