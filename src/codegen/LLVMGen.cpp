@@ -185,15 +185,23 @@ namespace gazprea
         else if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EXPRESSION_BODY_TOKEN) {
             // Expression Body
             currentSubroutine = subroutine;
-
-            // Populate Argument Symbol's llvmValue
-            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
-                subroutineSymbol->orderedArgs[i]->llvmPointerToVariableObject = subroutine->getArg(i);
-            }
-            
             llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
             ir.SetInsertPoint(bb);
-            visitChildren(t);
+
+            // Populate Argument Symbol's llvmValue
+            visit(t->children[1]);
+            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+                auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+                if (variableSymbol->typeQualifier == "const") {
+                    auto runtimeVariableParameterObject = llvmFunction.call("variableMalloc", {});
+                    llvmFunction.call("variableInitFromParameter", { runtimeVariableParameterObject, variableSymbol->llvmPointerToTypeObject, subroutine->getArg(i) });
+                    variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
+                } else {
+                    variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
+                }
+                
+            }
+            visit(t->children[3]);
 
             if (t->children[2]->isNil()) {
                 ir.CreateRetVoid();
@@ -202,7 +210,6 @@ namespace gazprea
                     auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", {t->children[3]->children[0]->llvmValue});
                     ir.CreateRet(returnIntegerValue);
                 } else {
-                    // ir.CreateRet(ir.CreateLoad(runtimeVariableTy, t->children[3]->children[0]->llvmValue));
                     ir.CreateRet(t->children[3]->children[0]->llvmValue);
                 }
             }
@@ -210,15 +217,23 @@ namespace gazprea
         else {
             // subroutine declaration and definition;
             currentSubroutine = subroutine;
-
-            // Populate Argument Symbol's llvmValue
-            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
-                subroutineSymbol->orderedArgs[i]->llvmPointerToVariableObject = subroutine->getArg(i);
-            }
-
             llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
             ir.SetInsertPoint(bb);
-            visitChildren(t);
+
+            // Populate Argument Symbol's llvmValue
+            visit(t->children[1]);
+            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+                auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+                if (variableSymbol->typeQualifier == "const") {
+                    auto runtimeVariableParameterObject = llvmFunction.call("variableMalloc", {});
+                    llvmFunction.call("variableInitFromParameter", { runtimeVariableParameterObject, variableSymbol->llvmPointerToTypeObject, subroutine->getArg(i) });
+                    variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
+                } else {
+                    variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
+                }
+                
+            }
+            visit(t->children[3]);
 
             if (t->children[2]->isNil()) {
                 ir.CreateRetVoid();
@@ -802,7 +817,34 @@ namespace gazprea
 
     void LLVMGen::visitParameterAtom(std::shared_ptr<AST> t) {
         visitChildren(t);
-        // TODO
+        auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
+
+        auto runtimeTypeObject = llvmFunction.call("typeMalloc", {});
+
+        // std::shared_ptr<MatrixType> matrixType;
+        // llvm::Value *baseType;
+        // llvm::Value *dimension1Expression = nullptr;
+        // llvm::Value *dimension2Expression = nullptr;
+
+        switch(variableSymbol->type->getTypeId()) {
+            case Type::BOOLEAN:
+                llvmFunction.call("typeInitFromBooleanScalar", { runtimeTypeObject });
+                break;
+            case Type::CHARACTER:
+                llvmFunction.call("typeInitFromCharacterScalar", { runtimeTypeObject });
+                break;
+            case Type::INTEGER:
+                llvmFunction.call("typeInitFromIntegerScalar", { runtimeTypeObject });
+                break;
+            case Type::REAL:
+                llvmFunction.call("typeInitFromRealScalar", { runtimeTypeObject });
+                break;
+            case Type::INTEGER_INTERVAL:
+                llvmFunction.call("typeInitFromIntegerInterval", { runtimeTypeObject });
+                break;
+            // TODO: Other Types
+        }
+        variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
     }
 
     void LLVMGen::Print() {
