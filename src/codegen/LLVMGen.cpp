@@ -280,12 +280,21 @@ namespace gazprea
     void LLVMGen::visitReturn(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->scope);
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, t->children[0]->llvmValue });
         if (subroutineSymbol->name == "main") {
-            auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", {t->children[0]->llvmValue});
+            // auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { t->children[0]->llvmValue });
+            auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { runtimeVariableObject });
+            if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+                llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
+            }
             ir.CreateRet(returnIntegerValue);
             return;
         }
-        ir.CreateRet(t->children[0]->llvmValue);
+        if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
+        }
+        ir.CreateRet(runtimeVariableObject);
     }
 
     void LLVMGen::visitVarDeclarationStatement(std::shared_ptr<AST> t) {
