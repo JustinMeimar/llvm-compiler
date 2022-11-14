@@ -22,7 +22,8 @@
 namespace gazprea {
 
 class LLVMGen {
-    public: 
+    public:
+        std::shared_ptr<SymbolTable> symtab;
         llvm::LLVMContext globalCtx;
         llvm::IRBuilder<llvm::NoFolder> ir;
         llvm::Module mod;

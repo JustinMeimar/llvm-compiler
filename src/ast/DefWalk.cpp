@@ -69,9 +69,14 @@ namespace gazprea {
         auto vs = std::make_shared<VariableSymbol>(identifierAST->parseTree->getText(), nullptr);
         vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = vs;  // track in AST
-        auto symbol = currentScope->resolve(identifierAST->parseTree->getText());
         currentScope->define(vs);
         visitChildren(t);
+        if (currentScope->getScopeName() == "global") {
+            vs->isGlobalVariable = true;
+            symtab->globals->globalVariableSymbols.push_back(vs);
+        } else {
+            vs->isGlobalVariable = false;
+        }
     }
 
     void DefWalk::visitSubroutineDeclDef(std::shared_ptr<AST> t) {

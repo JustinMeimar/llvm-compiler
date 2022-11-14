@@ -51,12 +51,21 @@ namespace gazprea {
         
         if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
             variableDeclarationSymbol->typeQualifier = t->children[0]->children[0]->parseTree->getText();
+            if (variableDeclarationSymbol->isGlobalVariable && t->children[0]->children[0]->parseTree->getText() != "const") {
+                std::cout << "Global variable cannot have type qualifier \"const\"" << std::endl;
+            }
         } else {
             if (t->children[0]->children[0]->isNil()) {
+                if (variableDeclarationSymbol->isGlobalVariable) {
+                    std::cout << "Global variable must have a type qualifier, and that type qualifier must be \"const\"" << std::endl;
+                }
                 variableDeclarationSymbol->typeQualifier = "var";  // default type qualifier is var
                 variableDeclarationSymbol->type = t->children[0]->children[1]->type;
             } else {
                 variableDeclarationSymbol->typeQualifier = t->children[0]->children[0]->parseTree->getText();
+                if (variableDeclarationSymbol->isGlobalVariable && t->children[0]->children[0]->parseTree->getText() != "const") {
+                    std::cout << "Global variable cannot have type qualifier \"const\"" << std::endl;
+                }
                 variableDeclarationSymbol->type = t->children[0]->children[1]->type;
             }
         }

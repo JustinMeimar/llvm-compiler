@@ -6,7 +6,7 @@ namespace gazprea
     LLVMGen::LLVMGen(
         std::shared_ptr<SymbolTable> symtab,
         std::string &outfile)
-        : globalCtx(), ir(globalCtx), mod("gazprea", globalCtx), outfile(outfile),
+        : symtab(symtab), globalCtx(), ir(globalCtx), mod("gazprea", globalCtx), outfile(outfile),
           llvmFunction(&globalCtx, &ir, &mod),
           llvmBranch(&globalCtx, &ir, &mod),
           numExprAncestors(0)
@@ -32,6 +32,15 @@ namespace gazprea
         llvmFunction.runtimeTypeTy = runtimeTypeTy;
         llvmFunction.runtimeVariableTy = runtimeVariableTy;
         llvmFunction.declareAllFunctions();
+
+        // Declare Global Variables
+        for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
+            mod.getOrInsertGlobal(variableSymbol->name, runtimeVariableTy->getPointerTo() );
+            auto globalVar = mod.getNamedGlobal(variableSymbol->name);
+            globalVar->setLinkage(llvm::GlobalValue::InternalLinkage);
+            globalVar->setInitializer(llvm::ConstantPointerNull::get(runtimeVariableTy->getPointerTo()));
+            variableSymbol->llvmPointerToVariableObject = globalVar;
+        }
     }
 
     LLVMGen::~LLVMGen() {
@@ -197,6 +206,15 @@ namespace gazprea
             llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
             ir.SetInsertPoint(bb);
 
+            // Initialize Global Variable
+            if (subroutineSymbol->name == "main") {
+                for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
+                    auto globalVar = mod.getNamedGlobal(variableSymbol->name);
+                    visit(variableSymbol->def->children[2]);
+                    ir.CreateStore(variableSymbol->def->children[2]->llvmValue, globalVar);
+                }
+            }
+
             // Populate Argument Symbol's llvmValue
             visit(t->children[1]);
             for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
@@ -228,6 +246,15 @@ namespace gazprea
             currentSubroutine = subroutine;
             llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
             ir.SetInsertPoint(bb);
+
+            // Initialize Global Variable
+            if (subroutineSymbol->name == "main") {
+                for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
+                    auto globalVar = mod.getNamedGlobal(variableSymbol->name);
+                    visit(variableSymbol->def->children[2]);
+                    ir.CreateStore(variableSymbol->def->children[2]->llvmValue, globalVar);
+                }
+            }
 
             // Populate Argument Symbol's llvmValue
             visit(t->children[1]);
@@ -262,8 +289,11 @@ namespace gazprea
     }
 
     void LLVMGen::visitVarDeclarationStatement(std::shared_ptr<AST> t) {
-        visitChildren(t);
         auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
+        if (variableSymbol->isGlobalVariable) {
+            return;
+        }
+        visitChildren(t);
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         if (t->children[2]->isNil()) {
             // No expression => Initialize to null
@@ -755,9 +785,14 @@ namespace gazprea
 
     void LLVMGen::visitIdentifier(std::shared_ptr<AST> t) {
         visitChildren(t);
-        if (numExprAncestors > 0)
-        {
-            t->llvmValue = t->symbol->llvmPointerToVariableObject;
+        if (numExprAncestors > 0) {
+            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
+            if (variableSymbol != nullptr && variableSymbol->isGlobalVariable) {
+                auto globalVar = mod.getNamedGlobal(variableSymbol->name);
+                t->llvmValue = ir.CreateLoad(runtimeVariableTy->getPointerTo(), globalVar);
+            } else {
+                t->llvmValue = t->symbol->llvmPointerToVariableObject;
+            }
         }
     }
 
@@ -972,11 +1007,6 @@ namespace gazprea
         auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
 
         auto runtimeTypeObject = llvmFunction.call("typeMalloc", {});
-
-        // std::shared_ptr<MatrixType> matrixType;
-        // llvm::Value *baseType;
-        // llvm::Value *dimension1Expression = nullptr;
-        // llvm::Value *dimension2Expression = nullptr;
 
         switch(variableSymbol->type->getTypeId()) {
             case Type::BOOLEAN:
