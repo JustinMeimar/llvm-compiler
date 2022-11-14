@@ -125,7 +125,15 @@ namespace gazprea {
             auto tupleTypeInTypeSpecifier = std::dynamic_pointer_cast<TupleType>(varTy);
             auto tupleTypeInExpression = std::dynamic_pointer_cast<TupleType>(exprTy);
             if (tupleTypeInTypeSpecifier->orderedArgs.size() != tupleTypeInExpression->orderedArgs.size()) {
-                std::cout << "Compile-time error!" << std::endl;
+                //throw exception
+                auto *ctx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext*>(t->parseTree);  
+                throw TupleSizeError(
+                    t->children[1]->getText(),
+                    t->children[2]->getText(),
+                    t->parseTree->getText(),
+                    ctx->getStart()->getLine(),
+                    ctx->getStart()->getCharPositionInLine()
+                );
             }
             for (size_t i = 0; i < tupleTypeInExpression->orderedArgs.size(); i++) {
                 int exprTupleElTy = tupleTypeInExpression->orderedArgs[i]->type->getTypeId();
@@ -303,17 +311,17 @@ namespace gazprea {
             case GazpreaParser::MINUS:
             case GazpreaParser::DIV:
             case GazpreaParser::ASTERISK: 
-                t->evalType = tp->getResultType(tp->arithmeticResultType, node1, node2);
+                t->evalType = tp->getResultType(tp->arithmeticResultType, node1, node2, t);
             break;
             case GazpreaParser::LESSTHAN:
             case GazpreaParser::GREATERTHAN:
             case GazpreaParser::LESSTHANOREQUAL:
             case GazpreaParser::GREATERTHANOREQUAL:
-                t->evalType = tp->getResultType(tp->relationalResultType, node1, node2);
+                t->evalType = tp->getResultType(tp->relationalResultType, node1, node2, t);
             break;
             case GazpreaParser::ISEQUAL:
             case GazpreaParser::ISNOTEQUAL:
-                t->evalType = tp->getResultType(tp->equalityResultType, node1, node2);
+                t->evalType = tp->getResultType(tp->equalityResultType, node1, node2, t);
             break; 
         }     
     }
