@@ -17,6 +17,7 @@
 #include "LLVMIRFunction.h"
 
 #include "MatrixType.h"
+#include "TypedefTypeSymbol.h"
 
 namespace gazprea {
 
