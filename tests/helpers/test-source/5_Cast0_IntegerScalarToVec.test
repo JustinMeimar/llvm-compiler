@@ -1,0 +1,10 @@
+procedure main() returns integer {
+    integer interval x = 1..10;
+    integer[10] v = as<integer[10]>(x);
+    v -> std_output;
+
+    return 0;
+}
+#split_token
+#split_token
+[1 2 3 4 5 6 7 8 9 10]

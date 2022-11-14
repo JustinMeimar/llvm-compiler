@@ -8,9 +8,9 @@ def run_program(args, inFile = None):
         print(arg, end = " ")
     print(flush = True)
     if inFile != None:
-        return subprocess.check_output(args, stdin=inFile, timeout=2)
+        return subprocess.check_output(args, stdin=inFile, timeout=8)
     else:
-        return subprocess.check_output(args, timeout=2)
+        return subprocess.check_output(args, timeout=8)
 
 def fetch_path_file_pair(dir):
     pairs = []
@@ -39,7 +39,9 @@ def main():
         test_path, tests_dir, test_name = test
         stripped_test_name = test_name[:-3]
         test_ins_path = testins_prefix + tests_dir + "/" + stripped_test_name + ".ins"
-        test_out_path = testins_prefix + tests_dir + "/" + stripped_test_name + ".out"
+        test_out_path = testout_prefix + tests_dir + "/" + stripped_test_name + ".out"
+        if (not (os.path.isfile(test_ins_path) and os.path.isfile(test_out_path))):
+            continue
 
         if len(selected_tests) >= 1:
             selected = False

@@ -23,10 +23,52 @@
 
 ///------------------------------INTERFACES---------------------------------------------------------------
 
+PCADPConfig pcadpParameterConfig = {
+        true, true,
+        true, false,
+        vectovec_rhs_size_must_not_be_greater, false,
+        true, false
+};
+PCADPConfig pcadpCastConfig = {
+        false, true,
+        false, false,
+        vectovec_rhs_size_can_be_any, true,
+        true, true
+};
+PCADPConfig pcadpAssignmentConfig = {
+        false, false,
+        false, true,
+        vectovec_rhs_must_be_same_size, false,
+        true, false
+};
+PCADPConfig pcadpDeclarationConfig = {
+        true, true,
+        false, false,
+        vectovec_rhs_size_must_not_be_greater, false,
+        true, false
+};
+PCADPConfig pcadpPromotionConfig = {
+        true, false,
+        false, false,
+        vectovec_rhs_must_be_same_size, false,
+        true, false
+};
+
 void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCADPConfig *config) {
     // in every possible case, we need to do one of the below two things
     // 1. throw an error when input types do not make sense
     // 2. initialize every field of this fully, including this->m_type and this->m_data
+//    if (config == &pcadpParameterConfig) {
+//        fprintf(stderr, "Param\n");
+//    } else if (config == &pcadpAssignmentConfig) {
+//        fprintf(stderr, "Assign\n");
+//    } else if (config == &pcadpCastConfig) {
+//        fprintf(stderr, "Cast\n");
+//    } else if (config == &pcadpDeclarationConfig) {
+//        fprintf(stderr, "Decl\n");
+//    } else if (config == &pcadpPromotionConfig) {
+//        fprintf(stderr, "Promote\n");
+//    }
 
     /// common local variables
     Type *rhsType = rhs->m_type;
@@ -125,6 +167,8 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
 
     /// interval -> ndarray
     if (rhsTypeID == TYPEID_INTERVAL) {
+        this->m_type = typeMalloc();
+        typeInitFromCopy(this->m_type, targetType);
         if (targetTypeID == TYPEID_NDARRAY) {
             // interval -> vector of integer or real
             ArrayType *CTI = targetType->m_compoundTypeInfo;
@@ -258,9 +302,9 @@ void variableInitFromMemcpy(Variable *this, Variable *other) {
         case TYPEID_STREAM_OUT:
         case TYPEID_EMPTY_ARRAY:
             break;  // m_data is ignored for these types
-        case TYPEID_INTERVAL:
+        case TYPEID_INTERVAL: {
             this->m_data = intervalTypeMallocDataFromCopy(other->m_data);
-            break;
+        } break;
         case TYPEID_UNKNOWN:
         case NUM_TYPE_IDS:
         default:
@@ -661,36 +705,6 @@ void variableInitFromBinaryOp(Variable *this, Variable *op1, Variable *op2, BinO
     freeListFreeAll(freeList, (void (*)(void *)) variableDestructThenFree);
 }
 
-PCADPConfig pcadpParameterConfig = {
-        true, true,
-        true, false,
-        vectovec_rhs_size_must_not_be_greater, false,
-        true, false
-};
-PCADPConfig pcadpCastConfig = {
-        false, true,
-        false, false,
-        vectovec_rhs_size_can_be_any, true,
-        true, true
-};
-PCADPConfig pcadpAssignmentConfig = {
-        false, false,
-        false, true,
-        vectovec_rhs_must_be_same_size, false,
-        true, false
-};
-PCADPConfig pcadpDeclarationConfig = {
-        true, true,
-        false, false,
-        vectovec_rhs_size_must_not_be_greater, false,
-        true, false
-};
-PCADPConfig pcadpPromotionConfig = {
-        true, false,
-        false, false,
-        vectovec_rhs_must_be_same_size, false,
-        true, false
-};
 void variableInitFromParameter(Variable *this, Type *lhsType, Variable *rhs) {
     variableInitFromPCADP(this, lhsType, rhs, &pcadpParameterConfig);
 }
