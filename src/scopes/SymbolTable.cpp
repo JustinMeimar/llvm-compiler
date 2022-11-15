@@ -11,7 +11,7 @@ namespace gazprea {
         globals->define(std::make_shared<BuiltInScalarTypeSymbol>("identityNull"));
     }
 
-    SymbolTable::SymbolTable() : globals(std::make_shared<GlobalScope>()) { 
+    SymbolTable::SymbolTable() : globals(std::make_shared<GlobalScope>()), numTupleIdentifierAccess(0) { 
         initTypeSystem(); 
     }
 

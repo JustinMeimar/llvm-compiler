@@ -111,15 +111,25 @@ namespace gazprea {
         }
         if (numSingleTermType == 3) { 
             variableSymbol->type = std::make_shared<IntervalType>(t->children[0]->type);
-            variableSymbol->name = t->children[2]->parseTree->getText(); 
+            variableSymbol->name = t->children[2]->parseTree->getText();
+
+            auto status = symtab->tupleIdentifierAccess.emplace(variableSymbol->name, symtab->numTupleIdentifierAccess);
+            if (status.second) {
+                symtab->numTupleIdentifierAccess++;
+            }
         } else if (numSingleTermType == 2) {
             auto symbol = symtab->globals->resolve(t->children[1]->parseTree->getText());
             if (symbol == nullptr || !symbol->isType()) {
                 variableSymbol->name = t->children[1]->parseTree->getText();
                 variableSymbol->type = t->children[0]->type;
+                
+                auto status = symtab->tupleIdentifierAccess.emplace(variableSymbol->name, symtab->numTupleIdentifierAccess);
+                if (status.second) {
+                    symtab->numTupleIdentifierAccess++;
+                }
             } else {
                 variableSymbol->type = std::make_shared<IntervalType>(t->children[0]->type);
-                variableSymbol->name = t->children[1]->parseTree->getText(); 
+                // variableSymbol->name = t->children[1]->parseTree->getText(); 
             }
         } else if (numSingleTermType == 1) {
             auto symbol = symtab->globals->resolve(t->children[0]->parseTree->getText());
@@ -130,6 +140,10 @@ namespace gazprea {
                 variableSymbol->type = t->children[0]->type;
             } else if (symbol == nullptr || !symbol->isType()) {
                 variableSymbol->name = t->children[0]->parseTree->getText();
+                auto status = symtab->tupleIdentifierAccess.emplace(variableSymbol->name, symtab->numTupleIdentifierAccess);
+                if (status.second) {
+                    symtab->numTupleIdentifierAccess++;
+                }
             } else {
                 variableSymbol->type = t->children[0]->type;
             }

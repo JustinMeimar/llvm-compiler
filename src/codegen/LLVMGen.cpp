@@ -11,7 +11,6 @@ namespace gazprea
           llvmBranch(&globalCtx, &ir, &mod),
           numExprAncestors(0)
     {
-
         runtimeTypeTy = llvm::StructType::create(
             globalCtx,
             {
@@ -544,7 +543,23 @@ namespace gazprea
                 } else {
                     tupleType = std::dynamic_pointer_cast<TupleType>(t->type);
                 }
-                // TODO
+                auto typeArray = llvmFunction.call("typeArrayMalloc", {ir.getInt64(tupleType->orderedArgs.size())} );
+                auto stridArray = llvmFunction.call("stridArrayMalloc", {ir.getInt64(tupleType->orderedArgs.size())} );
+                std::shared_ptr<VariableSymbol> argumentSymbol;
+                for (size_t i = 0; i < tupleType->orderedArgs.size(); i++) {
+                    argumentSymbol = std::dynamic_pointer_cast<VariableSymbol>(tupleType->orderedArgs[i]);
+                    // visit(tupleType->def->children[0]->children[i]);
+                    visit(argumentSymbol->def);
+                    llvmFunction.call("typeArraySet", { typeArray, ir.getInt64(i), argumentSymbol->llvmPointerToTypeObject });
+                    if (argumentSymbol->name == "") {
+                        llvmFunction.call("stridArraySet", { stridArray, ir.getInt64(i), ir.getInt64(-1) });
+                    } else {
+                        llvmFunction.call("stridArraySet", { stridArray, ir.getInt64(i), ir.getInt64(symtab->tupleIdentifierAccess.at(argumentSymbol->name)) });
+                    }
+                }
+                llvmFunction.call("typeInitFromTupleType", { runtimeTypeObject, ir.getInt64(tupleType->orderedArgs.size()), typeArray, stridArray });
+                llvmFunction.call("typeArrayFree", { typeArray });
+                llvmFunction.call("stridArrayFree", { stridArray });
                 break;
         }
 

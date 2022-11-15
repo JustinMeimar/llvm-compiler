@@ -179,7 +179,38 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo()->getPointerTo() }, false),
         "variableArrayFree"
     );
-    
+    declareFunction(
+        llvm::FunctionType::get(runtimeTypeTy->getPointerTo()->getPointerTo(), { int64Ty }, false),
+        "typeArrayMalloc"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo()->getPointerTo(), int64Ty, runtimeTypeTy->getPointerTo() }, false),
+        "typeArraySet"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo()->getPointerTo() }, false),
+        "typeArrayFree"
+    );
+
+    declareFunction(
+        llvm::FunctionType::get(int64Ty->getPointerTo(), { int64Ty }, false),
+        "stridArrayMalloc"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { int64Ty->getPointerTo(), int64Ty, int64Ty }, false),
+        "stridArraySet"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { int64Ty->getPointerTo() }, false),
+        "stridArrayFree"
+    );
+
+
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo(), int64Ty, runtimeTypeTy->getPointerTo()->getPointerTo(), int64Ty->getPointerTo() }, false),
+        "typeInitFromTupleType"
+    );
+
     declareFunction(
         llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), int64Ty, runtimeVariableTy->getPointerTo()->getPointerTo() }, false),
         "variableInitFromTupleLiteral"

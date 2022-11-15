@@ -50,6 +50,9 @@ namespace gazprea {
                 case GazpreaParser::RETURN:
                     visitReturn(t);
                     break;
+                case GazpreaParser::TUPLE_ACCESS_TOKEN:
+                    visitTupleAccess(t);
+                    break;
                 default: visitChildren(t);
             };
         }
@@ -156,5 +159,16 @@ namespace gazprea {
     void DefWalk::visitReturn(std::shared_ptr<AST> t) {
         t->scope = currentSubroutineScope;
         visitChildren(t);
+    }
+
+    void DefWalk::visitTupleAccess(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
+            auto identifierName = t->children[1]->parseTree->getText();
+            auto status = symtab->tupleIdentifierAccess.emplace(identifierName, symtab->numTupleIdentifierAccess);
+            if (status.second) {
+                symtab->numTupleIdentifierAccess++;
+            }
+        }
     }
 } // namespace gazprea 

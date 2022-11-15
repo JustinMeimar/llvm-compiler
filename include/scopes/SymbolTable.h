@@ -23,5 +23,7 @@ namespace gazprea {
 
         std::shared_ptr<Type> getType(size_t typeEnum);
         std::string toString();
+        std::map<std::string, int> tupleIdentifierAccess;
+        int numTupleIdentifierAccess;
     };
 }
