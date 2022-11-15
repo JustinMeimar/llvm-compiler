@@ -266,7 +266,6 @@ namespace gazprea
                 } else {
                     variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
                 }
-                
             }
             visit(t->children[3]);
 
@@ -1077,21 +1076,26 @@ namespace gazprea
     }
 
     void LLVMGen::visitTupleAccess(std::shared_ptr<AST> t) {
-        visitChildren(t);
+        visit(t->children[0]);
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvm::Value *tupleFieldValue;
         if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
-            auto tupleType = std::dynamic_pointer_cast<TupleType>(t->children[0]->evalType);
+            // auto tupleType = std::dynamic_pointer_cast<TupleType>(t->children[0]->evalType);
             auto identifierName = t->children[1]->parseTree->getText();
-            size_t i;
-            for (i = 0; i < tupleType->orderedArgs.size(); i++) {
-                if (tupleType->orderedArgs[i]->name == identifierName) {
-                    break;
-                }
-            }
-            t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(i + 1) });
+            // size_t i;
+            // for (i = 0; i < tupleType->orderedArgs.size(); i++) {
+            //     if (tupleType->orderedArgs[i]->name == identifierName) {
+            //         break;
+            //     }
+            // }
+            // t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(i + 1) });
+            tupleFieldValue = llvmFunction.call("variableGetTupleFieldFromID", { t->children[0]->llvmValue, ir.getInt64(symtab->tupleIdentifierAccess.at(identifierName)) });
         } else {
             auto index = std::stoi(t->children[1]->parseTree->getText());
-            t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(index) });
+            tupleFieldValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(index) }); 
         }
+        llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, tupleFieldValue });
+        t->llvmValue = runtimeVariableObject;
     }
 
     void LLVMGen::Print() {
