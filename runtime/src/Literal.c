@@ -62,6 +62,7 @@ void typeInitFromIntegerInterval(Type *this) {
 }
 
 void typeInitFromTupleType(Type *this, int64_t nField, Type **typeArray, int64_t *stridArray) {
+    this->m_typeId = TYPEID_TUPLE;
     this->m_compoundTypeInfo = tupleTypeMalloc();
     tupleTypeInitFromTypeAndId(this->m_compoundTypeInfo, nField, typeArray, stridArray);
 }
