@@ -181,7 +181,7 @@ expr:
     | IntegerConstant                                                               # IntegerAtom
     | CharacterConstant                                                             # CharacterAtom
     | StringLiteral                                                                 # StringLiteralAtom
-    | (IDENTITY | NULL_LITERAL)                                                             # IdentityOrNullAtom
+    | (IDENTITY | NULL_LITERAL)                                                     # IdentityOrNullAtom
     ;
 //
 // Generator and Filter
@@ -226,12 +226,13 @@ VAR : 'var' ;
 WHILE : 'while' ;
 XOR : 'xor' ;
 //
-DOT: '.';
+DOT: '.' ;
 PLUS: '+' ;
 MINUS: '-' ;
 ASTERISK: '*' ;
 DIV: '/' ;
 MODULO: '%' ;
+CARET: '^' ;
 DOTPRODUCT: '**' ;
 LESSTHAN: '<' ;
 GREATERTHAN: '>' ;

@@ -11,7 +11,7 @@ int TypePromote::arithmeticResultType[16][16] = { // + - / * ^  ..
     /*   0  TUPLE          */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     /*   1  INTERVAL       */ {-1,  1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     /*   2  BOOLEAN        */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-    /*   3  CHARACTER      */ {-1, -1, -1,  4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+    /*   3  CHARACTER      */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     /*   4  INTEGER        */ {-1, -1, -1, -1,  4,  5, -1, -1, -1, -1, 10, -1, -1, -1, 14, 15},
     /*   5  REAL           */ {-1, -1, -1, -1,  5,  5, -1, -1, -1, -1, -1, -1, -1, -1, 15, 15},
     /*   6  STRING         */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
@@ -86,7 +86,7 @@ int TypePromote::promotionFromTo[16][16] = { // 0 = nullptr
     /*   15 REAL_2         */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0}
 };
 
-std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs){
+std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs, std::shared_ptr<AST> t){
     int lhsType = lhs->evalType->getTypeId();
     int rhsType = rhs->evalType->getTypeId();
 
@@ -106,7 +106,14 @@ std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::sha
         int resTypeId = typeTable[lhsType][rhsType];
 
         if (resTypeId == -1 ) { 
-            std::cout << "Compile-Time-Error: TypeTable invalid result\n";
+            auto *ctx = dynamic_cast<GazpreaParser::BinaryOpContext*>(t->parseTree); 
+            throw BinaryOpTypeError(
+                lhs->evalType->getName(), 
+                rhs->evalType->getName(),
+                t->getText(), 
+                ctx->getStart()->getLine(),
+                ctx->getStart()->getCharPositionInLine() 
+            );            
             return nullptr; 
         }  
         auto newType = this->symtab->getType(resTypeId);

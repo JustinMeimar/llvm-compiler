@@ -40,6 +40,8 @@ include_directories("${CMAKE_SOURCE_DIR}/include/ast")
 include_directories("${CMAKE_SOURCE_DIR}/include/scopes")
 include_directories("${CMAKE_SOURCE_DIR}/include/symbols")
 include_directories("${CMAKE_SOURCE_DIR}/include/types")
+include_directories("${CMAKE_SOURCE_DIR}/include/codegen")
+include_directories("${CMAKE_SOURCE_DIR}/include/exceptions")
 
 # Build the source directory.
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/src")

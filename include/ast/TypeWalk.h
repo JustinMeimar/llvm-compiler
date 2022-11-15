@@ -12,6 +12,8 @@
 #include "MatrixType.h"
 #include "TupleType.h"
 
+#include "Exceptions.h"
+
 namespace gazprea {
 
 class TypeWalk {

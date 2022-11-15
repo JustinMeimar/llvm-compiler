@@ -1,0 +1,28 @@
+procedure main() returns integer {
+    {
+        integer a;
+        a <- std_input;
+        a -> std_output;
+        ' ' -> std_output;
+        a <- std_input;
+        a -> std_output;
+        ' ' -> std_output;
+        a <- std_input;
+        a -> std_output;
+        ' ' -> std_output;
+        a <- std_input;
+        a -> std_output;
+        ' ' -> std_output;
+        a <- std_input;
+        a -> std_output;
+        character temp;
+        temp <- std_input;
+        temp <- std_input;
+        temp <- std_input;
+        ' ' -> std_output;
+        a <- std_input;
+        a -> std_output;
+    }
+
+    return 0;
+}

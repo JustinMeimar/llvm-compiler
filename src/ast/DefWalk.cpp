@@ -10,6 +10,8 @@ namespace gazprea {
         symtab->globals->define(std::make_shared<SubroutineSymbol>("columns", nullptr, symtab->globals, false, isBuiltIn));
         symtab->globals->define(std::make_shared<SubroutineSymbol>("reverse", nullptr, symtab->globals, false, isBuiltIn));
         symtab->globals->define(std::make_shared<SubroutineSymbol>("stream_state", nullptr, symtab->globals, true, isBuiltIn));
+        symtab->globals->define(std::make_shared<VariableSymbol>("std_input", nullptr));
+        symtab->globals->define(std::make_shared<VariableSymbol>("std_output", nullptr));
     }
     DefWalk::~DefWalk() {}
 
@@ -48,6 +50,9 @@ namespace gazprea {
                 case GazpreaParser::RETURN:
                     visitReturn(t);
                     break;
+                case GazpreaParser::TUPLE_ACCESS_TOKEN:
+                    visitTupleAccess(t);
+                    break;
                 default: visitChildren(t);
             };
         }
@@ -67,9 +72,14 @@ namespace gazprea {
         auto vs = std::make_shared<VariableSymbol>(identifierAST->parseTree->getText(), nullptr);
         vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = vs;  // track in AST
-        auto symbol = currentScope->resolve(identifierAST->parseTree->getText());
         currentScope->define(vs);
         visitChildren(t);
+        if (currentScope->getScopeName() == "global") {
+            vs->isGlobalVariable = true;
+            symtab->globals->globalVariableSymbols.push_back(vs);
+        } else {
+            vs->isGlobalVariable = false;
+        }
     }
 
     void DefWalk::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
@@ -87,9 +97,11 @@ namespace gazprea {
             subroutineSymbol = std::make_shared<SubroutineSymbol>(identiferAST->parseTree->getText(), nullptr, symtab->globals, isProcedure, isBuiltIn);
             subroutineSymbol->declaration = t;
             symtab->globals->define(subroutineSymbol); // def subroutine in globals
+            subroutineSymbol->numTimesDeclare++;
         } else {
             subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(declarationSubroutineSymbol);
             subroutineSymbol->definition = t;
+            subroutineSymbol->numTimesDeclare++;
         }
 
         t->symbol = subroutineSymbol;  // track in AST
@@ -147,5 +159,16 @@ namespace gazprea {
     void DefWalk::visitReturn(std::shared_ptr<AST> t) {
         t->scope = currentSubroutineScope;
         visitChildren(t);
+    }
+
+    void DefWalk::visitTupleAccess(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
+            auto identifierName = t->children[1]->parseTree->getText();
+            auto status = symtab->tupleIdentifierAccess.emplace(identifierName, symtab->numTupleIdentifierAccess);
+            if (status.second) {
+                symtab->numTupleIdentifierAccess++;
+            }
+        }
     }
 } // namespace gazprea 

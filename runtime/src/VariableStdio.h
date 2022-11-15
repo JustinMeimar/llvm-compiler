@@ -1,7 +1,8 @@
 #pragma once
 
 #include <stdint.h>
-#include <stdbool.h>
+#include "Bool.h"
+#include "NDArray.h"
 
 typedef struct struct_gazprea_variable Variable;
 typedef struct struct_gazprea_type Type;
@@ -9,7 +10,7 @@ typedef struct struct_gazprea_type Type;
 
 void typeDebugPrint(Type *this);  // debug print to stdout               /// INTERFACE
 
-
+void elementPrintToStdout(ElementTypeID id, void *value);
 void variablePrintToStream(Variable *this, Variable *stream);            /// INTERFACE
 void variablePrintToStdout(Variable *this);
 void variableDebugPrint(Variable *this);  // debug print to stdout       /// INTERFACE

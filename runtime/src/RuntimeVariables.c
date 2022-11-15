@@ -5,6 +5,7 @@
 #include "FreeList.h"
 #include <string.h>
 #include "Literal.h"
+#include "VariableStdio.h"
 
 ///------------------------------DATA---------------------------------------------------------------
 // below explains how m_data is interpreted in each type of data
@@ -20,14 +21,54 @@
 // null & identity & [] & stream_in & stream_out - these types do not need to store associated data, m_data is ignored
 // unknown - unknown type should not be associated with a variable
 
-///------------------------------HELPER FUNCTIONS---------------------------------------------------------------
-
 ///------------------------------INTERFACES---------------------------------------------------------------
+
+PCADPConfig pcadpParameterConfig = {
+        true, true,
+        true, false,
+        vectovec_rhs_size_must_not_be_greater, false,
+        true, false
+};
+PCADPConfig pcadpCastConfig = {
+        false, true,
+        false, false,
+        vectovec_rhs_size_can_be_any, true,
+        true, true
+};
+PCADPConfig pcadpAssignmentConfig = {
+        false, false,
+        false, true,
+        vectovec_rhs_must_be_same_size, false,
+        true, false
+};
+PCADPConfig pcadpDeclarationConfig = {
+        true, true,
+        false, false,
+        vectovec_rhs_size_must_not_be_greater, false,
+        true, false
+};
+PCADPConfig pcadpPromotionConfig = {
+        true, false,
+        false, false,
+        vectovec_rhs_must_be_same_size, false,
+        true, false
+};
 
 void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCADPConfig *config) {
     // in every possible case, we need to do one of the below two things
     // 1. throw an error when input types do not make sense
     // 2. initialize every field of this fully, including this->m_type and this->m_data
+//    if (config == &pcadpParameterConfig) {
+//        fprintf(stderr, "Param\n");
+//    } else if (config == &pcadpAssignmentConfig) {
+//        fprintf(stderr, "Assign\n");
+//    } else if (config == &pcadpCastConfig) {
+//        fprintf(stderr, "Cast\n");
+//    } else if (config == &pcadpDeclarationConfig) {
+//        fprintf(stderr, "Decl\n");
+//    } else if (config == &pcadpPromotionConfig) {
+//        fprintf(stderr, "Promote\n");
+//    }
 
     /// common local variables
     Type *rhsType = rhs->m_type;
@@ -126,6 +167,8 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
 
     /// interval -> ndarray
     if (rhsTypeID == TYPEID_INTERVAL) {
+        this->m_type = typeMalloc();
+        typeInitFromCopy(this->m_type, targetType);
         if (targetTypeID == TYPEID_NDARRAY) {
             // interval -> vector of integer or real
             ArrayType *CTI = targetType->m_compoundTypeInfo;
@@ -194,8 +237,10 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         ArrayType *CTI = this->m_type->m_compoundTypeInfo;
         int8_t nDim = CTI->m_nDim;
         int64_t *dims = CTI->m_dims;
-        if (!config->m_allowArrToArrDifferentElementTypeConversion) {
-            errorAndExit("No array to array conversion allowed");
+        // TODO: handle mixed array
+        if (!config->m_allowArrToArrDifferentElementTypeConversion && rhsNDim != 0 &&
+            CTI->m_elementTypeID != rhsCTI->m_elementTypeID) {
+            errorAndExit("No vector/matrix to vector/matrix different element type conversion allowed");
         } else if (nDim < rhsNDim) {
             errorAndExit("Cannot convert to a lower dimension array!");
         } else if (nDim == 2 && rhsNDim == 1) {
@@ -257,9 +302,9 @@ void variableInitFromMemcpy(Variable *this, Variable *other) {
         case TYPEID_STREAM_OUT:
         case TYPEID_EMPTY_ARRAY:
             break;  // m_data is ignored for these types
-        case TYPEID_INTERVAL:
+        case TYPEID_INTERVAL: {
             this->m_data = intervalTypeMallocDataFromCopy(other->m_data);
-            break;
+        } break;
         case TYPEID_UNKNOWN:
         case NUM_TYPE_IDS:
         default:
@@ -268,6 +313,11 @@ void variableInitFromMemcpy(Variable *this, Variable *other) {
     }
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
+}
+
+void variableInitFromIdentifier(Variable *this, Variable *other) {
+    /// TODO: return a ref in case of an array/tuple
+    variableInitFromMemcpy(this, other);
 }
 
 // <type> var = null;
@@ -357,22 +407,26 @@ void computeSameTypeSameSizeArrayArrayBinop(Variable *this, Variable *op1, Varia
     Type *op1Type = op1->m_type;
     ArrayType *op1CTI = op1->m_type->m_compoundTypeInfo;
     int64_t arrSize = arrayTypeGetTotalLength(op1CTI);
-    ElementTypeID resultType;
+    ElementTypeID resultEID;
     bool resultCollapseToScalar;
-    if (!arrayBinopResultType(op1CTI->m_elementTypeID, opcode, &resultType, &resultCollapseToScalar)) {
-        errorAndExit("Cannot perform binop between two arrays variables!");
+    if (!arrayBinopResultType(op1CTI->m_elementTypeID, opcode, &resultEID, &resultCollapseToScalar)) {
+        errorAndExit("Cannot perform binop between two array variables!");
     }
 
     // init type
     this->m_type = typeMalloc();
     if (resultCollapseToScalar) {
-        typeInitFromArrayType(this->m_type, resultType, 0, NULL);
+        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, resultEID, 0, NULL);
     } else {
-        typeInitFromCopy(this->m_type, op1Type);
+        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, resultEID, op1CTI->m_nDim, op1CTI->m_dims);
+    }
+    ArrayType *CTI = this->m_type->m_compoundTypeInfo;
+    if (CTI->m_elementTypeID != resultEID) {
+        errorAndExit("The newly initialized type has a different eid than the expected result type from arrayBinopResultType!");
     }
 
     // init data
-    arrayMallocFromBinOp(resultType, opcode, op1->m_data, arrSize,
+    arrayMallocFromBinOp(op1CTI->m_elementTypeID, opcode, op1->m_data, arrSize,
                          op2->m_data, arrSize, &this->m_data, NULL);
 }
 
@@ -380,7 +434,7 @@ void computeIvlIvlBinop(Variable *this, Variable *op1, Variable *op2, BinOpCode 
     this->m_type = typeMalloc();
     if (opcode == BINARY_EQ || opcode == BINARY_NE) {
         // result is boolean
-        typeInitFromArrayType(this->m_type, ELEMENT_BOOLEAN, 0, NULL);
+        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, ELEMENT_BOOLEAN, 0, NULL);
         this->m_data = arrayMallocFromNull(ELEMENT_BOOLEAN, 1);
     } else {
         typeInitFromIntervalType(this->m_type, INTEGER_BASE_INTERVAL);
@@ -527,7 +581,7 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
             Type *ivlType = typeMalloc();
             typeInitFromIntervalType(ivlType, INTEGER_BASE_INTERVAL);
             Type *intType = typeMalloc();
-            typeInitFromArrayType(intType, ELEMENT_INTEGER, 0, NULL);
+            typeInitFromArrayType(intType, TYPEID_NDARRAY, ELEMENT_INTEGER, 0, NULL);
 
             binopPromoteComputationAndDispose(this, op1, op2, opcode, ivlType, intType, computeIvlByIntBinop);
 
@@ -593,10 +647,10 @@ void variableInitFromConcat(Variable *this, Variable *op1, Variable *op2) {
                          &this->m_data, NULL);
     this->m_type = typeMalloc();
     int64_t dims[1] = {arr1Length + arr2Length};
-    typeInitFromArrayType(this->m_type, resultEID, 1, dims);
-    // if one of the two operands is string then the result is string
+    TypeID tid = TYPEID_NDARRAY;
     if (op1Type->m_typeId == TYPEID_STRING || op2Type->m_typeId == TYPEID_STRING)
-        this->m_type->m_typeId = TYPEID_STRING;
+        tid = TYPEID_STRING;
+    typeInitFromArrayType(this->m_type, tid, resultEID, 1, dims);
 
     freeListFreeAll(freeList, free);
 
@@ -651,36 +705,6 @@ void variableInitFromBinaryOp(Variable *this, Variable *op1, Variable *op2, BinO
     freeListFreeAll(freeList, (void (*)(void *)) variableDestructThenFree);
 }
 
-PCADPConfig pcadpParameterConfig = {
-        true, true,
-        true, false,
-        vectovec_rhs_size_must_not_be_greater, false,
-        true, false
-};
-PCADPConfig pcadpCastConfig = {
-        false, true,
-        false, false,
-        vectovec_rhs_size_can_be_any, true,
-        true, true
-};
-PCADPConfig pcadpAssignmentConfig = {
-        false, false,
-        false, true,
-        vectovec_rhs_must_be_same_size, false,
-        true, false
-};
-PCADPConfig pcadpDeclarationConfig = {
-        true, true,
-        false, false,
-        vectovec_rhs_size_must_not_be_greater, false,
-        true, false
-};
-PCADPConfig pcadpPromotionConfig = {
-        true, false,
-        false, false,
-        vectovec_rhs_must_be_same_size, false,
-        true, false
-};
 void variableInitFromParameter(Variable *this, Type *lhsType, Variable *rhs) {
     variableInitFromPCADP(this, lhsType, rhs, &pcadpParameterConfig);
 }
@@ -713,20 +737,12 @@ void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed
     this->m_parent = this->m_data;
 }
 
-void computeIntervalConstructBinop(Variable *this, Variable *head, Variable *tail, BinOpCode opcode) {
-    int *headValue = head->m_data;
-    int *tailValue = tail->m_data;
+void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail) {
     this->m_type = typeMalloc();
     typeInitFromIntervalType(this->m_type, INTEGER_BASE_INTERVAL);
-    this->m_data = intervalTypeMallocDataFromHeadTail(*headValue, *tailValue);
-}
-
-void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail) {
-    Type *intType = typeMalloc();
-    typeInitFromArrayType(intType, ELEMENT_INTEGER, 0, NULL);
-    binopPromoteComputationAndDispose(this, head, tail, BINARY_RANGE_CONSTRUCT,
-                                      intType, intType, computeIntervalConstructBinop);
-    typeDestructThenFree(intType);
+    this->m_data = intervalTypeMallocDataFromHeadTail(variableGetIntegerValue(head), variableGetIntegerValue(tail));
+    this->m_fieldPos = -1;
+    this->m_parent = this->m_data;
 }
 
 void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step) {
@@ -735,18 +751,52 @@ void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step)
     if (k <= 0) {
         errorAndExit("ivl by step has a step value of 0 or negative!");
     }
-    int8_t nDim = 1;
+    int32_t value = 0;
     int64_t dims[1] = {(interval[1] - interval[0]) / k + 1};
 
-    this->m_type = typeMalloc();
-    typeInitFromArrayType(this->m_type, ELEMENT_INTEGER, nDim, dims);
-    int32_t *vec = arrayMallocFromNull(ELEMENT_INTEGER, dims[0]);
+    variableInitFromNDArray(this, TYPEID_NDARRAY, ELEMENT_INTEGER, 1, dims, &value, true);
+    int32_t *vec = this->m_data;
     for (int64_t i = 0; i < dims[0]; i++) {
         vec[i] = interval[0] + (int32_t)i * k;
     }
-    this->m_data = vec;
-    this->m_parent = this->m_data;
+}
+
+void variableInitFromNDArray(Variable *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims,
+                             void *value, bool valueIsScalar) {
+    this->m_type = typeMalloc();
+    typeInitFromArrayType(this->m_type, typeID, eid, nDim, dims);
+    int64_t totalLength = arrayTypeGetTotalLength(this->m_type->m_compoundTypeInfo);
+    int64_t elementSize = elementGetSize(eid);
+
+    if (value != NULL) {
+        if (valueIsScalar) {
+            this->m_data = arrayMallocFromElementValue(eid, totalLength, value);
+        } else {
+            this->m_data = arrayMallocFromNull(eid, totalLength);
+            memcpy(this->m_data, value, elementSize * totalLength);
+        }
+    } else {
+        this->m_data = arrayMallocFromNull(eid, totalLength);
+    }
     this->m_fieldPos = -1;
+    this->m_parent = this->m_data;
+}
+
+Variable *variableGetTupleField(Variable *tuple, int64_t pos) {
+    TupleType *CTI = tuple->m_type->m_compoundTypeInfo;
+    if (pos <= 0 || pos > CTI->m_nField) {
+        targetTypeError(tuple->m_type->m_compoundTypeInfo, "Tuple index out of range. Tuple type:");
+    }
+    Variable **vars = tuple->m_data;
+    return vars[pos - 1];
+}
+
+Variable *variableGetTupleFieldFromID(Variable *tuple, int64_t id) {
+    int64_t pos = tupleTypeResolveId(tuple->m_type->m_compoundTypeInfo, id);
+    if (pos == -1) {
+        targetTypeError(tuple->m_type->m_compoundTypeInfo, "Cannot resolve tuple field id at runtime. Tuple type:");
+    }
+    return variableGetTupleField(tuple, pos);
 }
 
 void variableDestructor(Variable *this) {
@@ -785,6 +835,45 @@ void variableDestructor(Variable *this) {
 void variableDestructThenFree(Variable *this) {
     variableDestructor(this);
     free(this);
+}
+
+int32_t variableGetIntegerValue(Variable *this) {
+    Type *intTy = typeMalloc();
+    typeInitFromArrayType(intTy, TYPEID_NDARRAY, ELEMENT_INTEGER, 0, NULL);
+    Variable *intVar = variableMalloc();
+    variableInitFromPromotion(intVar, intTy, this);
+    int32_t result = *(int32_t *)intVar->m_data;
+    variableDestructThenFree(intVar);
+    typeDestructThenFree(intTy);
+    return result;
+}
+
+bool variableGetBooleanValue(Variable *this) {
+    Type *boolTy = typeMalloc();
+    typeInitFromArrayType(boolTy, TYPEID_NDARRAY, ELEMENT_BOOLEAN, 0, NULL);
+    Variable *intVar = variableMalloc();
+    variableInitFromPromotion(intVar, boolTy, this);
+    bool result = *(bool *)intVar->m_data;
+    variableDestructThenFree(intVar);
+    typeDestructThenFree(boolTy);
+    return result;
+}
+
+int64_t variableGetNumFieldInTuple(Variable *this) {
+    if (this->m_type->m_typeId != TYPEID_TUPLE) {
+        targetTypeError(this->m_type, "The given type is not a tuple: ");
+    }
+    TupleType *CTI = this->m_type->m_compoundTypeInfo;
+    return CTI->m_nField;
+}
+
+void variableEmptyInitFromTypeID(Variable *this, TypeID id) {
+    this->m_type = typeMalloc();
+    this->m_type->m_compoundTypeInfo = NULL;
+    this->m_type->m_typeId = id;
+    this->m_data = NULL;
+    this->m_fieldPos = -1;
+    this->m_parent = this->m_data;
 }
 
 bool variableAliasWith(Variable *this, Variable *other) {
