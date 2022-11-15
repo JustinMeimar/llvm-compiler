@@ -125,7 +125,11 @@ namespace gazprea {
             auto tupleTypeInTypeSpecifier = std::dynamic_pointer_cast<TupleType>(varTy);
             auto tupleTypeInExpression = std::dynamic_pointer_cast<TupleType>(exprTy);
             if (tupleTypeInTypeSpecifier->orderedArgs.size() != tupleTypeInExpression->orderedArgs.size()) {
-                std::cout << "Compile-time error!" << std::endl;
+                //throw exception
+                auto *ctx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext*>(t->parseTree);  
+                throw TupleSizeError( t->children[1]->getText(), t->children[2]->getText(), t->parseTree->getText(),
+                    ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+                );
             }
             for (size_t i = 0; i < tupleTypeInExpression->orderedArgs.size(); i++) {
                 int exprTupleElTy = tupleTypeInExpression->orderedArgs[i]->type->getTypeId();
@@ -158,10 +162,12 @@ namespace gazprea {
                 auto tupleTypeInLHSExpression = std::dynamic_pointer_cast<TupleType>(LHSExpressionAST->evalType);
 
                 if (tupleTypeInRHSExpression->orderedArgs.size() != tupleTypeInLHSExpression->orderedArgs.size()) {
-                    std::cout << "Compile-time error!" << std::endl;
+                    auto *ctx = dynamic_cast<GazpreaParser::AssignmentStatementContext*>(t->parseTree);  
+                    throw TupleSizeError(t->children[0]->getText(), t->children[1]->getText(), t->parseTree->getText(),
+                        ctx->getStart()->getLine(),ctx->getStart()->getCharPositionInLine()
+                    );
                     return;
                 }
-
                 for (size_t i = 0; i < tupleTypeInRHSExpression->orderedArgs.size(); i++) {
                     int promote = tp->promotionFromTo[tupleTypeInRHSExpression->orderedArgs[i]->type->getTypeId()][tupleTypeInLHSExpression->orderedArgs[i]->type->getTypeId()];
                     if (promote != 0) {
@@ -181,14 +187,18 @@ namespace gazprea {
         } else {
             // Tuple Parallel Assignment
             if (RHSTy->getTypeId() != Type::TUPLE) {
-                std::cout << "Compile-time error! - RHS must be a tuple in Parallel Assignment" << std::endl;
-                return;
+                auto *ctx = dynamic_cast<GazpreaParser::AssignmentStatementContext*>(t->parseTree);  
+                throw ParallelAssignmentError(t->children[1]->getText(), t->parseTree->getText(), 
+                    ctx->getStart()->getLine(),ctx->getStart()->getCharPositionInLine()
+                ); 
             }
             // RHS must be a tuple
             auto tupleTypeInRHSExpression = std::dynamic_pointer_cast<TupleType>(RHSTy);
             if (numLHSExpressions != tupleTypeInRHSExpression->orderedArgs.size()) {
-                std::cout << "Compile-time error! - Incompatible type assignment" << std::endl;
-                return;
+                auto *ctx = dynamic_cast<GazpreaParser::AssignmentStatementContext*>(t->parseTree);  
+                throw TupleSizeError(t->children[0]->getText(),t->children[1]->getText(),
+                    t->parseTree->getText(),ctx->getStart()->getLine(),ctx->getStart()->getCharPositionInLine()
+                );
             }
             for (size_t i = 0; i < numLHSExpressions; i++) {
                 auto LHSExpressionAtomAST = t->children[0]->children[i];
@@ -303,17 +313,17 @@ namespace gazprea {
             case GazpreaParser::MINUS:
             case GazpreaParser::DIV:
             case GazpreaParser::ASTERISK: 
-                t->evalType = tp->getResultType(tp->arithmeticResultType, node1, node2);
+                t->evalType = tp->getResultType(tp->arithmeticResultType, node1, node2, t);
             break;
             case GazpreaParser::LESSTHAN:
             case GazpreaParser::GREATERTHAN:
             case GazpreaParser::LESSTHANOREQUAL:
             case GazpreaParser::GREATERTHANOREQUAL:
-                t->evalType = tp->getResultType(tp->relationalResultType, node1, node2);
+                t->evalType = tp->getResultType(tp->relationalResultType, node1, node2, t);
             break;
             case GazpreaParser::ISEQUAL:
             case GazpreaParser::ISNOTEQUAL:
-                t->evalType = tp->getResultType(tp->equalityResultType, node1, node2);
+                t->evalType = tp->getResultType(tp->equalityResultType, node1, node2, t);
             break; 
         }     
     }
@@ -386,6 +396,10 @@ namespace gazprea {
     }
 
     void TypeWalk::visitIdentifier(std::shared_ptr<AST> t) {
+        if(t->symbol == nullptr){            
+            auto *ctx = dynamic_cast<GazpreaParser::IdentifierContext*>(t->parseTree->parent);
+            throw UndefinedIdError(t->getText(), t->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        }
         t->evalType = t->symbol->type;
         t->promoteToType = nullptr;
         if (t->evalType != nullptr && t->evalType->getTypeId() == Type::TUPLE) {

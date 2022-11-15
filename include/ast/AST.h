@@ -4,6 +4,8 @@
 #include "GazpreaParser.h"
 #include "GazpreaLexer.h"
 
+#include "BaseErrorListener.h"
+
 #include "Type.h"
 #include "Scope.h"
 #include "Symbol.h"
