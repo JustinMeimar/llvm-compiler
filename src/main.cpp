@@ -17,17 +17,19 @@
 
 #include "DiagnosticErrorListener.h"
 #include "BailErrorStrategy.h"
+#include "../include/exceptions/Exceptions.h"
 
 #include <iostream>
 #include <fstream>
 
-void setParserReportAllErrors(gazprea::GazpreaParser &parser) {
-    std::shared_ptr<antlr4::BailErrorStrategy> handler = std::make_shared<antlr4::BailErrorStrategy>();
-    parser.setErrorHandler(handler);
-//    auto * listener = new antlr4::DiagnosticErrorListener();
-//    parser.addErrorListener(listener);
-//    parser.getInterpreter<antlr4::atn::ParserATNSimulator>()->setPredictionMode(antlr4::atn::PredictionMode::LL_EXACT_AMBIG_DETECTION);
-}
+class MyErrorListener : public antlr4::BaseErrorListener {
+    
+    void syntaxError(antlr4::Recognizer *recognizer, antlr4::Token * offendingSymbol, size_t line, size_t charPositionInLine, const std::string &msg, std::exception_ptr e) override {
+        std::vector<std::string> rule_stack = ((antlr4::Parser*) recognizer)->getRuleInvocationStack();
+        std::string newMsg = "Synatax error in rule: " + rule_stack[0] + " " + std::to_string(line) + ":" + std::to_string(charPositionInLine);
+        throw gazprea::SyntaxError(newMsg); 
+    }
+};
 
 int main(int argc, char **argv) {
   if (argc < 3) {
@@ -43,8 +45,9 @@ int main(int argc, char **argv) {
   antlr4::CommonTokenStream tokens(&lexer);
   gazprea::GazpreaParser parser(&tokens);
 
-  setParserReportAllErrors(parser);
-
+  parser.removeErrorListeners(); // Remove the default console error listener
+  parser.addErrorListener(new MyErrorListener()); // Add our error listener
+  
   // Get the root of the parse tree. Use your base rule name.
   antlr4::tree::ParseTree *tree = parser.compilationUnit();
   // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
@@ -69,6 +72,5 @@ int main(int argc, char **argv) {
   gazprea::LLVMGen llvmgen(symtab, outfile);
   llvmgen.visit(ast);
   
-  // std::cout << "ast:\n" << ast->toStringTree(&parser) << std::endl;
   return 0;
 }
