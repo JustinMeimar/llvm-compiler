@@ -16,6 +16,7 @@ class DefWalk {
         std::shared_ptr<SymbolTable> symtab;
         std::shared_ptr<Scope> currentScope;
         std::shared_ptr<SubroutineSymbol> currentSubroutineScope;
+        bool hasMainProcedure;
     public:
         DefWalk(std::shared_ptr<SymbolTable> symtab);
         ~DefWalk();

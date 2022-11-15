@@ -56,12 +56,58 @@ UndefinedIdError::UndefinedIdError(std::string id, std::string fullText, int lin
     msg = sstream.str();
 }
 
-RedefineIdError::RedefineIdError(std::string id, std::string fullText, int line, int charPos) {
+RedefineIdError::RedefineIdError(std::string id) {
     std::stringstream sstream;
-    sstream << "previously defined id"
-            << "\033[36m" << id << "\033[0m" << 
-            " can not be redefined " 
-            " " << line << ":" << charPos << "\n"
+    sstream << "previously defined id '"
+            "' can not be redefined "; 
+    msg = sstream.str();
+}
+
+MissingMainProcedureError::MissingMainProcedureError(std::string main) {
+    std::stringstream sstream;
+    sstream << "missing definition of procedure" 
+            << "\033[36m" << main << "\033[0m"; 
+    msg = sstream.str();
+}
+
+MainReturnIntegerError::MainReturnIntegerError(std::string fullText, int line, int charPos) {
+    std::stringstream sstream;
+    sstream << "procedure "
+            << "\033[36m" << "main" << "\033[0m" << 
+            " must return type integer " 
+            " " << line << "\033[0m"<< ":" << charPos << "\n"
+            << "\t|\n"
+            << line << "\t|" << " '" << fullText << "'\n"
+            << "\t|\n";
+    msg = sstream.str();
+}
+
+BadReturnTypeError::BadReturnTypeError(std::string nodeText, std::string fullText, int line, int charPos) {
+    std::stringstream sstream;
+    sstream << "must return type '"
+            << "\033[36m" << nodeText << "\033[0m" << 
+            "' in current procedure/function" 
+            " " << line << "\033[0m"<< ":" << charPos << "\n"
+            << "\t|\n"
+            << line << "\t|" << " '" << fullText << "'\n"
+            << "\t|\n";
+    msg = sstream.str();
+}
+
+MainArgumentsPresentError::MainArgumentsPresentError(std::string fullText, int line, int charPos){
+    std::stringstream sstream;
+    sstream << "procedure main can must have zero arguments"
+            " " << line << "\033[0m"<< ":" << charPos << "\n"
+            << "\t|\n"
+            << line << "\t|" << " '" << fullText << "'\n"
+            << "\t|\n";
+    msg = sstream.str();
+}
+
+
+GlobalVariableQualifierError::GlobalVariableQualifierError(std::string message, std::string fullText, int line, int charPos) {
+    std::stringstream sstream;
+    sstream << message << " " << line << "\033[0m"<< ":" << charPos << "\n"
             << "\t|\n"
             << line << "\t|" << " '" << fullText << "'\n"
             << "\t|\n";

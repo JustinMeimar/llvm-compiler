@@ -279,6 +279,13 @@ namespace gazprea
     void LLVMGen::visitReturn(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->scope);
+        //throw incompatible return type exception
+        if(subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
+            std::cout << "Subroutine does not return ";
+            auto *ctx = dynamic_cast<GazpreaParser::ReturnStatementContext*>(t->parseTree); 
+            throw BadReturnTypeError(subroutineSymbol->type->getName(),ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+            );
+        } 
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, t->children[0]->llvmValue });
         if (subroutineSymbol->name == "main") {
