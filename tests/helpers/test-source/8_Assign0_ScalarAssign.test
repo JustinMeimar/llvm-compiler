@@ -1,0 +1,10 @@
+procedure main() returns integer {
+    integer a = 0;
+    a -> std_output;
+    a = 1;
+    a -> std_output;
+    return 0;
+}
+#split_token
+#split_token
+01
