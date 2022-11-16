@@ -14,13 +14,8 @@ namespace gazprea {
     }
 
     void BaseScope::define(std::shared_ptr<Symbol> sym) {
-        if (symbols.count(sym->name) != 0) {
-            // TODO: throw exception
-            // throw RedefineIdError(); 
-            std::cout << sym->name;
-            
-            std::cerr << "Error: attempt to define the same identifier twice!" << std::endl;
-
+        if (symbols.count(sym->name) != 0) { 
+            throw RedefineIdError(sym->name); 
         }
         symbols.emplace(sym->name, sym);
         sym->scope = shared_from_this(); // track the scope in each symbol

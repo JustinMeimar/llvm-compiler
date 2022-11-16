@@ -278,6 +278,13 @@ namespace gazprea
     void LLVMGen::visitReturn(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->scope);
+        //throw incompatible return type exception
+        if(subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
+            std::cout << "Subroutine does not return ";
+            auto *ctx = dynamic_cast<GazpreaParser::ReturnStatementContext*>(t->parseTree); 
+            throw BadReturnTypeError(subroutineSymbol->type->getName(),ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+            );
+        } 
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, t->children[0]->llvmValue });
         if (subroutineSymbol->name == "main") {
@@ -999,11 +1006,18 @@ namespace gazprea
     void LLVMGen::visitCallSubroutineInExpression(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
+        auto *ctx = dynamic_cast<GazpreaParser::CallProcedureFunctionInExpressionContext*>(t->parseTree);
+        //Exception for misaligned argument pass  
+        int numArgsExpected = subroutineSymbol->declaration->children[1]->children.size(); 
+        int numArgsRecieved = t->children[1]->children.size(); 
+        if (numArgsExpected != numArgsRecieved) {
+            throw InvalidArgumentError(subroutineSymbol->declaration->children[0]->getText(), t->getText(),
+                ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+            );
+        }       
         std::vector<llvm::Value *> arguments = std::vector<llvm::Value *>();
-        if (!t->children[1]->isNil())
-        {
-            for (auto expressionAST : t->children[1]->children)
-            {
+        if (!t->children[1]->isNil()) {
+            for (auto expressionAST : t->children[1]->children){
                 arguments.push_back(expressionAST->llvmValue);
             }
         }
@@ -1014,11 +1028,18 @@ namespace gazprea
     void LLVMGen::visitCallSubroutineStatement(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
+        auto *ctx = dynamic_cast<GazpreaParser::CallProcedureContext*>(t->parseTree);
+        //Throw exception for invalid arguments 
+        int numArgsExpected = subroutineSymbol->declaration->children[1]->children.size(); 
+        int numArgsRecieved = t->children[1]->children.size(); 
+        if (numArgsExpected != numArgsRecieved) {
+            throw InvalidArgumentError(subroutineSymbol->declaration->children[0]->getText(), t->getText(),
+                ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+            );
+        }  
         std::vector<llvm::Value *> arguments = std::vector<llvm::Value *>();
-        if (!t->children[1]->isNil())
-        {
-            for (auto expressionAST : t->children[1]->children)
-            {
+        if (!t->children[1]->isNil()) {
+            for (auto expressionAST : t->children[1]->children) {
                 arguments.push_back(expressionAST->llvmValue);
             }
         }

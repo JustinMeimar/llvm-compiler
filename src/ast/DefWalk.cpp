@@ -13,7 +13,11 @@ namespace gazprea {
         symtab->globals->define(std::make_shared<VariableSymbol>("std_input", nullptr));
         symtab->globals->define(std::make_shared<VariableSymbol>("std_output", nullptr));
     }
-    DefWalk::~DefWalk() {}
+    DefWalk::~DefWalk() {
+        if(!this->hasMainProcedure) { //throw missing main exception;
+            throw MissingMainProcedureError("main");
+        }
+    }
 
     void DefWalk::visit(std::shared_ptr<AST> t) {
         if(!t->isNil()){
@@ -91,6 +95,9 @@ namespace gazprea {
             isProcedure = false;
         }
         auto identiferAST = t->children[0];
+        if(identiferAST->parseTree->getText() == "main" && isProcedure) { //track if we encounter a procedure named main
+            this->hasMainProcedure = true;
+        } 
         std::shared_ptr<SubroutineSymbol> subroutineSymbol;
         auto declarationSubroutineSymbol = symtab->globals->resolve(identiferAST->parseTree->getText());
         if (declarationSubroutineSymbol == nullptr) {
