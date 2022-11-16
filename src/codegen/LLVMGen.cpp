@@ -1036,6 +1036,12 @@ namespace gazprea
         llvm::Value *dimension1Expression = nullptr;
         llvm::Value *dimension2Expression = nullptr;
 
+        if (variableSymbol->type == nullptr) {
+            // inferred type qualifier
+            llvmFunction.call("typeInitFromUnknownType", { runtimeTypeObject });
+            variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
+            return;
+        }
         switch(variableSymbol->type->getTypeId()) {
             case Type::BOOLEAN:
                 llvmFunction.call("typeInitFromBooleanScalar", { runtimeTypeObject });
