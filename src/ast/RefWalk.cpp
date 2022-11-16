@@ -99,7 +99,7 @@ namespace gazprea {
                 ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
             );
         }
-        if (subroutineSymbol->orderedArgs.size() != 0){
+        if (subroutineSymbol->getName() == "main" && subroutineSymbol->orderedArgs.size() != 0){
             throw MainArgumentsPresentError("procedure main(...)", 
                 ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
         }

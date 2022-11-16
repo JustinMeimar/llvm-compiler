@@ -129,6 +129,17 @@ class GlobalVariableQualifierError : public std::exception {
         }
 };
 
+//Invalid Argument Error
+class InvalidArgumentError : public std::exception {
+    private:
+        std::string msg;
+    public: 
+        InvalidArgumentError(std::string nodeText, std::string fullText, int line, int charPos);
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+};
+
 } // namespace gazpreak
 
 

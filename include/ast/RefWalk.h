@@ -11,7 +11,7 @@
 #include "MatrixType.h"
 #include "IntervalType.h"
 #include "TupleType.h"
-#include "Exceptions.h"
+#include "exceptions.h"
 
 namespace gazprea {
 

@@ -8,6 +8,7 @@
 #include "LocalScope.h"
 #include "SubroutineSymbol.h"
 #include "TupleType.h"
+#include "exceptions.h"
 
 namespace gazprea {
 

@@ -149,6 +149,7 @@ namespace gazprea {
     }
 
     void DefWalk::visitParameterAtom(std::shared_ptr<AST> t) {
+        visitChildren(t);
         auto variableSymbol = std::make_shared<VariableSymbol>("", nullptr);
         currentScope->define(variableSymbol);
         t->symbol = variableSymbol;

@@ -1,4 +1,4 @@
-#include "Exceptions.h"
+#include "exceptions.h"
 
 namespace gazprea {
 
@@ -111,6 +111,18 @@ GlobalVariableQualifierError::GlobalVariableQualifierError(std::string message, 
             << "\t|\n"
             << line << "\t|" << " '" << fullText << "'\n"
             << "\t|\n";
+    msg = sstream.str();
+}
+
+InvalidArgumentError::InvalidArgumentError(std::string nodeText, std::string fullText, int line, int charPos) {
+    std::stringstream sstream;
+    sstream << "wrong arguments passed to procedure/function "
+        << "\033[36m" << nodeText << "\033[0m" << 
+        " " << line << "\033[0m"<< ":" << charPos << "\n"
+        << "\t|\n"
+        << line << "\t|" << " '" << fullText << "'\n"
+        << "\t|\n"; 
+
     msg = sstream.str();
 }
 
