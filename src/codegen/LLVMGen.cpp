@@ -1251,7 +1251,7 @@ namespace gazprea
                 std::shared_ptr<VariableSymbol> argumentSymbol;
                 for (size_t i = 0; i < tupleType->orderedArgs.size(); i++) {
                     argumentSymbol = std::dynamic_pointer_cast<VariableSymbol>(tupleType->orderedArgs[i]);
-                    // visit(tupleType->def->children[0]->children[i]);
+                    // std::cout << argumentSymbol 
                     visit(argumentSymbol->def);
                     llvmFunction.call("typeArraySet", { typeArray, ir.getInt64(i), argumentSymbol->llvmPointerToTypeObject });
                     if (argumentSymbol->name == "") {

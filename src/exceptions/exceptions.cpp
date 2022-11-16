@@ -10,7 +10,7 @@ BinaryOpTypeError::BinaryOpTypeError(std::string lhs, std::string rhs, std::stri
             " and " 
             << "\033[36m" << rhs  << "\033[0m" <<  
             " " << line << "\033[0m"<< ":" << charPos << "\n"
-            << "\t  | \n" << "\t" << line << " |" << " '" << fullText << "'\n" << "\t  | \n";
+            << "\t  | \n" << "" << line << "\t  |" << " '" << fullText << "'\n" << "\t  | \n";
     msg = sstream.str();
 } 
 
