@@ -33,7 +33,7 @@ set(
     "${CMAKE_CURRENT_SOURCE_DIR}/codegen/LLVMIRBranch.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/codegen/LLVMIRFunction.cpp"
     #exceptions
-    "${CMAKE_CURRENT_SOURCE_DIR}/exceptions/Exceptions.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/exceptions/exceptions.cpp"
 
 )
 

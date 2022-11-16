@@ -266,7 +266,6 @@ namespace gazprea
                 } else {
                     variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
                 }
-                
             }
             visit(t->children[3]);
 
@@ -279,6 +278,13 @@ namespace gazprea
     void LLVMGen::visitReturn(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->scope);
+        //throw incompatible return type exception
+        if(subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
+            std::cout << "Subroutine does not return ";
+            auto *ctx = dynamic_cast<GazpreaParser::ReturnStatementContext*>(t->parseTree); 
+            throw BadReturnTypeError(subroutineSymbol->type->getName(),ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+            );
+        } 
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, t->children[0]->llvmValue });
         if (subroutineSymbol->name == "main") {
@@ -1000,11 +1006,18 @@ namespace gazprea
     void LLVMGen::visitCallSubroutineInExpression(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
+        auto *ctx = dynamic_cast<GazpreaParser::CallProcedureFunctionInExpressionContext*>(t->parseTree);
+        //Exception for misaligned argument pass  
+        int numArgsExpected = subroutineSymbol->declaration->children[1]->children.size(); 
+        int numArgsRecieved = t->children[1]->children.size(); 
+        if (numArgsExpected != numArgsRecieved) {
+            throw InvalidArgumentError(subroutineSymbol->declaration->children[0]->getText(), t->getText(),
+                ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+            );
+        }       
         std::vector<llvm::Value *> arguments = std::vector<llvm::Value *>();
-        if (!t->children[1]->isNil())
-        {
-            for (auto expressionAST : t->children[1]->children)
-            {
+        if (!t->children[1]->isNil()) {
+            for (auto expressionAST : t->children[1]->children){
                 arguments.push_back(expressionAST->llvmValue);
             }
         }
@@ -1015,11 +1028,18 @@ namespace gazprea
     void LLVMGen::visitCallSubroutineStatement(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
+        auto *ctx = dynamic_cast<GazpreaParser::CallProcedureContext*>(t->parseTree);
+        //Throw exception for invalid arguments 
+        int numArgsExpected = subroutineSymbol->declaration->children[1]->children.size(); 
+        int numArgsRecieved = t->children[1]->children.size(); 
+        if (numArgsExpected != numArgsRecieved) {
+            throw InvalidArgumentError(subroutineSymbol->declaration->children[0]->getText(), t->getText(),
+                ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+            );
+        }  
         std::vector<llvm::Value *> arguments = std::vector<llvm::Value *>();
-        if (!t->children[1]->isNil())
-        {
-            for (auto expressionAST : t->children[1]->children)
-            {
+        if (!t->children[1]->isNil()) {
+            for (auto expressionAST : t->children[1]->children) {
                 arguments.push_back(expressionAST->llvmValue);
             }
         }
@@ -1029,9 +1049,20 @@ namespace gazprea
     void LLVMGen::visitParameterAtom(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
+        auto runtimeTypeObject = llvmFunction.call("typeMalloc", {}); 
+        std::shared_ptr<MatrixType> matrixType;
+        std::shared_ptr<TupleType> tupleType;
+        std::shared_ptr<TypedefTypeSymbol> typedefTypeSymbol;
+        llvm::Value *baseType;
+        llvm::Value *dimension1Expression = nullptr;
+        llvm::Value *dimension2Expression = nullptr;
 
-        auto runtimeTypeObject = llvmFunction.call("typeMalloc", {});
-
+        if (variableSymbol->type == nullptr) {
+            // inferred type qualifier
+            llvmFunction.call("typeInitFromUnknownType", { runtimeTypeObject });
+            variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
+            return;
+        }
         switch(variableSymbol->type->getTypeId()) {
             case Type::BOOLEAN:
                 llvmFunction.call("typeInitFromBooleanScalar", { runtimeTypeObject });
@@ -1045,13 +1076,194 @@ namespace gazprea
             case Type::REAL:
                 llvmFunction.call("typeInitFromRealScalar", { runtimeTypeObject });
                 break;
-            case Type::INTEGER_INTERVAL:
+            case Type::INTEGER_INTERVAL: 
                 llvmFunction.call("typeInitFromIntegerInterval", { runtimeTypeObject });
                 break;
-            case Type::TUPLE:
-                // TODO
+            case Type::BOOLEAN_1: {
+                if (t->symbol->type->isTypedefType()) {
+                    auto typedefTypeSymbol = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->symbol->type);
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(typedefTypeSymbol->type);
+                } else {
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(t->symbol->type);
+                }    
+                if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[0]);
+                        dimension1Expression = matrixType->def->children[1]->children[0]->llvmValue;
+                } else { 
+                        dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                }
+                baseType = llvmFunction.call("typeMalloc", {});
+                llvmFunction.call("typeInitFromBooleanScalar", {baseType});
+                llvmFunction.call("typeInitFromVectorSizeSpecification", {runtimeTypeObject, dimension1Expression, baseType});
                 break;
-            // TODO: Other Types
+            }
+            case Type::CHARACTER_1: {
+                if (t->symbol->type->isTypedefType()) {
+                    typedefTypeSymbol = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->symbol->type);
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(typedefTypeSymbol->type);
+                } else {
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(t->symbol->type);
+                }    
+                if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[0]);
+                        dimension1Expression = matrixType->def->children[1]->children[0]->llvmValue;
+                } else { 
+                        dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                }
+                baseType = llvmFunction.call("typeMalloc", {});
+                llvmFunction.call("typeInitFromCharacterScalar", {baseType});
+                llvmFunction.call("typeInitFromVectorSizeSpecification", {runtimeTypeObject, dimension1Expression, baseType});
+                break;
+            }
+            case Type::INTEGER_1: {
+                if (t->symbol->type->isTypedefType()) {
+                    typedefTypeSymbol = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->symbol->type);
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(typedefTypeSymbol->type);
+                } else {
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(t->symbol->type);
+                }    
+                if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[0]);
+                        dimension1Expression = matrixType->def->children[1]->children[0]->llvmValue;
+                } else { 
+                        dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                }
+                baseType = llvmFunction.call("typeMalloc", {});
+                llvmFunction.call("typeInitFromIntegerScalar", {baseType});
+                llvmFunction.call("typeInitFromVectorSizeSpecification", {runtimeTypeObject, dimension1Expression, baseType});
+                break;
+            }
+            case Type::REAL_1: {
+                if (t->symbol->type->isTypedefType()) {
+                    typedefTypeSymbol = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->symbol->type);
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(typedefTypeSymbol->type);
+                } else {
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(t->symbol->type);
+                }    
+                if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[0]);
+                        dimension1Expression = matrixType->def->children[1]->children[0]->llvmValue;
+                } else { 
+                        dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                }
+                baseType = llvmFunction.call("typeMalloc", {});
+                llvmFunction.call("typeInitFromRealScalar", {baseType});
+                llvmFunction.call("typeInitFromVectorSizeSpecification", {runtimeTypeObject, dimension1Expression, baseType});
+                break;
+            }
+            case Type::BOOLEAN_2: {
+                if (t->symbol->type->isTypedefType()) {
+                    typedefTypeSymbol = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->symbol->type);
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(typedefTypeSymbol->type);
+                } else {
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(t->symbol->type);
+                } if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[0]);
+                        dimension1Expression = matrixType->def->children[1]->children[0]->llvmValue;
+                } else { 
+                        dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                } if (matrixType->def->children[1]->children[1]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[1]);
+                        dimension2Expression = matrixType->def->children[1]->children[1]->llvmValue;
+                } else {
+                        dimension2Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                }
+                baseType = llvmFunction.call("typeMalloc", {});
+                llvmFunction.call("typeInitFromBooleanScalar", {baseType});
+                llvmFunction.call("typeInitFromMatrixSizeSpecification", {runtimeTypeObject, dimension1Expression, dimension2Expression, baseType});
+                break;
+            }
+            case Type::CHARACTER_2: {
+                if (t->symbol->type->isTypedefType()) {
+                    typedefTypeSymbol = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->symbol->type);
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(typedefTypeSymbol->type);
+                } else {
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(t->symbol->type);
+                } if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[0]);
+                        dimension1Expression = matrixType->def->children[1]->children[0]->llvmValue;
+                } else { 
+                        dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                } if (matrixType->def->children[1]->children[1]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[1]);
+                        dimension2Expression = matrixType->def->children[1]->children[1]->llvmValue;
+                } else {
+                        dimension2Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                }
+                baseType = llvmFunction.call("typeMalloc", {});
+                llvmFunction.call("typeInitFromCharacterScalar", {baseType});
+                llvmFunction.call("typeInitFromMatrixSizeSpecification", {runtimeTypeObject, dimension1Expression, dimension2Expression, baseType});
+                break;
+            }
+            case Type::INTEGER_2: {
+                if (t->symbol->type->isTypedefType()) {
+                    typedefTypeSymbol = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->symbol->type);
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(typedefTypeSymbol->type);
+                } else {
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(t->symbol->type);
+                } if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[0]);
+                        dimension1Expression = matrixType->def->children[1]->children[0]->llvmValue;
+                } else { 
+                        dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                } if (matrixType->def->children[1]->children[1]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[1]);
+                        dimension2Expression = matrixType->def->children[1]->children[1]->llvmValue;
+                } else {
+                        dimension2Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                }
+                baseType = llvmFunction.call("typeMalloc", {});
+                llvmFunction.call("typeInitFromIntegerScalar", {baseType});
+                llvmFunction.call("typeInitFromMatrixSizeSpecification", {runtimeTypeObject, dimension1Expression, dimension2Expression, baseType});
+                break;
+            }
+            case Type::REAL_2: {
+                if (t->symbol->type->isTypedefType()) {
+                    typedefTypeSymbol = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->symbol->type);
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(typedefTypeSymbol->type);
+                } else {
+                    matrixType = std::dynamic_pointer_cast<MatrixType>(t->symbol->type);
+                }  if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[0]);
+                        dimension1Expression = matrixType->def->children[1]->children[1]->llvmValue;
+                } else { 
+                        dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                } if (matrixType->def->children[1]->children[1]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
+                        visit(matrixType->def->children[1]->children[1]);
+                        dimension2Expression = matrixType->def->children[1]->children[1]->llvmValue;
+                } else {
+                        dimension2Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
+                }
+                baseType = llvmFunction.call("typeMalloc", {});
+                llvmFunction.call("typeInitFromRealScalar", {baseType});
+                llvmFunction.call("typeInitFromMatrixSizeSpecification", {runtimeTypeObject, dimension1Expression, dimension2Expression, baseType});
+                break;
+            }
+            case Type::TUPLE: {
+                if (t->symbol->type->isTypedefType()) {
+                    typedefTypeSymbol = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->symbol->type);
+                    tupleType = std::dynamic_pointer_cast<TupleType>(typedefTypeSymbol->type);
+                } else {
+                    tupleType = std::dynamic_pointer_cast<TupleType>(t->symbol->type);
+                }
+                auto typeArray = llvmFunction.call("typeArrayMalloc", {ir.getInt64(tupleType->orderedArgs.size())} );
+                auto stridArray = llvmFunction.call("stridArrayMalloc", {ir.getInt64(tupleType->orderedArgs.size())} );
+                std::shared_ptr<VariableSymbol> argumentSymbol;
+                for (size_t i = 0; i < tupleType->orderedArgs.size(); i++) {
+                    argumentSymbol = std::dynamic_pointer_cast<VariableSymbol>(tupleType->orderedArgs[i]);
+                    // visit(tupleType->def->children[0]->children[i]);
+                    visit(argumentSymbol->def);
+                    llvmFunction.call("typeArraySet", { typeArray, ir.getInt64(i), argumentSymbol->llvmPointerToTypeObject });
+                    if (argumentSymbol->name == "") {
+                        llvmFunction.call("stridArraySet", { stridArray, ir.getInt64(i), ir.getInt64(-1) });
+                    } else {
+                        llvmFunction.call("stridArraySet", { stridArray, ir.getInt64(i), ir.getInt64(symtab->tupleIdentifierAccess.at(argumentSymbol->name)) });
+                    }
+                }
+                llvmFunction.call("typeInitFromTupleType", { runtimeTypeObject, ir.getInt64(tupleType->orderedArgs.size()), typeArray, stridArray });
+                llvmFunction.call("typeArrayFree", { typeArray });
+                llvmFunction.call("stridArrayFree", { stridArray });
+            }
         }
         variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
     }
@@ -1077,21 +1289,26 @@ namespace gazprea
     }
 
     void LLVMGen::visitTupleAccess(std::shared_ptr<AST> t) {
-        visitChildren(t);
+        visit(t->children[0]);
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvm::Value *tupleFieldValue;
         if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
-            auto tupleType = std::dynamic_pointer_cast<TupleType>(t->children[0]->evalType);
+            // auto tupleType = std::dynamic_pointer_cast<TupleType>(t->children[0]->evalType);
             auto identifierName = t->children[1]->parseTree->getText();
-            size_t i;
-            for (i = 0; i < tupleType->orderedArgs.size(); i++) {
-                if (tupleType->orderedArgs[i]->name == identifierName) {
-                    break;
-                }
-            }
-            t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(i + 1) });
+            // size_t i;
+            // for (i = 0; i < tupleType->orderedArgs.size(); i++) {
+            //     if (tupleType->orderedArgs[i]->name == identifierName) {
+            //         break;
+            //     }
+            // }
+            // t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(i + 1) });
+            tupleFieldValue = llvmFunction.call("variableGetTupleFieldFromID", { t->children[0]->llvmValue, ir.getInt64(symtab->tupleIdentifierAccess.at(identifierName)) });
         } else {
             auto index = std::stoi(t->children[1]->parseTree->getText());
-            t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(index) });
+            tupleFieldValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(index) }); 
         }
+        llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, tupleFieldValue });
+        t->llvmValue = runtimeVariableObject;
     }
 
     void LLVMGen::Print() {

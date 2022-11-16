@@ -74,6 +74,72 @@ class RedefineIdError : public std::exception {
         }
 };
 
-} // namespace gazprea
+//Missing main procedure error
+class MissingMainProcedureError : public std::exception {
+    private:
+        std::string msg;
+    public: 
+        MissingMainProcedureError(std::string main);
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+};
+
+// Main must return integer error
+class MainReturnIntegerError : public std::exception {
+    private:
+        std::string msg;
+    public: 
+        MainReturnIntegerError(std::string fullText, int line, int charPos);
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+};
+
+// Bad Return Type
+class BadReturnTypeError : public std::exception {
+    private:
+        std::string msg;
+    public: 
+        BadReturnTypeError(std::string nodeText, std::string fullText, int line, int charPos);
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+};
+
+// Bad Return Type
+class MainArgumentsPresentError : public std::exception {
+    private:
+        std::string msg;
+    public: 
+        MainArgumentsPresentError(std::string fullText, int line, int charPos);
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+};
+
+//Global Variable Qualifier Error
+class GlobalVariableQualifierError : public std::exception {
+    private:
+        std::string msg;
+    public: 
+        GlobalVariableQualifierError(std::string message, std::string fullText, int line, int charPos);
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+};
+
+//Invalid Argument Error
+class InvalidArgumentError : public std::exception {
+    private:
+        std::string msg;
+    public: 
+        InvalidArgumentError(std::string nodeText, std::string fullText, int line, int charPos);
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+};
+
+} // namespace gazpreak
 
 

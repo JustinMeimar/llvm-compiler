@@ -12,7 +12,7 @@
 #include "MatrixType.h"
 #include "TupleType.h"
 
-#include "Exceptions.h"
+#include "exceptions.h"
 
 namespace gazprea {
 
