@@ -14,7 +14,7 @@ namespace gazprea {
     }
 	
     void BaseScope::define(std::shared_ptr<Symbol> sym) {
-        if (symbols.count(sym->name) != 0) { 
+        if (symbols.count(sym->name) != 0 && !sym->isType()) { 
             auto vs = std::dynamic_pointer_cast<VariableSymbol>(sym); 
             vs->doubleDefined = true;
         }
