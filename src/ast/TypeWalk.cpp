@@ -309,26 +309,31 @@ namespace gazprea {
         
         //getResultType automatically populates promotType of children
         switch(t->children[2]->getNodeType()){ 
-            case GazpreaParser::MODULO:
             case GazpreaParser::XOR:
-            case GazpreaParser::AND:
-                t->evalType = symtab->getType(Type::INTEGER);
+            case GazpreaParser::AND: 
+            case GazpreaParser::OR: 
+            case GazpreaParser::NOT:  
+                t->evalType = tp->getResultType(tp->logicalResultType, node1, node2, t); 
+                break;
+            case GazpreaParser::MODULO:
             case GazpreaParser::PLUS:
             case GazpreaParser::MINUS:
             case GazpreaParser::DIV:
             case GazpreaParser::ASTERISK: 
+            case GazpreaParser::CARET:
                 t->evalType = tp->getResultType(tp->arithmeticResultType, node1, node2, t);
-            break;
+                break;
             case GazpreaParser::LESSTHAN:
             case GazpreaParser::GREATERTHAN:
             case GazpreaParser::LESSTHANOREQUAL:
             case GazpreaParser::GREATERTHANOREQUAL:
                 t->evalType = tp->getResultType(tp->relationalResultType, node1, node2, t);
-            break;
+                break;
             case GazpreaParser::ISEQUAL:
             case GazpreaParser::ISNOTEQUAL:
+                std::cout << node1->evalType->getTypeId() << "  " << node2->evalType->getTypeId() << std::endl;
                 t->evalType = tp->getResultType(tp->equalityResultType, node1, node2, t);
-            break; 
+                break; 
         }     
     }
 
