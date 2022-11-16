@@ -57,6 +57,9 @@ int main(int argc, char **argv) {
 
   gazprea::DefWalk defwalk(symtab);
   defwalk.visit(ast);
+  if(!defwalk.hasMainProcedure) {
+    throw gazprea::MissingMainProcedureError("main");
+  }
 
   gazprea::RefWalk refwalk(symtab);
   refwalk.visit(ast);

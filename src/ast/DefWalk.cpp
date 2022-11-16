@@ -13,11 +13,7 @@ namespace gazprea {
         symtab->globals->define(std::make_shared<VariableSymbol>("std_input", nullptr));
         symtab->globals->define(std::make_shared<VariableSymbol>("std_output", nullptr));
     }
-    DefWalk::~DefWalk() {
-        if(!this->hasMainProcedure) { //throw missing main exception;
-            throw MissingMainProcedureError("main");
-        }
-    }
+    DefWalk::~DefWalk() {}
 
     void DefWalk::visit(std::shared_ptr<AST> t) {
         if(!t->isNil()){
@@ -77,6 +73,11 @@ namespace gazprea {
         vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = vs;  // track in AST
         currentScope->define(vs);
+        if (vs->doubleDefined ){ 
+            auto *ctx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext*>(t->parseTree);
+            throw RedefineIdError(t->children[1]->getText(), ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        }
+ 
         visitChildren(t);
         if (currentScope->getScopeName() == "global") {
             vs->isGlobalVariable = true;

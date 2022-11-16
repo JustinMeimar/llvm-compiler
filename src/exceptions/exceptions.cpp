@@ -56,10 +56,15 @@ UndefinedIdError::UndefinedIdError(std::string id, std::string fullText, int lin
     msg = sstream.str();
 }
 
-RedefineIdError::RedefineIdError(std::string id) {
+RedefineIdError::RedefineIdError(std::string id, std::string fullText, int line, int charPos){
     std::stringstream sstream;
     sstream << "previously defined id '"
-            "' can not be redefined "; 
+        << "\033[36m" << id << "\033[0m" << 
+        "' can not be redefined in this scope" 
+        " " << line << "\033[0m"<< ":" << charPos << "\n"
+        << "\t|\n"
+        << line << "\t|" << " '" << fullText << "'\n"
+        << "\t|\n";
     msg = sstream.str();
 }
 

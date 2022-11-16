@@ -68,7 +68,7 @@ class RedefineIdError : public std::exception {
     private:
         std::string msg;
     public: 
-        RedefineIdError(std::string id);
+        RedefineIdError(std::string id, std::string fullText, int line, int charPos);
         virtual const char* what() const throw() {
             return msg.c_str();
         }
