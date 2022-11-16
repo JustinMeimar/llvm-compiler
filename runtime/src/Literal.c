@@ -48,10 +48,6 @@ void typeInitFromUnspecifiedString(Type *this) {
     this->m_typeId = TYPEID_STRING;
 }
 
-void variableInitFromArrayLiteral(Variable *this, int64_t nVars, Variable **vars) {
-    // TODO
-}
-
 
 void typeInitFromUnspecifiedInterval(Type *this) {
     typeInitFromIntervalType(this, UNSPECIFIED_BASE_INTERVAL);
@@ -102,6 +98,91 @@ void variableInitFromNullScalar(Variable *this) {
 
 void variableInitFromIdentityScalar(Variable *this){
     variableInitFromNDArray(this, TYPEID_NDARRAY, ELEMENT_IDENTITY, 0, NULL, NULL, false);
+}
+
+void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **vars) {
+    // one pass to check if the result is a vector or a matrix, another to convert it into mixed array
+    bool isMatrix = false;
+    for (int64_t i = 0; i < nVars; i++) {
+        int8_t nDim = variableGetNDim(vars[i]);
+        if (nDim > 1)
+            targetTypeError(vars[i]->m_type, "Vector literal contains type:");
+        else if (nDim == 1) {
+            isMatrix = true;
+            break;
+        }
+    }
+    MixedTypeElement mixedTemplate = {ELEMENT_NULL, NULL };
+    this->m_type = typeMalloc();
+    if (isMatrix) {
+        // matrix literal
+        // one more pass to find out the longest vector among all rows
+        int64_t width = 0;
+        for (int64_t i = 0; i < nVars; i++) {
+            int64_t size = variableGetLength(vars[i]);
+            width = width > size ? width : size;
+        }
+        int64_t dims[2] = {nVars, width};
+        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, ELEMENT_MIXED, 2, dims);
+        MixedTypeElement *arr = arrayMallocFromElementValue(ELEMENT_MIXED, dims[0] * dims[1], &mixedTemplate);
+
+        for (int64_t i = 0; i < nVars; i++) {
+            Variable *rhs = vars[i];
+            Type *rhsType = rhs->m_type;
+            for (int64_t j = 0; j < width; j++) {
+                MixedTypeElement *curElement = arr + i * width + j;
+                switch(rhsType->m_typeId) {
+                    case TYPEID_NDARRAY:
+                    case TYPEID_STRING: {
+                        if (variableGetNDim(rhs) != 1) {
+                            targetTypeError(rhsType, "Invalid dimension in an array (matrix) literal:");
+                        }
+                        int64_t size = variableGetLength(vars[i]);
+                        if (j < size) {
+                            ArrayType *CTI = rhsType->m_compoundTypeInfo;
+                            ElementTypeID eid = CTI->m_elementTypeID;
+                            void *elementPtr = arrayGetElementPtrAtIndex(eid, rhs->m_data, j);
+                            mixedTypeElementInitFromValue(curElement, eid, elementPtr);
+                        } else {
+                            mixedTypeElementInitFromValue(curElement, ELEMENT_NULL, NULL);
+                        }
+                    } break;
+                    case TYPEID_EMPTY_ARRAY: {
+                        mixedTypeElementInitFromValue(curElement, ELEMENT_NULL, NULL);
+                    } break;
+                    default:
+                        targetTypeError(rhsType, "Invalid type in an array (matrix) literal:");
+                }
+            }
+        }
+
+        this->m_data = arr;
+    } else {
+        // vector literal
+        int64_t dims[1] = {nVars};
+        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, ELEMENT_MIXED, 1, dims);
+        MixedTypeElement *arr = arrayMallocFromElementValue(ELEMENT_MIXED, nVars, &mixedTemplate);
+        for (int64_t i = 0; i < nVars; i++) {
+            MixedTypeElement *curElement = arr + i;
+            Variable *rhs = vars[i];
+            Type *rhsType = rhs->m_type;
+            switch(rhsType->m_typeId) {
+                case TYPEID_NDARRAY: {
+                    if (!typeIsScalar(rhsType)) {
+                        targetTypeError(rhsType, "Nonscalar type in an array (vector) literal:");
+                    }
+                    ArrayType *CTI = rhsType->m_compoundTypeInfo;
+                    mixedTypeElementInitFromValue(curElement, CTI->m_elementTypeID, rhs->m_data);
+                } break;
+                default:
+                    targetTypeError(rhsType, "Invalid type in an array (vector) literal:");
+            }
+        }
+
+        this->m_data = arr;
+    }
+    this->m_parent = this->m_data;
+    this->m_fieldPos = -1;
 }
 
 void variableInitFromString(Variable *this, int64_t strLength, int8_t *str) {

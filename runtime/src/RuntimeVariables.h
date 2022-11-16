@@ -30,6 +30,7 @@ typedef struct struct_gazprea_pcadp_config {
     bool m_allowArrToArrDifferentElementTypeConversion;
     bool m_allowRHSVectorLiteralDirectPromotion;
     bool m_isCast;  // including null/identity matrices
+    bool m_allowRHSNullIdentity;
 } PCADPConfig;
 
 void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCADPConfig *config);
@@ -45,6 +46,7 @@ void variableInitFromCast(Variable *this, Type *lhsType, Variable *rhs);        
 void variableInitFromDeclaration(Variable *this, Type *lhsType, Variable *rhs);                   /// INTERFACE
 void variableInitFromAssign(Variable *this, Type *lhsType, Variable *rhs);
 void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs);                     /// INTERFACE
+void variableInitFromDomainExpression(Variable *this, Variable *rhs);                             /// INTERFACE
 
 void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed);
 void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail);
@@ -54,6 +56,14 @@ void variableInitFromNDArray(Variable *this, TypeID typeID, ElementTypeID eid, i
 void variableDestructor(Variable *this);                                                          /// INTERFACE
 void variableDestructThenFree(Variable *this);                                                    /// INTERFACE
 
+/// INTERFACE - for domain variable i.e. "i in 1..10"
+bool variableIsIntegerInterval(Variable *this);
+bool variableIsIntegerArray(Variable *this);
+bool variableIsDomainExprCompatible(Variable *this);
+int64_t variableGetLength(Variable *this);
+int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx);  // works for both vectors and integer intervals, index start at 1
+
+int8_t variableGetNDim(Variable *this);  // returns SIZE_UNKNOWN for types other than array, string or interval
 void variableEmptyInitFromTypeID(Variable *this, TypeID id);  // a helper function for other inits
 // promote to integer scalar and return the value as int32_t
 int32_t variableGetIntegerValue(Variable *this);                                                  /// INTERFACE
@@ -62,6 +72,4 @@ Variable *variableGetTupleField(Variable *tuple, int64_t pos);                  
 Variable *variableGetTupleFieldFromID(Variable *tuple, int64_t id);                               /// INTERFACE
 int64_t variableGetNumFieldInTuple(Variable *this);                                               /// INTERFACE
 bool variableAliasWith(Variable *this, Variable *other);                                          /// INTERFACE return ture if the two variable alias
-void variableAssignment(Variable *this, Variable *rhs);
-void variableVectorIndexAssignment(Variable *vector, Variable *index, Variable *rhs);
-void variableMatrixIndexAssignment(Variable *vector, Variable *rowIndex, Variable *colIndex, Variable *rhs);
+void variableAssignment(Variable *this, Variable *rhs);                                           /// INTERFACE
