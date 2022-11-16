@@ -106,7 +106,7 @@ namespace gazprea {
         if (typeQualifierExist) {
             variableSymbol->typeQualifier = t->children[3]->parseTree->getText();
         } else {
-            // Default type qualifier for subroutine parameter is const
+            // Default type qualifier for subroutine parameter is const 
             variableSymbol->typeQualifier = "const";
         }
         if (numSingleTermType == 3) { 

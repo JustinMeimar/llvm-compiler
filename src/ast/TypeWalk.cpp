@@ -400,7 +400,7 @@ namespace gazprea {
     }
 
     void TypeWalk::visitIdentifier(std::shared_ptr<AST> t) {
-        if(t->symbol == nullptr){            
+        if(t->symbol == nullptr){     
             auto *ctx = dynamic_cast<GazpreaParser::IdentifierContext*>(t->parseTree->parent);
             throw UndefinedIdError(t->getText(), t->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
         }
