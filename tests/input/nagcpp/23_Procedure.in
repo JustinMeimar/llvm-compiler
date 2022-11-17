@@ -27,10 +27,7 @@ procedure truncate (float b) returns int {
     return as<int>(b) + 5;
 }
 
-procedure changeRef (var tuple(int b, real) hi) {
-    hi.b = 123;
-    hi.2 = 53.;
-}
+procedure changeRef (var tuple(int b, real) hi);
 
 procedure constRef (tuple (real, int, float asdf) meh) { // meh is a const variables
     var what = meh;
@@ -74,19 +71,7 @@ procedure main() returns int {
     return 0;
 }
 
-#split_token
-#split_token
-0
-1
-2
-3
-4
-5
-"15"
-123
-53
-1.1
-5132.23
-1.1
-58
-0.1
+procedure changeRef (var tuple(int b, real) hi) {
+    hi.b = 123;
+    hi.2 = 53.;
+}

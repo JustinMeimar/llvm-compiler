@@ -1,7 +1,6 @@
 typedef integer int;
 typedef boolean bool;
 typedef character char;
-typedef tuple tup;
 typedef real float;
 
 const int INTMAX = 2147483647;
@@ -18,8 +17,8 @@ procedure main() returns int {
     min -> std_out; // Print -2.14748e+09
 
     // Testing tuple promotion
-    tup(float x, float y, bool) first;
-    tup(int x, int y, bool z) second = (INTMAX, INTMIN, null);
+    tuple(float x, float y, bool) first;
+    tuple(int x, int y, bool z) second = (INTMAX, INTMIN, null);
     first = second;
 
     first.x -> std_out; // Print 2.14748e+09
@@ -27,10 +26,13 @@ procedure main() returns int {
     first.3 -> std_out; // Print 0
 
     // Testing binary operation promotion
-    0.5 == 0 -> std_out; // Print 0
-    INT_MAX == 2.14748e+09 -> std_out; // Print 1
+    boolean firstTest = 0.5 == 0;
+    firstTest -> std_out; // Print 0
+    firstTest = INTMAX == 2.14748e+09;
+    firstTest -> std_out; // Print 1
     
-    FLOATMAX - INTMAX + 5.0 -> std_out; // Print 3.40282e+38
+    real secondTest =  FLOATMAX - INTMAX + 5.0;
+    secondTest -> std_out; // Print 3.40282e+38
 
     return 0;
 }
