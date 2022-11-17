@@ -1,0 +1,5 @@
+procedure main() returns integer {
+    integer[3] a = [1, 2, 3];
+    a -> std_output;
+    return 0;
+}

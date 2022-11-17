@@ -251,7 +251,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         int64_t *dims = CTI->m_dims;
         // TODO: check if this satisfies spec
         if (!config->m_allowArrToArrDifferentElementTypeConversion && rhsNDim != 0 &&
-            CTI->m_elementTypeID != rhsCTI->m_elementTypeID) {
+            CTI->m_elementTypeID != rhsCTI->m_elementTypeID && rhsCTI->m_elementTypeID != ELEMENT_MIXED) {
             errorAndExit("No vector/matrix to vector/matrix different element type conversion allowed");
         } else if (nDim < rhsNDim) {
             errorAndExit("Cannot convert to a lower dimension array!");
