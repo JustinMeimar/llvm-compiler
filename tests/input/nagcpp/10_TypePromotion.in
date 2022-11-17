@@ -28,7 +28,7 @@ procedure main() returns int {
 
     // Testing binary operation promotion
     0.5 == 0 -> std_out; // Print 0
-    INT_MAX == 2.14748e+09 -> std_out; // Print true
+    INT_MAX == 2.14748e+09 -> std_out; // Print 1
     
     FLOATMAX - INTMAX + 5.0 -> std_out; // Print 3.40282e+38
 
