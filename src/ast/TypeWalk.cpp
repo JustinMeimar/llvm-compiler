@@ -153,7 +153,10 @@ namespace gazprea {
     void TypeWalk::visitAssignment(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto RHSTy = t->children[1]->evalType;
-        auto numLHSExpressions = t->children[0]->children.size();
+        auto numLHSExpressions = t->children[0]->children.size(); 
+        if (t->children[0]->children[0]->evalType == nullptr) {
+            return;
+        }
         if (numLHSExpressions == 1) {
             auto LHSExpressionAST = t->children[0]->children[0];
 

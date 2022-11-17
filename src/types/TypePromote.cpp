@@ -108,6 +108,10 @@ int TypePromote::promotionFromTo[16][16] = { // 0 = nullptr
 
 
 std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs, std::shared_ptr<AST> t){
+    if(lhs->evalType == nullptr || rhs->evalType == nullptr) { //occurs when infered type on l/rhs
+        return nullptr;
+    }
+
     int lhsType = lhs->evalType->getTypeId();
     int rhsType = rhs->evalType->getTypeId();
 
