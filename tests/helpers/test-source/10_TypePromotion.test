@@ -1,0 +1,16 @@
+typedef integer int;
+typedef boolean bool;
+typedef character char;
+typedef tuple tup;
+typedef real float;
+
+const int INTMAX = 2147483647;
+const int INTMIN = -2147483648;
+const float FLOATMAX = 3.40282347e+38;
+
+procedure main() returns int {
+    float hello = 5.0;
+    hello = as<float> INTMAX;
+
+    
+}
