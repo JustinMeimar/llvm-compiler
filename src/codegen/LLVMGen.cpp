@@ -166,6 +166,9 @@ namespace gazprea
             case GazpreaParser::TUPLE_ACCESS_TOKEN: 
                 visitTupleAccess(t);
                 break;
+            case GazpreaParser::VECTOR_LITERAL_TOKEN:
+                visitVectorMatrixLiteral(t);
+                break;
             default: // The other nodes we don't care about just have their children visited
                 visitChildren(t);
             }
@@ -290,13 +293,15 @@ namespace gazprea
         if (subroutineSymbol->name == "main") {
             // auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { t->children[0]->llvmValue });
             auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { runtimeVariableObject });
-            if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+            && t->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
                 llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
             }
             ir.CreateRet(returnIntegerValue);
             return;
         }
-        if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+        if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+        && t->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
         }
         ir.CreateRet(runtimeVariableObject);
@@ -321,7 +326,8 @@ namespace gazprea
             llvmFunction.call("variableInitFromDeclaration", {runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue});
             variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
             
-            if (t->children[2]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            if (t->children[2]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+            && t->children[2]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
                 llvmFunction.call("variableDestructThenFree", { t->children[2]->llvmValue });
             }
         } else {
@@ -329,7 +335,8 @@ namespace gazprea
             llvmFunction.call("variableInitFromDeclaration", {runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue});
             variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
 
-            if (t->children[2]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            if (t->children[2]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+            && t->children[2]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
                 llvmFunction.call("variableDestructThenFree", { t->children[2]->llvmValue });
             }
         }
@@ -861,7 +868,8 @@ namespace gazprea
     {
         visitChildren(t);
         llvmFunction.call("variablePrintToStdout", {t->children[0]->llvmValue});
-        if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+        if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+        && t->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
         }
     }
@@ -937,10 +945,12 @@ namespace gazprea
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(opCode)});
         t->llvmValue = runtimeVariableObject;
 
-        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+        && t->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
         }
-        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+        && t->children[1]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
         }
     }
@@ -964,7 +974,8 @@ namespace gazprea
         llvmFunction.call("variableInitFromUnaryOp", {runtimeVariableObject, t->children[1]->llvmValue, ir.getInt32(opCode)});
         t->llvmValue = runtimeVariableObject;
 
-        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+        && t->children[1]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
         }
     }
@@ -974,10 +985,12 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(0)});
         t->llvmValue = runtimeVariableObject;
-        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+        && t->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
         }
-        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+        && t->children[1]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
         }
     }
@@ -988,10 +1001,12 @@ namespace gazprea
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(1)});
         t->llvmValue = runtimeVariableObject;
 
-        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+        if (t->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+        && t->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
         }
-        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+        if (t->children[1]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+        && t->children[1]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
         }
     }
@@ -1282,7 +1297,30 @@ namespace gazprea
 
         // Free all unused variables
         for (size_t i = 0; i < numExpressions; i++) {
-            if (t->children[0]->children[i]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN) {
+            if (t->children[0]->children[i]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+            && t->children[0]->children[i]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
+                llvmFunction.call("variableDestructThenFree", { t->children[0]->children[i]->llvmValue });
+            }
+        }
+    }
+
+    void LLVMGen::visitVectorMatrixLiteral(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto numExpressions = t->children[0]->children.size();
+        auto runtimeVariableArray = llvmFunction.call("variableArrayMalloc", { ir.getInt64(numExpressions) });
+        for (size_t i = 0; i < numExpressions; i++) {
+            llvmFunction.call("variableArraySet", { runtimeVariableArray, ir.getInt64(i), t->children[0]->children[i]->llvmValue });
+        }
+        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromVectorLiteral", { runtimeVariableObject, ir.getInt64(numExpressions), runtimeVariableArray });
+        
+        t->llvmValue = runtimeVariableObject;
+        llvmFunction.call("variableArrayFree", { runtimeVariableArray });
+
+        // Free all unused variables
+        for (size_t i = 0; i < numExpressions; i++) {
+            if (t->children[0]->children[i]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+            && t->children[0]->children[i]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
                 llvmFunction.call("variableDestructThenFree", { t->children[0]->children[i]->llvmValue });
             }
         }
@@ -1293,22 +1331,13 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvm::Value *tupleFieldValue;
         if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
-            // auto tupleType = std::dynamic_pointer_cast<TupleType>(t->children[0]->evalType);
             auto identifierName = t->children[1]->parseTree->getText();
-            // size_t i;
-            // for (i = 0; i < tupleType->orderedArgs.size(); i++) {
-            //     if (tupleType->orderedArgs[i]->name == identifierName) {
-            //         break;
-            //     }
-            // }
-            // t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(i + 1) });
             tupleFieldValue = llvmFunction.call("variableGetTupleFieldFromID", { t->children[0]->llvmValue, ir.getInt64(symtab->tupleIdentifierAccess.at(identifierName)) });
         } else {
             auto index = std::stoi(t->children[1]->parseTree->getText());
             tupleFieldValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(index) }); 
         }
-        llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, tupleFieldValue });
-        t->llvmValue = runtimeVariableObject;
+        t->llvmValue = tupleFieldValue;
     }
 
     void LLVMGen::Print() {
