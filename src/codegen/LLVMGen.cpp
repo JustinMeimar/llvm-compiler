@@ -291,7 +291,6 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, t->children[0]->llvmValue });
         if (subroutineSymbol->name == "main") {
-            // auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { t->children[0]->llvmValue });
             auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { runtimeVariableObject });
             if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
             && t->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
@@ -320,6 +319,7 @@ namespace gazprea
             auto rhs = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromNullScalar", { rhs });
             llvmFunction.call("variableInitFromDeclaration", { runtimeVariableObject, runtimeTypeObject, rhs });
+            llvmFunction.call("typeDestructThenFree", runtimeTypeObject);
         } else if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
             auto runtimeTypeObject = llvmFunction.call("typeMalloc", {});
             llvmFunction.call("typeInitFromUnknownType", { runtimeTypeObject });
@@ -330,6 +330,7 @@ namespace gazprea
             && t->children[2]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
                 llvmFunction.call("variableDestructThenFree", { t->children[2]->llvmValue });
             }
+            llvmFunction.call("typeDestructThenFree", runtimeTypeObject);
         } else {
             auto runtimeTypeObject = t->children[0]->children[1]->llvmValue;
             llvmFunction.call("variableInitFromDeclaration", {runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue});
@@ -339,6 +340,7 @@ namespace gazprea
             && t->children[2]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
                 llvmFunction.call("variableDestructThenFree", { t->children[2]->llvmValue });
             }
+            llvmFunction.call("typeDestructThenFree", runtimeTypeObject);
         }
         
         t->llvmValue = runtimeVariableObject;
@@ -352,7 +354,6 @@ namespace gazprea
     }
 
     void LLVMGen::visitUnqualifiedType(std::shared_ptr<AST> t) {
-        // visitChildren(t);
         auto runtimeTypeObject = llvmFunction.call("typeMalloc", {});
 
         std::shared_ptr<MatrixType> matrixType;
@@ -398,6 +399,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromBooleanScalar", {baseType});
                 llvmFunction.call("typeInitFromVectorSizeSpecification", { runtimeTypeObject, dimension1Expression, baseType });
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             
             case Type::CHARACTER_1:
@@ -416,6 +418,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromCharacterScalar", {baseType});
                 llvmFunction.call("typeInitFromVectorSizeSpecification", { runtimeTypeObject, dimension1Expression, baseType });
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             
             case Type::INTEGER_1:
@@ -434,6 +437,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromIntegerScalar", {baseType});
                 llvmFunction.call("typeInitFromVectorSizeSpecification", { runtimeTypeObject, dimension1Expression, baseType });
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             
             case Type::REAL_1:
@@ -452,6 +456,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromRealScalar", {baseType});
                 llvmFunction.call("typeInitFromVectorSizeSpecification", { runtimeTypeObject, dimension1Expression, baseType });
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             
             case Type::BOOLEAN_2:
@@ -476,6 +481,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromBooleanScalar", {baseType});
                 llvmFunction.call("typeInitFromMatrixSizeSpecification", { runtimeTypeObject, dimension1Expression, dimension2Expression, baseType });
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             case Type::CHARACTER_2:
                 if (t->type->isTypedefType()) {
@@ -499,6 +505,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromCharacterScalar", {baseType});
                 llvmFunction.call("typeInitFromMatrixSizeSpecification", { runtimeTypeObject, dimension1Expression, dimension2Expression, baseType });
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
 
             case Type::INTEGER_2:
@@ -523,6 +530,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromIntegerScalar", {baseType});
                 llvmFunction.call("typeInitFromMatrixSizeSpecification", { runtimeTypeObject, dimension1Expression, dimension2Expression, baseType });
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             
             case Type::REAL_2:
@@ -547,6 +555,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromRealScalar", {baseType});
                 llvmFunction.call("typeInitFromMatrixSizeSpecification", { runtimeTypeObject, dimension1Expression, dimension2Expression, baseType });
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             
             case Type::TUPLE:
@@ -561,7 +570,6 @@ namespace gazprea
                 std::shared_ptr<VariableSymbol> argumentSymbol;
                 for (size_t i = 0; i < tupleType->orderedArgs.size(); i++) {
                     argumentSymbol = std::dynamic_pointer_cast<VariableSymbol>(tupleType->orderedArgs[i]);
-                    // visit(tupleType->def->children[0]->children[i]);
                     visit(argumentSymbol->def);
                     llvmFunction.call("typeArraySet", { typeArray, ir.getInt64(i), argumentSymbol->llvmPointerToTypeObject });
                     if (argumentSymbol->name == "") {
@@ -853,6 +861,7 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromCast", { runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue });
         t->llvmValue = runtimeVariableObject;
+        llvmFunction.call("typeDestructThenFree", t->children[0]->llvmValue);
     }
 
     void LLVMGen::visitTypedef(std::shared_ptr<AST> t) {
@@ -1266,7 +1275,6 @@ namespace gazprea
                 std::shared_ptr<VariableSymbol> argumentSymbol;
                 for (size_t i = 0; i < tupleType->orderedArgs.size(); i++) {
                     argumentSymbol = std::dynamic_pointer_cast<VariableSymbol>(tupleType->orderedArgs[i]);
-                    // std::cout << argumentSymbol 
                     visit(argumentSymbol->def);
                     llvmFunction.call("typeArraySet", { typeArray, ir.getInt64(i), argumentSymbol->llvmPointerToTypeObject });
                     if (argumentSymbol->name == "") {
@@ -1328,16 +1336,13 @@ namespace gazprea
 
     void LLVMGen::visitTupleAccess(std::shared_ptr<AST> t) {
         visit(t->children[0]);
-        auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
-        llvm::Value *tupleFieldValue;
         if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
             auto identifierName = t->children[1]->parseTree->getText();
-            tupleFieldValue = llvmFunction.call("variableGetTupleFieldFromID", { t->children[0]->llvmValue, ir.getInt64(symtab->tupleIdentifierAccess.at(identifierName)) });
+            t->llvmValue = llvmFunction.call("variableGetTupleFieldFromID", { t->children[0]->llvmValue, ir.getInt64(symtab->tupleIdentifierAccess.at(identifierName)) });
         } else {
             auto index = std::stoi(t->children[1]->parseTree->getText());
-            tupleFieldValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(index) }); 
+            t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(index) }); 
         }
-        t->llvmValue = tupleFieldValue;
     }
 
     void LLVMGen::Print() {
