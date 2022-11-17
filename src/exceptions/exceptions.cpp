@@ -70,7 +70,7 @@ RedefineIdError::RedefineIdError(std::string id, std::string fullText, int line,
 
 MissingMainProcedureError::MissingMainProcedureError(std::string main) {
     std::stringstream sstream;
-    sstream << "missing definition of procedure" 
+    sstream << "missing definition of procedure " 
             << "\033[36m" << main << "\033[0m"; 
     msg = sstream.str();
 }
@@ -122,6 +122,18 @@ GlobalVariableQualifierError::GlobalVariableQualifierError(std::string message, 
 InvalidArgumentError::InvalidArgumentError(std::string nodeText, std::string fullText, int line, int charPos) {
     std::stringstream sstream;
     sstream << "wrong arguments passed to procedure/function "
+        << "\033[36m" << nodeText << "\033[0m" << 
+        " " << line << "\033[0m"<< ":" << charPos << "\n"
+        << "\t|\n"
+        << line << "\t|" << " '" << fullText << "'\n"
+        << "\t|\n"; 
+
+    msg = sstream.str();
+}
+
+ConstAssignmentError::ConstAssignmentError(std::string nodeText, std::string fullText, int line, int charPos) {
+    std::stringstream sstream;
+    sstream << "can not reassign value to const variable "
         << "\033[36m" << nodeText << "\033[0m" << 
         " " << line << "\033[0m"<< ":" << charPos << "\n"
         << "\t|\n"
