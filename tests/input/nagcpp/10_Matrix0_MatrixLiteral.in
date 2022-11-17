@@ -1,5 +1,5 @@
 procedure main() returns integer {
-    integer[3] x = [1, 2, 3];
+    integer[2, 3] x = [[1, 2, 3], [1, 2, 3]];
     x -> std_output;
     return 0;
 }

@@ -762,8 +762,9 @@ void arrayMallocFromMatrixResize(ElementTypeID id, void *old, int64_t oldNRow, i
     char *resultArr = arrayMallocFromNull(id, newNRow * newNCol);
     for (int64_t i = 0; i < oldNRow && i < newNRow; i++) {
         for (int64_t j = 0; j < oldNCol && j < newNCol; j++) {
-            int64_t offset = i * newNRow + j;
+            int64_t offset = i * newNCol + j;
             memcpy(resultArr + offset * elementSize, oldArr + offset * elementSize, elementSize);
         }
     }
+    *result = resultArr;
 }

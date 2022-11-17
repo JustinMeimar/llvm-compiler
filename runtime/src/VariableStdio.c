@@ -137,9 +137,9 @@ void variablePrintToStdout(Variable *this) {
                 for (int64_t i = 0; i < dims[0]; i++) {
                     printf("[");
                     for (int64_t j = 0; j < dims[1]; j++) {
+                        elementPrintToStdout(eid, dataPos + (i * dims[1] + j) * elementSize);
                         if (j != dims[1] - 1) {
                             printf(" ");
-                            elementPrintToStdout(eid, dataPos + (i * dims[1] + j) * elementSize);
                         }
                     }
                     printf("]");
