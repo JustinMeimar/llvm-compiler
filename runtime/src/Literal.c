@@ -142,7 +142,12 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
                             ArrayType *CTI = rhsType->m_compoundTypeInfo;
                             ElementTypeID eid = CTI->m_elementTypeID;
                             void *elementPtr = arrayGetElementPtrAtIndex(eid, rhs->m_data, j);
-                            mixedTypeElementInitFromValue(curElement, eid, elementPtr);
+                            if (eid == ELEMENT_MIXED) {
+                                MixedTypeElement *element = elementPtr;
+                                mixedTypeElementInitFromValue(curElement, element->m_elementTypeID, element->m_element);
+                            } else {
+                                mixedTypeElementInitFromValue(curElement, eid, elementPtr);
+                            }
                         } else {
                             mixedTypeElementInitFromValue(curElement, ELEMENT_NULL, NULL);
                         }

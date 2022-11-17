@@ -278,9 +278,11 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
             }
             // resize
             if (rhsNDim == 1) {
-                arrayMallocFromVectorResize(CTI->m_elementTypeID, convertedArray, rhsDims[0], dims[0], &this->m_data);
+                arrayMallocFromVectorResize(CTI->m_elementTypeID, convertedArray,
+                                            rhsDims[0], dims[0], &this->m_data);
             } else {
-                arrayMallocFromMatrixResize(CTI->m_elementTypeID, rhs->m_data, rhsDims[0], rhsDims[1], dims[0], dims[1], &this->m_data);
+                arrayMallocFromMatrixResize(CTI->m_elementTypeID, convertedArray,
+                                            rhsDims[0], rhsDims[1], dims[0], dims[1], &this->m_data);
             }
         }
         free(convertedArray);
