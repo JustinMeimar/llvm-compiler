@@ -12,7 +12,10 @@ const floats INT_MAX_IN_FLOAT = 2.14748e+09;
 const floats FLOAT_MAX = 3.40282347e+38;
 
 procedure main() returns int {
-    //
+    // Testing int casting
+    bools one = null; // Should be false for now
+    
+
 
     return 0;
 }
