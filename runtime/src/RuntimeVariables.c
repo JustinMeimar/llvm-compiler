@@ -27,31 +27,43 @@ PCADPConfig pcadpParameterConfig = {
         true, true,
         true, false,
         vectovec_rhs_size_must_not_be_greater, false,
-        true, false
+        true, false,
+        true,
 };
 PCADPConfig pcadpCastConfig = {
         false, true,
         false, false,
         vectovec_rhs_size_can_be_any, true,
-        true, true
+        true, true,
+        true,
 };
 PCADPConfig pcadpAssignmentConfig = {
         false, false,
         false, true,
         vectovec_rhs_must_be_same_size, false,
-        true, false
+        true, false,
+        true,
 };
 PCADPConfig pcadpDeclarationConfig = {
         true, true,
         false, false,
         vectovec_rhs_size_must_not_be_greater, false,
-        true, false
+        true, false,
+        true,
 };
 PCADPConfig pcadpPromotionConfig = {
         true, false,
         false, false,
         vectovec_rhs_must_be_same_size, false,
-        true, false
+        true, false,
+        true,
+};
+PCADPConfig pcadpDomainExpressionConfig = {
+        false, true,
+        false, false,
+        vectovec_rhs_must_be_same_size, false,
+        true, false,
+        false,
 };
 
 void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCADPConfig *config) {
@@ -89,7 +101,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         } else if (!config->m_allowUnknownTargetArraySize && arrayTypeHasUnknownSize(CTI)) {
             targetTypeError(targetType, "Attempt to convert into unknown size array:");
         }
-    } else if (config->m_isCast && (typeIsArrayNull(rhsType) || typeIsArrayIdentity(rhsType))) {
+    } else if (!config->m_allowRHSNullIdentity && (typeIsArrayNull(rhsType) || typeIsArrayIdentity(rhsType))) {
         targetTypeError(rhsType, "Null or identity not allowed to be rhs:");
     }
 
@@ -237,9 +249,9 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         ArrayType *CTI = this->m_type->m_compoundTypeInfo;
         int8_t nDim = CTI->m_nDim;
         int64_t *dims = CTI->m_dims;
-        // TODO: handle mixed array
+        // TODO: check if this satisfies spec
         if (!config->m_allowArrToArrDifferentElementTypeConversion && rhsNDim != 0 &&
-            CTI->m_elementTypeID != rhsCTI->m_elementTypeID) {
+            CTI->m_elementTypeID != rhsCTI->m_elementTypeID && rhsCTI->m_elementTypeID != ELEMENT_MIXED) {
             errorAndExit("No vector/matrix to vector/matrix different element type conversion allowed");
         } else if (nDim < rhsNDim) {
             errorAndExit("Cannot convert to a lower dimension array!");
@@ -266,9 +278,11 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
             }
             // resize
             if (rhsNDim == 1) {
-                arrayMallocFromVectorResize(CTI->m_elementTypeID, convertedArray, rhsDims[0], dims[0], &this->m_data);
+                arrayMallocFromVectorResize(CTI->m_elementTypeID, convertedArray,
+                                            rhsDims[0], dims[0], &this->m_data);
             } else {
-                arrayMallocFromMatrixResize(CTI->m_elementTypeID, rhs->m_data, rhsDims[0], rhsDims[1], dims[0], dims[1], &this->m_data);
+                arrayMallocFromMatrixResize(CTI->m_elementTypeID, convertedArray,
+                                            rhsDims[0], rhsDims[1], dims[0], dims[1], &this->m_data);
             }
         }
         free(convertedArray);
@@ -720,6 +734,13 @@ void variableInitFromDeclaration(Variable *this, Type *lhsType, Variable *rhs) {
 void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs) {
     variableInitFromPCADP(this, lhsType, rhs, &pcadpPromotionConfig);
 }
+void variableInitFromDomainExpression(Variable *this, Variable *rhs) {
+    Type *intVec = typeMalloc();
+    int64_t dims[1] = {-1};
+    typeInitFromArrayType(intVec, TYPEID_NDARRAY, ELEMENT_INTEGER, 1, dims);
+    variableInitFromPCADP(this, intVec, rhs, &pcadpDomainExpressionConfig);
+    typeDestructThenFree(intVec);
+}
 
 void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed) {
     Type *rhsType = mixed->m_type;
@@ -837,6 +858,42 @@ void variableDestructThenFree(Variable *this) {
     free(this);
 }
 
+bool variableIsIntegerInterval(Variable *this) { return typeIsIntegerInterval(this->m_type); }
+bool variableIsIntegerArray(Variable *this) { return typeIsIntegerArray(this->m_type); }
+bool variableIsDomainExprCompatible(Variable *this) { return typeIsDomainExprCompatible(this->m_type); }
+int64_t variableGetLength(Variable *this) {
+    switch(this->m_type->m_typeId) {
+        case TYPEID_NDARRAY:
+        case TYPEID_STRING: {
+            return arrayTypeGetTotalLength(this->m_type->m_compoundTypeInfo);
+        } break;
+        case TYPEID_INTERVAL: {
+            int32_t *interval = this->m_data;
+            return interval[1] - interval[0] + 1;
+        } break;
+        case TYPEID_EMPTY_ARRAY: {
+            return 0;
+        } break;
+        default: {
+            targetTypeError(this->m_type, "Invalid type for variableGetLength!");
+        } break;
+    }
+}
+
+int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx) {
+    switch(this->m_type->m_typeId) {
+        case TYPEID_NDARRAY: {
+            return arrayGetIntegerValue(this->m_data, idx - 1);
+        } break;
+        case TYPEID_INTERVAL: {
+            return intervalTypeGetElementAtIndex(this->m_data, idx);
+        } break;
+        default: {
+            targetTypeError(this->m_type, "Invalid type for variableGetIntegerElementAtIndex!");
+        } break;
+    }
+}
+
 int32_t variableGetIntegerValue(Variable *this) {
     Type *intTy = typeMalloc();
     typeInitFromArrayType(intTy, TYPEID_NDARRAY, ELEMENT_INTEGER, 0, NULL);
@@ -865,6 +922,22 @@ int64_t variableGetNumFieldInTuple(Variable *this) {
     }
     TupleType *CTI = this->m_type->m_compoundTypeInfo;
     return CTI->m_nField;
+}
+
+int8_t variableGetNDim(Variable *this) {
+    Type *type = this->m_type;
+    switch (type->m_typeId) {
+        case TYPEID_NDARRAY: {
+            ArrayType *CTI = type->m_compoundTypeInfo;
+            return CTI->m_nDim;
+        } break;
+        case TYPEID_STRING:
+        case TYPEID_INTERVAL: {
+            return 1;
+        } break;
+        default:
+            return (int8_t) SIZE_UNKNOWN;
+    }
 }
 
 void variableEmptyInitFromTypeID(Variable *this, TypeID id) {

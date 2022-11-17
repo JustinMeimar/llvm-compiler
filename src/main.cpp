@@ -1,24 +1,19 @@
 #include "GazpreaLexer.h"
 #include "GazpreaParser.h"
-
 #include "ANTLRFileStream.h"
 #include "CommonTokenStream.h"
 #include "tree/ParseTree.h"
 #include "tree/ParseTreeWalker.h"
-
 #include "AST.h"
 #include "SymbolTable.h"
-
 #include "ASTBuilder.h"
 #include "DefWalk.h"
 #include "RefWalk.h"
 #include "TypeWalk.h"
 #include "LLVMGen.h"
-
 #include "DiagnosticErrorListener.h"
 #include "BailErrorStrategy.h"
-#include "../include/exceptions/Exceptions.h"
-
+#include "exceptions.h"
 #include <iostream>
 #include <fstream>
 
@@ -62,6 +57,9 @@ int main(int argc, char **argv) {
 
   gazprea::DefWalk defwalk(symtab);
   defwalk.visit(ast);
+  if(!defwalk.hasMainProcedure) {
+    throw gazprea::MissingMainProcedureError("main");
+  }
 
   gazprea::RefWalk refwalk(symtab);
   refwalk.visit(ast);

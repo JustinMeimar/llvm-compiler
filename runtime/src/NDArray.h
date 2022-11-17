@@ -15,6 +15,8 @@ typedef struct struct_gazprea_mixed_type_element {
     void *m_element;
 } MixedTypeElement;
 
+void mixedTypeElementInitFromValue(MixedTypeElement *this, ElementTypeID eid, void *value);
+
 bool elementIsMixedType(ElementTypeID id);
 bool elementIsNullIdentity(ElementTypeID id);
 bool elementIsBasicType(ElementTypeID id);
@@ -52,6 +54,7 @@ void *arrayMallocFromRealValue(int64_t size, float value);
 void arrayFree(ElementTypeID id, void *arr, int64_t size);
 
 // simple getter/setters
+void *arrayGetElementPtrAtIndex(ElementTypeID eid, void *arr, int64_t index);
 bool arrayGetBoolValue(void *arr, int64_t index);
 int8_t arrayGetCharacterValue(void *arr, int64_t index);
 int32_t arrayGetIntegerValue(void *arr, int64_t index);

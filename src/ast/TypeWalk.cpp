@@ -117,6 +117,11 @@ namespace gazprea {
         
         auto varTy = t->children[1]->evalType;  // Filled in by visitChildren(t), and specifically, visitIdentifier(t);
         auto exprTy = t->children[2]->evalType;
+
+        if (exprTy == nullptr) {
+            // The expression can be from an inferred_type parameter
+            return;
+        }
         
         if (exprTy->getTypeId() == Type::IDENTITYNULL) {
             t->children[2]->promoteToType = varTy;
@@ -154,8 +159,15 @@ namespace gazprea {
         visitChildren(t);
         auto RHSTy = t->children[1]->evalType;
         auto numLHSExpressions = t->children[0]->children.size();
+        if (RHSTy == nullptr) {
+            // The expression can be from an inferred_type parameter
+            return;
+        }
         if (numLHSExpressions == 1) {
             auto LHSExpressionAST = t->children[0]->children[0];
+            if (LHSExpressionAST->evalType == nullptr) {
+                return;
+            }
 
             if (LHSExpressionAST->evalType->getTypeId() == Type::TUPLE && RHSTy->getTypeId() == Type::TUPLE) {
                 auto tupleTypeInRHSExpression = std::dynamic_pointer_cast<TupleType>(RHSTy);
@@ -202,6 +214,11 @@ namespace gazprea {
             }
             for (size_t i = 0; i < numLHSExpressions; i++) {
                 auto LHSExpressionAtomAST = t->children[0]->children[i];
+                if (LHSExpressionAtomAST->evalType == nullptr) {
+                    // The expression can be from an inferred_type parameter
+                    continue;
+                }
+                
                 int promote = tp->promotionFromTo[tupleTypeInRHSExpression->orderedArgs[i]->type->getTypeId()][LHSExpressionAtomAST->evalType->getTypeId()];
                 if (promote != 0) {
                     t->children[1]->tuplePromoteTypeList[i] = LHSExpressionAtomAST->evalType;
@@ -309,26 +326,31 @@ namespace gazprea {
         
         //getResultType automatically populates promotType of children
         switch(t->children[2]->getNodeType()){ 
-            case GazpreaParser::MODULO:
             case GazpreaParser::XOR:
-            case GazpreaParser::AND:
-                t->evalType = symtab->getType(Type::INTEGER);
+            case GazpreaParser::AND: 
+            case GazpreaParser::OR: 
+            case GazpreaParser::NOT:  
+                t->evalType = tp->getResultType(tp->logicalResultType, node1, node2, t); 
+                break;
+            case GazpreaParser::MODULO:
             case GazpreaParser::PLUS:
             case GazpreaParser::MINUS:
             case GazpreaParser::DIV:
             case GazpreaParser::ASTERISK: 
+            case GazpreaParser::CARET:
                 t->evalType = tp->getResultType(tp->arithmeticResultType, node1, node2, t);
-            break;
+                break;
             case GazpreaParser::LESSTHAN:
             case GazpreaParser::GREATERTHAN:
             case GazpreaParser::LESSTHANOREQUAL:
             case GazpreaParser::GREATERTHANOREQUAL:
                 t->evalType = tp->getResultType(tp->relationalResultType, node1, node2, t);
-            break;
+                break;
             case GazpreaParser::ISEQUAL:
             case GazpreaParser::ISNOTEQUAL:
+                std::cout << node1->evalType->getTypeId() << "  " << node2->evalType->getTypeId() << std::endl;
                 t->evalType = tp->getResultType(tp->equalityResultType, node1, node2, t);
-            break; 
+                break; 
         }     
     }
 

@@ -1,0 +1,11 @@
+procedure a(tuple(integer, integer) b) {
+    
+}
+
+procedure main() returns integer {
+    call a();
+
+    return 0;
+}
+#split_token
+#split_token

@@ -73,6 +73,11 @@ namespace gazprea {
         vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = vs;  // track in AST
         currentScope->define(vs);
+        if (vs->doubleDefined ){ 
+            auto *ctx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext*>(t->parseTree);
+            throw RedefineIdError(t->children[1]->getText(), ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        }
+ 
         visitChildren(t);
         if (currentScope->getScopeName() == "global") {
             vs->isGlobalVariable = true;
@@ -91,6 +96,9 @@ namespace gazprea {
             isProcedure = false;
         }
         auto identiferAST = t->children[0];
+        if(identiferAST->parseTree->getText() == "main" && isProcedure) { //track if we encounter a procedure named main
+            this->hasMainProcedure = true;
+        } 
         std::shared_ptr<SubroutineSymbol> subroutineSymbol;
         auto declarationSubroutineSymbol = symtab->globals->resolve(identiferAST->parseTree->getText());
         if (declarationSubroutineSymbol == nullptr) {

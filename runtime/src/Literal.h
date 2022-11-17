@@ -52,10 +52,9 @@ void variableInitFromRealScalar(Variable *this, float value);
 void variableInitFromCharacterScalar(Variable *this, int8_t value);
 void variableInitFromNullScalar(Variable *this);
 void variableInitFromIdentityScalar(Variable *this);
-void variableInitFromArrayLiteral(Variable *this, int64_t nVars, Variable **vars);  // could be either vector or matrix literal
+void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **vars);  // could be either vector or matrix literal
 // string
 void variableInitFromString(Variable *this, int64_t strLength, int8_t *str);
-// interval: use binop ("..") to initialize an interval
 // tuple
 /**
  * Initialize a tuple variable from a tuple literal construct

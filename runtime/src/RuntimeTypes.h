@@ -45,6 +45,9 @@ bool typeIsArrayOrString(Type *this);  // does not include ref type
 bool typeIsVectorOrString(Type *this);
 bool typeIsMatrix(Type *this);
 bool typeIsMixedArray(Type *this);
+bool typeIsIntegerInterval(Type *this);
+bool typeIsIntegerArray(Type *this);
+bool typeIsDomainExprCompatible(Type *this);
 bool typeIsIdentical(Type *this, Type *other);  // checks if the two types are describing the same types
 
 ///------------------------------COMPOUND TYPE INFO---------------------------------------------------------------
@@ -94,6 +97,7 @@ void *intervalTypeMallocDataFromCopy(void *otherIntervalData);
 void intervalTypeFreeData(void *data);
 
 bool intervalTypeIsUnspecified(IntervalType *this);  // if the base type is unspecified, otherwise the base type is integer
+int32_t intervalTypeGetElementAtIndex(const int32_t *ivl, int64_t idx);  // index start at 1
 // should support self assignment
 void intervalTypeUnaryPlus(int32_t *result, const int32_t *op);
 void intervalTypeUnaryMinus(int32_t *result, const int32_t *op);

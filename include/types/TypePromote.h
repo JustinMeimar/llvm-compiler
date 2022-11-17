@@ -13,6 +13,7 @@ namespace gazprea {
 class TypePromote {
     public:
         std::shared_ptr<SymbolTable> symtab;
+        static int logicalResultType[16][16];
         static int arithmeticResultType[16][16];
         static int relationalResultType[16][16];
         static int equalityResultType[16][16];

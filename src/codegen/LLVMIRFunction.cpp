@@ -224,6 +224,11 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), { runtimeVariableTy->getPointerTo(), int64Ty }, false),
         "variableGetTupleFieldFromID"
     );
+
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), int64Ty, runtimeVariableTy->getPointerTo()->getPointerTo() }, false),
+        "variableInitFromVectorLiteral"
+    );
 }
 
 llvm::Function *LLVMIRFunction::declareFunction(llvm::FunctionType *fTy, const std::string &name) {

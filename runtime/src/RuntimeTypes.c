@@ -255,6 +255,24 @@ bool typeIsMixedArray(Type *this) {
     return false;
 }
 
+bool typeIsIntegerInterval(Type *this) {
+    if (this->m_typeId != TYPEID_INTERVAL)
+        return false;
+    IntervalType *CTI = this->m_compoundTypeInfo;
+    return CTI->m_baseTypeID == INTEGER_BASE_INTERVAL;
+}
+
+bool typeIsIntegerArray(Type *this) {
+    if (typeIsVectorOrString(this))
+        return false;
+    ArrayType *CTI = this->m_compoundTypeInfo;
+    return CTI->m_elementTypeID == ELEMENT_INTEGER;
+}
+
+bool typeIsDomainExprCompatible(Type *this) {
+    return typeIsIntegerArray(this) || typeIsIntegerInterval(this) || this->m_typeId == TYPEID_EMPTY_ARRAY;
+}
+
 bool typeIsIdentical(Type *this, Type *other) {
     // TODO: implement this (if this is ever needed)
 }
@@ -414,6 +432,13 @@ void intervalTypeFreeData(void *data) {
 
 bool intervalTypeIsUnspecified(IntervalType *this) {
     return this->m_baseTypeID == UNSPECIFIED_BASE_INTERVAL;
+}
+
+int32_t intervalTypeGetElementAtIndex(const int32_t *ivl, int64_t idx) {
+    int32_t offset = (int32_t)(idx - 1);
+    if (offset < 0 || offset > ivl[1] - ivl[0])
+        errorAndExit("Index out of range for integer interval!");
+    return ivl[0] + offset;
 }
 
 void intervalTypeUnaryPlus(int32_t *result, const int32_t *op) {
