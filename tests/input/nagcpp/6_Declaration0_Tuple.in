@@ -1,0 +1,19 @@
+procedure main() returns integer {
+    var tup1 = (3, 4);  // INFERRED_TOKEN_TYPE
+    tuple(integer, integer) tup2 = (5, 6);
+    var tup3 = tup1;
+    tup3.1 = 7;
+    var tup4 = tup1;
+    tup4.2 <- std_input;
+
+    tup1.2 -> std_output;
+    tup2.1 -> std_output;
+    '\n' -> std_output;
+    tup3.2 -> std_output;
+    tup3.1 -> std_output;
+    '\n' -> std_output;
+    tup4.2 -> std_output;
+    tup4.1 -> std_output;
+
+    return 0;
+}
