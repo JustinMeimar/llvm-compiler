@@ -282,12 +282,12 @@ namespace gazprea
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->scope);
         //throw incompatible return type exception
-        if(subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
+        if(t->children[0]->evalType != nullptr && subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
             std::cout << "Subroutine does not return ";
             auto *ctx = dynamic_cast<GazpreaParser::ReturnStatementContext*>(t->parseTree); 
             throw BadReturnTypeError(subroutineSymbol->type->getName(),ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
             );
-        } 
+        }
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, t->children[0]->llvmValue });
         if (subroutineSymbol->name == "main") {
@@ -349,8 +349,24 @@ namespace gazprea
 
     void LLVMGen::visitAssignmentStatement(std::shared_ptr<AST> t) {
         visitChildren(t);
-        llvmFunction.call("variableAssignment", {t->children[0]->children[0]->llvmValue, t->children[1]->llvmValue});
-        // TODO: Handle parallel assignment, and free resources
+        auto numLHSExpressions = t->children[0]->children.size();
+        if (numLHSExpressions == 1) {
+            llvmFunction.call("variableAssignment", {t->children[0]->children[0]->llvmValue, t->children[1]->llvmValue});
+            if (t->children[1]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+            && t->children[1]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
+                llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
+            }
+            return;
+        }
+        for (size_t i = 0; i < numLHSExpressions; i++) {
+            auto LHSExpressionAtomAST = t->children[0]->children[i];
+            auto tupleFieldValue = llvmFunction.call("variableGetTupleField", { t->children[1]->llvmValue, ir.getInt64(i + 1) });
+            llvmFunction.call("variableAssignment", { LHSExpressionAtomAST->llvmValue, tupleFieldValue });
+        }
+        if (t->children[1]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+            && t->children[1]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
+                llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
+        }
     }
 
     void LLVMGen::visitUnqualifiedType(std::shared_ptr<AST> t) {

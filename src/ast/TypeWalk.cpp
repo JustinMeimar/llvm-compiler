@@ -117,6 +117,11 @@ namespace gazprea {
         
         auto varTy = t->children[1]->evalType;  // Filled in by visitChildren(t), and specifically, visitIdentifier(t);
         auto exprTy = t->children[2]->evalType;
+
+        if (exprTy == nullptr) {
+            // The expression can be from an inferred_type parameter
+            return;
+        }
         
         if (exprTy->getTypeId() == Type::IDENTITYNULL) {
             t->children[2]->promoteToType = varTy;
@@ -153,12 +158,16 @@ namespace gazprea {
     void TypeWalk::visitAssignment(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto RHSTy = t->children[1]->evalType;
-        auto numLHSExpressions = t->children[0]->children.size(); 
-        if (t->children[0]->children[0]->evalType == nullptr) {
+        auto numLHSExpressions = t->children[0]->children.size();
+        if (RHSTy == nullptr) {
+            // The expression can be from an inferred_type parameter
             return;
         }
         if (numLHSExpressions == 1) {
             auto LHSExpressionAST = t->children[0]->children[0];
+            if (LHSExpressionAST->evalType == nullptr) {
+                return;
+            }
 
             if (LHSExpressionAST->evalType->getTypeId() == Type::TUPLE && RHSTy->getTypeId() == Type::TUPLE) {
                 auto tupleTypeInRHSExpression = std::dynamic_pointer_cast<TupleType>(RHSTy);
@@ -205,6 +214,11 @@ namespace gazprea {
             }
             for (size_t i = 0; i < numLHSExpressions; i++) {
                 auto LHSExpressionAtomAST = t->children[0]->children[i];
+                if (LHSExpressionAtomAST->evalType == nullptr) {
+                    // The expression can be from an inferred_type parameter
+                    continue;
+                }
+                
                 int promote = tp->promotionFromTo[tupleTypeInRHSExpression->orderedArgs[i]->type->getTypeId()][LHSExpressionAtomAST->evalType->getTypeId()];
                 if (promote != 0) {
                     t->children[1]->tuplePromoteTypeList[i] = LHSExpressionAtomAST->evalType;
