@@ -2,6 +2,12 @@
 #include "RuntimeErrors.h"
 #include "math.h"
 #include "string.h"
+#include "VariableStdio.h"
+
+void mixedTypeElementInitFromValue(MixedTypeElement *this, ElementTypeID eid, void *value) {
+    this->m_elementTypeID = eid;
+    this->m_element = arrayMallocFromElementValue(eid, 1, value);
+}
 
 bool elementIsMixedType(ElementTypeID id) {
     return id == ELEMENT_MIXED;
@@ -199,7 +205,7 @@ void elementMallocFromCast(ElementTypeID resultID, ElementTypeID srcID, void *sr
             case ELEMENT_BOOLEAN:
                 *resultInt = *((bool *)src) ? 1 : 0; break;
             case ELEMENT_CHARACTER:
-                *resultInt = (int32_t)*((int32_t *)src); break;
+                *resultInt = (int32_t)*((unsigned char *)src); break;
             case ELEMENT_REAL:
                 // TODO: spec check
                 *resultInt = (int32_t)*((float *)src); break;
@@ -213,7 +219,7 @@ void elementMallocFromCast(ElementTypeID resultID, ElementTypeID srcID, void *sr
                 *resultFloat = *((bool *)src) ? 1.0f : 0.0f; break;
             case ELEMENT_CHARACTER:
                 // TODO: spec check
-                *resultFloat = (float)*((int8_t *)src); break;
+                *resultFloat = (float)*((unsigned char *)src); break;
             case ELEMENT_INTEGER:
                 // TODO: spec check
                 *resultFloat = (float)*((int32_t *)src); break;
@@ -246,8 +252,7 @@ void elementMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, v
 
 int32_t integerExponentiation(int32_t base, int32_t exp) {
     if (base == 0 && exp < 0) {
-        return 0;
-        // TODO: division by zero error
+        errorAndExit("Division by zero!");
     } else if (base == -1) {
         return exp % 2 == 0 ? 1 : -1;
     } else if (exp < 0) {
@@ -389,7 +394,7 @@ void *arrayMallocFromIdentity(ElementTypeID id, int64_t size) {
 }
 
 void *arrayMallocFromElementValue(ElementTypeID id, int64_t size, void *value) {
-    if (elementIsBasicType(id)) {
+    if (elementIsBasicType(id) || id == ELEMENT_MIXED) {
         int64_t elementSize = elementGetSize(id);
         char *target = malloc(elementSize * size);
         for (int64_t i = 0; i < size; i++) {
@@ -448,6 +453,13 @@ void arrayFree(ElementTypeID id, void *arr, int64_t size) {
         // then free the pointer array itself
         free(arr);
     }
+}
+
+void *arrayGetElementPtrAtIndex(ElementTypeID eid, void *arr, int64_t index) {
+    if (eid == ELEMENT_NULL || eid == ELEMENT_IDENTITY)
+        return arr;
+    int64_t elementSize = elementGetSize(eid);
+    return ((char *)arr) + elementSize * index;
 }
 
 // simple getter/setters
@@ -579,10 +591,11 @@ bool arrayBinopResultType(ElementTypeID id, BinOpCode opcode, ElementTypeID *res
 }
 
 void arrayMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, int64_t op1Size, void *op2, int64_t op2Size, void **result, int64_t *resultSize) {
-    ElementTypeID resultType;
+    ElementTypeID resultEID;
     bool resultCollapseToScalar;
-    bool success = arrayBinopResultType(id, opcode, &resultType, &resultCollapseToScalar);
+    bool success = arrayBinopResultType(id, opcode, &resultEID, &resultCollapseToScalar);
     if (!success) {
+        fprintf(stderr, "NDArray can't perform binop between element id:%d and opcode:%d", id, opcode);
         errorAndExit("Invalid type for binary operator!");
     }
 
@@ -590,25 +603,26 @@ void arrayMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, int64_t
     char *op2Pos = op2;
     char *resultPos = NULL;
     int64_t elementSize = elementGetSize(id);
+    int64_t resultElementSize = elementGetSize(resultEID);
     int64_t resultArraySize;
     // only differences from scalar binop is that now we have dot-product, concat and boolean; as well as != and ==
     // and the only way we have binop between two boolean arrays is when we concat them
     // op1Size should be the same as op2Size except for concatenation '||'
     if (opcode == BINARY_CONCAT) {
         resultArraySize = op1Size + op2Size;
-        resultPos = malloc(resultArraySize * elementSize);
+        resultPos = malloc(resultArraySize * resultElementSize);
         memcpy(resultPos, op1, op1Size * elementSize);
         memcpy(resultPos + op1Size * elementSize, op2, op2Size * elementSize);
     } else if (opcode == BINARY_DOT_PRODUCT) {
         resultArraySize = 1;
 
-        void *sum = arrayMallocFromNull(id, 1);
+        void *sum = arrayMallocFromNull(resultEID, 1);
         for (int64_t i = 0; i < resultArraySize; i++) {
             // sum += op1[i] * op2[i]
             void *temp;
             void *tempSum;
             elementMallocFromBinOp(id, BINARY_MULTIPLY, op1Pos + i * elementSize, op2Pos + i * elementSize, &temp);
-            elementMallocFromBinOp(id, BINARY_PLUS, sum, temp, &tempSum);
+            elementMallocFromBinOp(resultEID, BINARY_PLUS, sum, temp, &tempSum);
             free(temp);
             free(sum);
             sum = tempSum;
@@ -617,33 +631,18 @@ void arrayMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, int64_t
     } else if (opcode == BINARY_EQ || opcode == BINARY_NE) {
         resultArraySize = 1;
 
-        void *aggregate = arrayMallocFromNull(ELEMENT_BOOLEAN, 1);
-        for (int64_t i = 0; i < resultArraySize; i++) {
-            // aggregate = aggregate and (op1[i] == op2[i])
-            void *temp;
-            void *tempAggregate;
-            elementMallocFromBinOp(id, BINARY_EQ, op1Pos + i * elementSize, op2Pos + i * elementSize, &temp);
-            elementMallocFromBinOp(ELEMENT_BOOLEAN, BINARY_AND, aggregate, temp, &tempAggregate);
-            free(temp);
-            free(aggregate);
-            aggregate = tempAggregate;
-        }
-        if (opcode == BINARY_NE) {
-            // negate the result
-            void *temp;
-            elementMallocFromUnaryOp(ELEMENT_BOOLEAN, UNARY_NOT, aggregate, &temp);
-            free(aggregate);
-            aggregate = temp;
-        }
-        resultPos = aggregate;
-    } else {  // same as scalar case
+        bool *aggregate = arrayMallocFromIdentity(resultEID, resultArraySize);
+        *aggregate = memcmp(op1Pos, op2Pos, op1Size * elementSize) == 0;
+        if (opcode == BINARY_NE)
+            *aggregate = !*aggregate;
+        resultPos = (void *)aggregate;
+    } else {  // for other operators, this is same as scalar case i.e. the binop is done element-wise
         resultArraySize = op1Size;
-        resultPos = malloc(resultArraySize * elementSize);
-
+        resultPos = malloc(resultArraySize * resultElementSize);
         for (int64_t i = 0; i < resultArraySize; i++) {
             void *temp;
             elementMallocFromBinOp(id, opcode, op1Pos + i * elementSize, op2Pos + i * elementSize, &temp);
-            memcpy(resultPos + i * elementSize, temp, elementSize);
+            memcpy(resultPos + i * resultElementSize, temp, resultElementSize);
             free(temp);
         }
     }
@@ -689,12 +688,20 @@ void arrayMallocFromPromote(ElementTypeID resultID, ElementTypeID srcID, int64_t
 bool arrayMixedElementCanBePromotedToSameType(MixedTypeElement *arr, int64_t size, ElementTypeID *resultType) {
     // not a general algorithm, but should work on gazprea since the only nontrivial scalar promotion is integer->real
     *resultType = arr[0].m_elementTypeID;  // we assume array literal is at least size one
+    int64_t numNull = *resultType == ELEMENT_NULL;
+    int64_t numIdentity = *resultType == ELEMENT_IDENTITY;
     for (int64_t i = 1; i < size; i++) {
-        bool success = elementCanBePromotedBetween(*resultType, arr[i].m_elementTypeID, resultType);
-        if (!success)
-            return false;
+        ElementTypeID eid = arr[i].m_elementTypeID;
+        if (eid == ELEMENT_NULL || eid == ELEMENT_IDENTITY) {
+            numNull += eid == ELEMENT_NULL;
+            numIdentity += eid == ELEMENT_IDENTITY;
+        } else {
+            bool success = elementCanBePromotedBetween(*resultType, eid, resultType);
+            if (!success)
+                return false;
+        }
     }
-    return true;
+    return numNull == 0 || numIdentity == 0 || numNull + numIdentity < size;  // all identity, all null or exist some other type
 }
 
 // n * m matrix multiply by m * k matrix to produce a n * k matrix
@@ -755,8 +762,9 @@ void arrayMallocFromMatrixResize(ElementTypeID id, void *old, int64_t oldNRow, i
     char *resultArr = arrayMallocFromNull(id, newNRow * newNCol);
     for (int64_t i = 0; i < oldNRow && i < newNRow; i++) {
         for (int64_t j = 0; j < oldNCol && j < newNCol; j++) {
-            int64_t offset = i * newNRow + j;
+            int64_t offset = i * newNCol + j;
             memcpy(resultArr + offset * elementSize, oldArr + offset * elementSize, elementSize);
         }
     }
+    *result = resultArr;
 }

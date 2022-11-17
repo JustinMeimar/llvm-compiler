@@ -1,0 +1,32 @@
+procedure main() returns integer {
+    2 == 4 -> std_output;
+    3 == 3 -> std_output;
+    2 != 4 -> std_output;
+    3 != 3 -> std_output;
+
+    3 > 2 -> std_output;
+    2 > 3 -> std_output;
+    0 > 0 -> std_output;
+    3 < 2 -> std_output;
+    2 < 3 -> std_output;
+    0 < 0 -> std_output;
+
+    2.3e2 > 1e2 -> std_output;
+    2.3e1 > 1e2 -> std_output;
+    2.3e1 < 1e2 -> std_output;
+
+    true == true -> std_output;
+    false == false -> std_output;
+    true != false -> std_output;
+    false != true -> std_output;
+
+    true != true -> std_output;
+    false != false -> std_output;
+    true == false -> std_output;
+    false == true -> std_output;
+
+    return 0;
+}
+#split_token
+#split_token
+FTTFTFFFTFTFTTTTTFFFF

@@ -7,6 +7,10 @@
 #include "Symbol.h"
 #include "Type.h"
 
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Function.h"
+
 namespace gazprea {
     class SubroutineSymbol : public Symbol, public Scope {
     private:
@@ -16,7 +20,9 @@ namespace gazprea {
         bool isBuiltIn;  // True if this subroutine is built-in, false otherwise
         std::shared_ptr<AST> declaration;
         std::shared_ptr<AST> definition;
+        int numTimesDeclare = 0;  // If forward declaration, this value is 2, otherwise 1
         std::vector<std::shared_ptr<Symbol>> orderedArgs;
+        llvm::Function *llvmFunction;
         SubroutineSymbol(std::string name, std::shared_ptr<Type> retType, std::shared_ptr<Scope> enclosingScope, bool isProcedure, bool isBuiltIn);
         std::shared_ptr<Symbol> resolve(const std::string &name);
         void define(std::shared_ptr<Symbol> sym);

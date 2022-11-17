@@ -48,15 +48,29 @@ namespace gazprea {
     void RefWalk::visitVariableDeclaration(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto variableDeclarationSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
-        
+
+        auto *ctx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext* >(t->parseTree);
+
         if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
             variableDeclarationSymbol->typeQualifier = t->children[0]->children[0]->parseTree->getText();
+            if (variableDeclarationSymbol->isGlobalVariable && t->children[0]->children[0]->parseTree->getText() != "const") {
+                std::string msg = "Global variable cannot have type qualifier \"const\"";
+                throw GlobalVariableQualifierError(msg, ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+            }
         } else {
             if (t->children[0]->children[0]->isNil()) {
+                if (variableDeclarationSymbol->isGlobalVariable) {
+                    std::string msg = "Global variable must have a type qualifier, and that type qualifier must be \"const\"";
+                    throw GlobalVariableQualifierError(msg, ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+                }
                 variableDeclarationSymbol->typeQualifier = "var";  // default type qualifier is var
                 variableDeclarationSymbol->type = t->children[0]->children[1]->type;
             } else {
                 variableDeclarationSymbol->typeQualifier = t->children[0]->children[0]->parseTree->getText();
+                if (variableDeclarationSymbol->isGlobalVariable && t->children[0]->children[0]->parseTree->getText() != "const") {
+                    std::string msg = "Global variable must have a type qualifier, and that type qualifier must be \"const\"";
+                    throw GlobalVariableQualifierError(msg, ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+                }
                 variableDeclarationSymbol->type = t->children[0]->children[1]->type;
             }
         }
@@ -65,7 +79,10 @@ namespace gazprea {
     void RefWalk::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->symbol);
-        if (subroutineSymbol->type == nullptr) {
+        if (subroutineSymbol->numTimesDeclare == 1) {
+            // visit Forward declaration, or only one definition exists
+            subroutineSymbol->type = t->children[2]->type;  // Set return type
+        } else {
             subroutineSymbol->type = t->children[2]->type;  // Set return type
             int numArgs = (subroutineSymbol->orderedArgs).size();
             std::vector<std::shared_ptr<Symbol>> newArgs;
@@ -73,7 +90,19 @@ namespace gazprea {
                 newArgs.push_back(subroutineSymbol->orderedArgs[i]);
             }
             subroutineSymbol->orderedArgs = newArgs;
-        } 
+            subroutineSymbol->numTimesDeclare--;  // We will eliminate duplicated parameter once (i.e., this else-block will only run once)
+        }
+        auto ctx = dynamic_cast<GazpreaParser::SubroutineDeclDefContext*>(t->parseTree);
+        if (subroutineSymbol->getName() == "main" && subroutineSymbol->type->getTypeId() != Type::INTEGER) {
+            throw MainReturnIntegerError(
+                (ctx->children[0]->getText() + " " + ctx->children[2]->getText() + ctx->children[3]->getText() + ctx->children[4]->getText()),
+                ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+            );
+        }
+        if (subroutineSymbol->getName() == "main" && subroutineSymbol->orderedArgs.size() != 0){
+            throw MainArgumentsPresentError("procedure main(...)", 
+                ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        }
     }
 
     void RefWalk::visitParameterAtom(std::shared_ptr<AST> t) {
@@ -92,20 +121,30 @@ namespace gazprea {
         if (typeQualifierExist) {
             variableSymbol->typeQualifier = t->children[3]->parseTree->getText();
         } else {
-            // Default type qualifier for subroutine parameter is const
+            // Default type qualifier for subroutine parameter is const 
             variableSymbol->typeQualifier = "const";
         }
         if (numSingleTermType == 3) { 
             variableSymbol->type = std::make_shared<IntervalType>(t->children[0]->type);
-            variableSymbol->name = t->children[2]->parseTree->getText(); 
+            variableSymbol->name = t->children[2]->parseTree->getText();
+
+            auto status = symtab->tupleIdentifierAccess.emplace(variableSymbol->name, symtab->numTupleIdentifierAccess);
+            if (status.second) {
+                symtab->numTupleIdentifierAccess++;
+            }
         } else if (numSingleTermType == 2) {
             auto symbol = symtab->globals->resolve(t->children[1]->parseTree->getText());
             if (symbol == nullptr || !symbol->isType()) {
                 variableSymbol->name = t->children[1]->parseTree->getText();
                 variableSymbol->type = t->children[0]->type;
+                
+                auto status = symtab->tupleIdentifierAccess.emplace(variableSymbol->name, symtab->numTupleIdentifierAccess);
+                if (status.second) {
+                    symtab->numTupleIdentifierAccess++;
+                }
             } else {
                 variableSymbol->type = std::make_shared<IntervalType>(t->children[0]->type);
-                variableSymbol->name = t->children[1]->parseTree->getText(); 
+                // variableSymbol->name = t->children[1]->parseTree->getText(); 
             }
         } else if (numSingleTermType == 1) {
             auto symbol = symtab->globals->resolve(t->children[0]->parseTree->getText());
@@ -116,6 +155,10 @@ namespace gazprea {
                 variableSymbol->type = t->children[0]->type;
             } else if (symbol == nullptr || !symbol->isType()) {
                 variableSymbol->name = t->children[0]->parseTree->getText();
+                auto status = symtab->tupleIdentifierAccess.emplace(variableSymbol->name, symtab->numTupleIdentifierAccess);
+                if (status.second) {
+                    symtab->numTupleIdentifierAccess++;
+                }
             } else {
                 variableSymbol->type = t->children[0]->type;
             }
@@ -129,7 +172,6 @@ namespace gazprea {
     }
 
     void RefWalk::visitIdentifier(std::shared_ptr<AST> t) {
-        // If the identifier is std_input or std_output, then t->scope->resolve(t->parseTree->getText()) <- nullptr
         t->symbol = t->scope->resolve(t->parseTree->getText());
     }
 

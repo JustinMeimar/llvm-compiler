@@ -8,6 +8,7 @@
 #include "LocalScope.h"
 #include "SubroutineSymbol.h"
 #include "TupleType.h"
+#include "exceptions.h"
 
 namespace gazprea {
 
@@ -17,6 +18,7 @@ class DefWalk {
         std::shared_ptr<Scope> currentScope;
         std::shared_ptr<SubroutineSymbol> currentSubroutineScope;
     public:
+        bool hasMainProcedure;
         DefWalk(std::shared_ptr<SymbolTable> symtab);
         ~DefWalk();
 
@@ -42,6 +44,8 @@ class DefWalk {
         void visitContinue(std::shared_ptr<AST> t);
 
         void visitReturn(std::shared_ptr<AST> t);
+
+        void visitTupleAccess(std::shared_ptr<AST> t);
 };
 
 } // namespace gazrepa

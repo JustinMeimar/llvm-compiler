@@ -1,6 +1,7 @@
 #pragma once
 
 #include "BaseScope.h"
+#include "VariableSymbol.h"
 
 
 namespace gazprea {
@@ -8,5 +9,6 @@ namespace gazprea {
     public:
         GlobalScope();
         std::string getScopeName() override;
+        std::vector<std::shared_ptr<VariableSymbol>> globalVariableSymbols;
     };
 }

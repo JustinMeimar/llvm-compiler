@@ -7,13 +7,15 @@
  */
 
 #include <stdint.h>
-#include <stdbool.h>
+#include "Bool.h"
 #include "Enums.h"
 
 typedef struct struct_gazprea_mixed_type_element {
     ElementTypeID m_elementTypeID;
     void *m_element;
 } MixedTypeElement;
+
+void mixedTypeElementInitFromValue(MixedTypeElement *this, ElementTypeID eid, void *value);
 
 bool elementIsMixedType(ElementTypeID id);
 bool elementIsNullIdentity(ElementTypeID id);
@@ -33,7 +35,7 @@ void elementMallocFromCast(ElementTypeID resultID, ElementTypeID srcID, void *sr
 void elementMallocFromAssignment(ElementTypeID id, void *src, void **result);
 void elementMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, void **result);
 // binary operation may not return the same type e.g. 1 == 2
-void elementMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, void *op2, void **result);
+void elementMallocFromBinOp(ElementTypeID operandID, BinOpCode opcode, void *op1, void *op2, void **result);
 
 
 ///------------------------------DIMENSIONLESS ARRAY---------------------------------------------------------------
@@ -52,6 +54,7 @@ void *arrayMallocFromRealValue(int64_t size, float value);
 void arrayFree(ElementTypeID id, void *arr, int64_t size);
 
 // simple getter/setters
+void *arrayGetElementPtrAtIndex(ElementTypeID eid, void *arr, int64_t index);
 bool arrayGetBoolValue(void *arr, int64_t index);
 int8_t arrayGetCharacterValue(void *arr, int64_t index);
 int32_t arrayGetIntegerValue(void *arr, int64_t index);

@@ -12,8 +12,12 @@ namespace gazprea {
         if ( enclosingScope != nullptr ) return enclosingScope->resolve(name);
         return nullptr; // not found
     }
-
+	
     void BaseScope::define(std::shared_ptr<Symbol> sym) {
+        if (symbols.count(sym->name) != 0 && !sym->isType()) { 
+            auto vs = std::dynamic_pointer_cast<VariableSymbol>(sym); 
+            vs->doubleDefined = true;
+        }
         symbols.emplace(sym->name, sym);
         sym->scope = shared_from_this(); // track the scope in each symbol
     }

@@ -166,7 +166,11 @@ namespace gazprea {
     std::any ASTBuilder::visitCallProcedure(GazpreaParser::CallProcedureContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::CALL_PROCEDURE_STATEMENT_TOKEN, ctx);
         t->addChild(visit(ctx->identifier()));
-        t->addChild(visit(ctx->expressionList()));
+        if (ctx->expressionList()) {
+            t->addChild(visit(ctx->expressionList()));
+        } else {
+            t->addChild(AST::NewNilNode());
+        }
         return t;
     }
 
@@ -277,6 +281,8 @@ namespace gazprea {
         t->addChild(visit(ctx->identifier()));
         if (ctx->expressionList()) {
             t->addChild(visit(ctx->expressionList()));
+        } else {
+            t->addChild(AST::NewNilNode());
         }
         return t;
     }

@@ -10,6 +10,8 @@ namespace gazprea {
         symtab->globals->define(std::make_shared<SubroutineSymbol>("columns", nullptr, symtab->globals, false, isBuiltIn));
         symtab->globals->define(std::make_shared<SubroutineSymbol>("reverse", nullptr, symtab->globals, false, isBuiltIn));
         symtab->globals->define(std::make_shared<SubroutineSymbol>("stream_state", nullptr, symtab->globals, true, isBuiltIn));
+        symtab->globals->define(std::make_shared<VariableSymbol>("std_input", nullptr));
+        symtab->globals->define(std::make_shared<VariableSymbol>("std_output", nullptr));
     }
     DefWalk::~DefWalk() {}
 
@@ -48,6 +50,9 @@ namespace gazprea {
                 case GazpreaParser::RETURN:
                     visitReturn(t);
                     break;
+                case GazpreaParser::TUPLE_ACCESS_TOKEN:
+                    visitTupleAccess(t);
+                    break;
                 default: visitChildren(t);
             };
         }
@@ -67,9 +72,19 @@ namespace gazprea {
         auto vs = std::make_shared<VariableSymbol>(identifierAST->parseTree->getText(), nullptr);
         vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = vs;  // track in AST
-        auto symbol = currentScope->resolve(identifierAST->parseTree->getText());
         currentScope->define(vs);
+        if (vs->doubleDefined ){ 
+            auto *ctx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext*>(t->parseTree);
+            throw RedefineIdError(t->children[1]->getText(), ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        }
+ 
         visitChildren(t);
+        if (currentScope->getScopeName() == "global") {
+            vs->isGlobalVariable = true;
+            symtab->globals->globalVariableSymbols.push_back(vs);
+        } else {
+            vs->isGlobalVariable = false;
+        }
     }
 
     void DefWalk::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
@@ -81,15 +96,20 @@ namespace gazprea {
             isProcedure = false;
         }
         auto identiferAST = t->children[0];
+        if(identiferAST->parseTree->getText() == "main" && isProcedure) { //track if we encounter a procedure named main
+            this->hasMainProcedure = true;
+        } 
         std::shared_ptr<SubroutineSymbol> subroutineSymbol;
         auto declarationSubroutineSymbol = symtab->globals->resolve(identiferAST->parseTree->getText());
         if (declarationSubroutineSymbol == nullptr) {
             subroutineSymbol = std::make_shared<SubroutineSymbol>(identiferAST->parseTree->getText(), nullptr, symtab->globals, isProcedure, isBuiltIn);
             subroutineSymbol->declaration = t;
             symtab->globals->define(subroutineSymbol); // def subroutine in globals
+            subroutineSymbol->numTimesDeclare++;
         } else {
             subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(declarationSubroutineSymbol);
             subroutineSymbol->definition = t;
+            subroutineSymbol->numTimesDeclare++;
         }
 
         t->symbol = subroutineSymbol;  // track in AST
@@ -130,6 +150,7 @@ namespace gazprea {
     }
 
     void DefWalk::visitParameterAtom(std::shared_ptr<AST> t) {
+        visitChildren(t);
         auto variableSymbol = std::make_shared<VariableSymbol>("", nullptr);
         currentScope->define(variableSymbol);
         t->symbol = variableSymbol;
@@ -147,5 +168,16 @@ namespace gazprea {
     void DefWalk::visitReturn(std::shared_ptr<AST> t) {
         t->scope = currentSubroutineScope;
         visitChildren(t);
+    }
+
+    void DefWalk::visitTupleAccess(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
+            auto identifierName = t->children[1]->parseTree->getText();
+            auto status = symtab->tupleIdentifierAccess.emplace(identifierName, symtab->numTupleIdentifierAccess);
+            if (status.second) {
+                symtab->numTupleIdentifierAccess++;
+            }
+        }
     }
 } // namespace gazprea 

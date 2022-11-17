@@ -16,4 +16,10 @@ build/
 tests/*
 !tests/input/
 !tests/output/
+!tests/inStream/
+!tests/helpers/
 !tests/GazpreaConfig.json
+
+lli-temp.out
+tests/memchk.out
+*.ll

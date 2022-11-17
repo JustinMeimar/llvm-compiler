@@ -87,7 +87,7 @@ void typeInitFromIntervalType(Type *this, IntervalTypeBaseTypeID id) {
     this->m_typeId = TYPEID_INTERVAL;
 }
 
-void typeInitFromArrayType(Type *this, ElementTypeID eid, int8_t nDim, int64_t *dims) {
+void typeInitFromArrayType(Type *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims) {
     this->m_typeId = TYPEID_NDARRAY;
     this->m_compoundTypeInfo = arrayTypeMalloc();
     arrayTypeInitFromDims(this->m_compoundTypeInfo, eid, nDim, dims);
@@ -126,6 +126,15 @@ void typeDestructThenFree(Type *this) {
 }
 
 // Type Methods
+
+bool typeIsSpecifiable(Type *this) {
+    if (this->m_typeId == TYPEID_STRING) {
+        ArrayType *CTI = this->m_compoundTypeInfo;
+        if (CTI->m_dims[0] == -2)
+            return true;
+    }
+    return typeIsScalarBasic(this);
+}
 
 // if the type does not have any unknown/unspecified part i.e. a variable can have this type
 bool typeIsConcreteType(Type *this) {
@@ -246,6 +255,24 @@ bool typeIsMixedArray(Type *this) {
     return false;
 }
 
+bool typeIsIntegerInterval(Type *this) {
+    if (this->m_typeId != TYPEID_INTERVAL)
+        return false;
+    IntervalType *CTI = this->m_compoundTypeInfo;
+    return CTI->m_baseTypeID == INTEGER_BASE_INTERVAL;
+}
+
+bool typeIsIntegerArray(Type *this) {
+    if (typeIsVectorOrString(this))
+        return false;
+    ArrayType *CTI = this->m_compoundTypeInfo;
+    return CTI->m_elementTypeID == ELEMENT_INTEGER;
+}
+
+bool typeIsDomainExprCompatible(Type *this) {
+    return typeIsIntegerArray(this) || typeIsIntegerInterval(this) || this->m_typeId == TYPEID_EMPTY_ARRAY;
+}
+
 bool typeIsIdentical(Type *this, Type *other) {
     // TODO: implement this (if this is ever needed)
 }
@@ -316,6 +343,7 @@ bool arrayTypeHasUnknownSize(ArrayType *this) {
     for (int8_t i = 0; i < this->m_nDim; i++) {
         hasUnknown = hasUnknown || this->m_dims[i] < 0;
     }
+    return hasUnknown;
 }
 
 int64_t arrayTypeElementSize(ArrayType *this) {
@@ -369,21 +397,21 @@ void *intervalTypeInitFromCopy(IntervalType *this, IntervalType *other) {
 }
 
 void *intervalTypeMallocDataFromNull() {
-    int *interval = malloc(sizeof(int32_t) * 2);
+    int32_t *interval = malloc(sizeof(int32_t) * 2);
     interval[0] = 0;
     interval[1] = 0;
     return interval;
 }
 
 void *intervalTypeMallocDataFromIdentity() {
-    int *interval = malloc(sizeof(int32_t) * 2);
+    int32_t *interval = malloc(sizeof(int32_t) * 2);
     interval[0] = 1;
     interval[1] = 1;
     return interval;
 }
 
 void *intervalTypeMallocDataFromHeadTail(int32_t head, int32_t tail) {
-    int *interval = malloc(sizeof(int32_t) * 2);
+    int32_t *interval = malloc(sizeof(int32_t) * 2);
     if (head > tail) {
         errorAndExit("Interval head is greater than tail!");
     }
@@ -393,7 +421,7 @@ void *intervalTypeMallocDataFromHeadTail(int32_t head, int32_t tail) {
 }
 
 void *intervalTypeMallocDataFromCopy(void *otherIntervalData) {
-    int *interval = malloc(sizeof(int32_t) * 2);
+    int32_t *interval = malloc(sizeof(int32_t) * 2);
     memcpy(interval, otherIntervalData, sizeof(int32_t) * 2);
     return interval;
 }
@@ -404,6 +432,13 @@ void intervalTypeFreeData(void *data) {
 
 bool intervalTypeIsUnspecified(IntervalType *this) {
     return this->m_baseTypeID == UNSPECIFIED_BASE_INTERVAL;
+}
+
+int32_t intervalTypeGetElementAtIndex(const int32_t *ivl, int64_t idx) {
+    int32_t offset = (int32_t)(idx - 1);
+    if (offset < 0 || offset > ivl[1] - ivl[0])
+        errorAndExit("Index out of range for integer interval!");
+    return ivl[0] + offset;
 }
 
 void intervalTypeUnaryPlus(int32_t *result, const int32_t *op) {
@@ -455,18 +490,27 @@ TupleType *tupleTypeMalloc() {
     return malloc(sizeof(TupleType));
 }
 
-void tupleTypeInitFromTypeAndId(TupleType *this, int64_t nField, Type *typeArray, int64_t *stridArray) {
+void tupleTypeInitFromTypeAndId(TupleType *this, int64_t nField, Type **typeArray, int64_t *stridArray) {
     this->m_nField = nField;
     this->m_idxToStrid = malloc(nField * sizeof(int64_t));
     this->m_fieldTypeArr = malloc(nField * sizeof(Type));
-    memcpy(this->m_idxToStrid, stridArray, nField * sizeof(int64_t));
+    if (stridArray != NULL) {
+        memcpy(this->m_idxToStrid, stridArray, nField * sizeof(int64_t));
+    } else {
+        for (int64_t i = 0; i < nField; i++)
+            this->m_idxToStrid[i] = -1;
+    }
     for (int64_t i = 0; i < nField; i++) {
-        typeInitFromCopy(&(this->m_fieldTypeArr[i]), &(typeArray[i]));
+        typeInitFromCopy(&(this->m_fieldTypeArr[i]), typeArray[i]);
     }
 }
 
 void tupleTypeInitFromCopy(TupleType *this, TupleType *other) {
-    tupleTypeInitFromTypeAndId(this, other->m_nField, other->m_fieldTypeArr, other->m_idxToStrid);
+    Type *(types[other->m_nField]);
+    for (int64_t i = 0; i < other->m_nField; i++) {
+        types[i] = &(other->m_fieldTypeArr[i]);
+    }
+    tupleTypeInitFromTypeAndId(this, other->m_nField, types, other->m_idxToStrid);
 }
 
 void tupleTypeDestructor(TupleType *this) {
@@ -513,9 +557,12 @@ void *tupleTypeMallocDataFromIdentity(TupleType *this) {
 }
 
 void *tupleTypeMallocDataFromCopy(TupleType *this, void *otherTupleData) {
+    return tupleTypeMallocDataFromCopyVariableArray(this, (Variable **)otherTupleData);
+}
+
+void *tupleTypeMallocDataFromCopyVariableArray(TupleType *this, Variable **otherVars) {
     int64_t n = this->m_nField;
     Variable **vars = malloc(n * sizeof(Variable *));
-    Variable **otherVars = otherTupleData;
     for (int64_t i = 0; i < n; i++) {
         vars[i] = variableMalloc();
         variableInitFromMemcpy(vars[i], otherVars[i]);
@@ -545,3 +592,17 @@ void tupleTypeFreeData(TupleType *this, void *data) {
     }
     free(vars);
 }
+
+// Some Utility for LLVM passing parameters---------------------------------------------------------------------------------------------
+
+void *variableArrayMalloc(int64_t size) { return malloc(size * sizeof(Variable *)); }
+void variableArraySet(Variable **arr, int64_t idx, Variable *var) { arr[idx] = var; }
+void variableArrayFree(Variable **arr) { free(arr); }
+
+void *typeArrayMalloc(int64_t size) { return malloc(size * sizeof(Type *)); }
+void typeArraySet(Type **arr, int64_t idx, Type *type) { arr[idx] = type; }
+void typeArrayFree(Type **arr) { free(arr); }
+
+void *stridArrayMalloc(int64_t size) { return malloc(size * sizeof(int64_t)); }
+void stridArraySet(int64_t *arr, int64_t idx, int64_t val) { arr[idx] = val; }
+void stridArrayFree(int64_t *arr) { free(arr); }

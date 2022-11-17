@@ -2,8 +2,9 @@
 
 #include <map>
 #include <string>
-
+#include "exceptions.h"
 #include "Scope.h"
+#include "VariableSymbol.h"
 
 namespace gazprea {
 	class BaseScope : public Scope {
@@ -13,7 +14,7 @@ namespace gazprea {
 
 		BaseScope(std::shared_ptr<Scope> enclosingScope);
 		std::shared_ptr<Symbol> resolve(const std::string &name);
-		void define(std::shared_ptr<Symbol> sym);
+		void define(std::shared_ptr<Symbol> sym); 
 		std::shared_ptr<Scope> getEnclosingScope();
 
 		virtual std::string toString() override;

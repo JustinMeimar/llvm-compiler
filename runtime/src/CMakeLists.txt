@@ -17,11 +17,16 @@ set(
   "${CMAKE_CURRENT_SOURCE_DIR}/Literal.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/VariableStdio.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/VariableStdio.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Bool.h"
 )
 
 # Build our executable from the source files.
 add_library(gazrt SHARED ${gazprea_rt_files})
 target_include_directories(gazc PUBLIC ${RUNTIME_INCLUDE})
+
+# author usr1234567 edited by Sled
+# Stackoverflow url:https://stackoverflow.com/questions/34625627/how-to-link-to-the-c-math-library-with-cmake
+target_link_libraries(gazrt m)
 
 # Symbolic link our library to the base directory so we don't have to go searching for it.
 symlink_to_bin("gazrt")

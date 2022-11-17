@@ -1,0 +1,1 @@
+procedure main() returns integer { integer[5] vector = 1; return 0; }
