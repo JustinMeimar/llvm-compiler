@@ -21,13 +21,21 @@ procedure main() returns int {
     // 
     int feedback = signature(1, 2, 3, 5.0, '9') + as<int>('1');
     feedback -> std_out; // Should print 117
+    '\n' -> std_out;
 
     int y = recursive (0);
+
+    y -> std_out; // Prints 5
+    '\n' -> std_out;
+
+    const winners = winner(10);
+    winners -> std_out; // Prints 2
+    '\n' -> std_out;
 
     return 0;
 }
 
-function signature(int one, int two, int three, float five, char nine) returns real {
+function signature(int one, int two, int three, float five, char nine) returns int {
     const int sum = one + two + three + as<int>(five) + as<int>(nine);
     return sum;
 }
