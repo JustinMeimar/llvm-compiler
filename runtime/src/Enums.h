@@ -4,6 +4,8 @@
 
 // This file declares all enums and consts in the runtime library
 
+// #define DEBUG_PRINT
+
 extern const int64_t SIZE_UNKNOWN;
 extern const int64_t SIZE_UNSPECIFIED;  // for string only
 

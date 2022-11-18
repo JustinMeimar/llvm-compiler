@@ -89,7 +89,7 @@ Type *variableGetType(Variable *this) {
 
 Type *variableSwapType(Variable *this, Type *newType) {
     if (this->m_type->m_typeId != TYPEID_TUPLE || newType->m_typeId != TYPEID_TUPLE) {
-        return this->m_type;  // do not swap
+        return NULL;  // do not swap
     }
     // TODO: type checking between type pair
     Type *temp = this->m_type;

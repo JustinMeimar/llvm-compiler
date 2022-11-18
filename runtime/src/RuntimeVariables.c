@@ -295,6 +295,9 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
 }
 
 Variable *variableMalloc() {
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "(malloc var)\n");
+#endif
     return malloc(sizeof(Variable));
 }
 
@@ -822,6 +825,11 @@ Variable *variableGetTupleFieldFromID(Variable *tuple, int64_t id) {
 }
 
 void variableDestructor(Variable *this) {
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "(destruct var)");
+    variableDebugPrint(this);
+    fprintf(stderr, "\n");
+#endif
     TypeID id = this->m_type->m_typeId;
 
     if (id == TYPEID_NDARRAY || id == TYPEID_STRING) {
@@ -856,6 +864,9 @@ void variableDestructor(Variable *this) {
 
 void variableDestructThenFree(Variable *this) {
     variableDestructor(this);
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "(free var)\n");
+#endif
     free(this);
 }
 
