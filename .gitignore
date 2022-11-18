@@ -42,3 +42,4 @@ Makefile
 libparser.a
 test.ll
 runtime/src/libgazrt.so
+tests/GazpreaConfig.json
