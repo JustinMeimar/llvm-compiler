@@ -339,7 +339,11 @@ namespace gazprea {
 
     std::any ASTBuilder::visitVectorLiteral(GazpreaParser::VectorLiteralContext *ctx){
         auto t = std::make_shared<AST>(GazpreaParser::VECTOR_LITERAL_TOKEN, ctx);
-        t->addChild(visit(ctx->expressionList()));
+        if (ctx->expressionList()) {
+            t->addChild(visit(ctx->expressionList()));
+        } else {
+            t->addChild(AST::NewNilNode());
+        }
         return t;
     }
 
