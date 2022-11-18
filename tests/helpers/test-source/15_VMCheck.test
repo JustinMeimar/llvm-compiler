@@ -13,10 +13,10 @@ procedure main() returns int {
     real[3] test = [1, x/6, y/2];
     int[3] test2 = [1*23, x%2, y*3];
 
-    /*real[*] p = [];
+    real[*] p = [];
     int[*] asdf = [];
     char[*] nb = [];
-    bool[*] mom = [];*/
+    bool[*] mom = [];
 
     int[2] why = [INT_MAX, INT_MAX];
     float[*] could = [INT_MAX_IN_FLOAT, FLOAT_MAX, INT_MAX];
