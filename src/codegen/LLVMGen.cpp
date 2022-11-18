@@ -1367,8 +1367,20 @@ namespace gazprea
     void LLVMGen::visitTupleAccess(std::shared_ptr<AST> t) {
         visit(t->children[0]);
         if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
+            auto tupleType = std::dynamic_pointer_cast<TupleType>(t->children[0]->evalType);
             auto identifierName = t->children[1]->parseTree->getText();
-            t->llvmValue = llvmFunction.call("variableGetTupleFieldFromID", { t->children[0]->llvmValue, ir.getInt64(symtab->tupleIdentifierAccess.at(identifierName)) });
+            if (tupleType != nullptr) {
+                // inferred_type parameter
+                size_t i;
+                for (i = 0; i < tupleType->orderedArgs.size(); i++) {
+                    if (tupleType->orderedArgs[i]->name == identifierName) {
+                        break;
+                    }
+                }
+                t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(i + 1) });
+            } else {
+                t->llvmValue = llvmFunction.call("variableGetTupleFieldFromID", { t->children[0]->llvmValue, ir.getInt64(symtab->tupleIdentifierAccess.at(identifierName)) });
+            }
         } else {
             auto index = std::stoi(t->children[1]->parseTree->getText());
             t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(index) }); 
