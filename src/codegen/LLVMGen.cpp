@@ -247,7 +247,6 @@ namespace gazprea
             // subroutine declaration and definition;
             if (t->children[2]->isNil()) {
                 // Free all variables in a block if no return statement in a subroutine
-                freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
                 freeSubroutineParameters(subroutineSymbol);
                 ir.CreateRetVoid();
             }
@@ -256,7 +255,7 @@ namespace gazprea
 
     void LLVMGen::visitReturn(std::shared_ptr<AST> t) {
         visitChildren(t);
-        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->scope);
+        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->subroutineSymbol);
         //throw incompatible return type exception
         if(t->children[0]->evalType != nullptr && subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
             std::cout << "Subroutine does not return ";
@@ -277,13 +276,26 @@ namespace gazprea
         
         if (subroutineSymbol->name == "main") {
             auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { runtimeVariableObject });
-            freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
+
+            std::shared_ptr<Scope> temp = t->scope;
+            while (temp->getEnclosingScope()->getEnclosingScope()->getScopeName() != "gazprea.scope.global") {
+                freeAllVariablesDeclaredInBlockScope(std::dynamic_pointer_cast<LocalScope>(temp));
+                temp = temp->getEnclosingScope();
+            }
+
             freeGlobalVariables();
             llvmFunction.call("variableDestructThenFree", runtimeVariableObject);
             ir.CreateRet(returnIntegerValue);
         } else {
             // Non-main subroutine
-            freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
+
+            // Recursively free the current scope of return Statement and all of its enclosing scope (traverse up until subroutineSymbol)
+            std::shared_ptr<Scope> temp = t->scope;
+            while (temp->getEnclosingScope()->getEnclosingScope()->getScopeName() != "gazprea.scope.global") {
+                // The enclosing scope of the subroutine symbol is global variable
+                freeAllVariablesDeclaredInBlockScope(std::dynamic_pointer_cast<LocalScope>(temp));
+                temp = temp->getEnclosingScope();
+            }
             ir.CreateRet(runtimeVariableObject);
         }
     }
@@ -579,6 +591,11 @@ namespace gazprea
                 llvmFunction.call("typeInitFromTupleType", { runtimeTypeObject, ir.getInt64(tupleType->orderedArgs.size()), typeArray, stridArray });
                 llvmFunction.call("typeArrayFree", { typeArray });
                 llvmFunction.call("stridArrayFree", { stridArray });
+                
+                for (size_t i = 0; i < tupleType->orderedArgs.size(); i++) {
+                    argumentSymbol = std::dynamic_pointer_cast<VariableSymbol>(tupleType->orderedArgs[i]);
+                    llvmFunction.call("typeDestructThenFree", argumentSymbol->llvmPointerToTypeObject);
+                }
                 break;
         }
 
@@ -1069,26 +1086,7 @@ namespace gazprea
                 arguments.push_back(expressionAST->llvmValue);
             }
         }
-
-        std::vector<llvm::Value *> oldTypeVector;
-        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
-            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
-            if (variableSymbol->typeQualifier == "var") {
-                auto oldType = llvmFunction.call("variableGetType", { t->children[1]->children[i]->llvmValue });
-                oldTypeVector.push_back(oldType);   
-            } else {
-                oldTypeVector.push_back(nullptr);
-            }
-        }
-        auto llvmReturnValue = ir.CreateCall(subroutineSymbol->llvmFunction, arguments);
-        t->llvmValue = llvmReturnValue;
-        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
-            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
-            if (variableSymbol->typeQualifier == "var") {
-                llvmFunction.call("variableSwapType", { t->children[1]->children[i]->llvmValue, oldTypeVector[i] });
-                // llvmFunction.call("typeDestructThenFree", newType);
-            }
-        }
+        t->llvmValue = ir.CreateCall(subroutineSymbol->llvmFunction, arguments);
     }
 
     void LLVMGen::visitCallSubroutineStatement(std::shared_ptr<AST> t) {
@@ -1110,26 +1108,7 @@ namespace gazprea
             }
         }
 
-        std::vector<llvm::Value *> oldTypeVector;
-        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
-            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
-            if (variableSymbol->typeQualifier == "var") {
-                auto oldType = llvmFunction.call("variableGetType", { t->children[1]->children[i]->llvmValue });
-                oldTypeVector.push_back(oldType);   
-            } else {
-                oldTypeVector.push_back(nullptr);
-            }
-        }
-
         ir.CreateCall(subroutineSymbol->llvmFunction, arguments);
-
-        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
-            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
-            if (variableSymbol->typeQualifier == "var") {
-                llvmFunction.call("variableSwapType", { t->children[1]->children[i]->llvmValue, oldTypeVector[i] });
-                // llvmFunction.call("typeDestructThenFree", newType);
-            }
-        }
     }
 
     void LLVMGen::visitParameterAtom(std::shared_ptr<AST> t) {
@@ -1356,6 +1335,11 @@ namespace gazprea
                 llvmFunction.call("typeInitFromTupleType", { runtimeTypeObject, ir.getInt64(tupleType->orderedArgs.size()), typeArray, stridArray });
                 llvmFunction.call("typeArrayFree", { typeArray });
                 llvmFunction.call("stridArrayFree", { stridArray });
+
+                for (size_t i = 0; i < tupleType->orderedArgs.size(); i++) {
+                    argumentSymbol = std::dynamic_pointer_cast<VariableSymbol>(tupleType->orderedArgs[i]);
+                    llvmFunction.call("typeDestructThenFree", argumentSymbol->llvmPointerToTypeObject);
+                }
             }
         }
         variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
@@ -1429,10 +1413,9 @@ namespace gazprea
     void LLVMGen::visitBlock(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto localScope = std::dynamic_pointer_cast<LocalScope>(t->scope);
-        if (!localScope->parentIsSubroutineSymbol) {
+        if (!localScope->containReturn) {
             freeAllVariablesDeclaredInBlockScope(localScope);
         }
-        // If the scope is a subroutine's block, don't free anything
     }
 
     void LLVMGen::initializeGlobalVariables() {
@@ -1480,7 +1463,16 @@ namespace gazprea
                 llvmFunction.call("typeDestructThenFree", variableSymbol->llvmPointerToTypeObject);
             } else {
                 variableSymbol->llvmPointerToVariableObject = subroutineSymbol->llvmFunction->getArg(i);
-                llvmFunction.call("variableSwapType", { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject });
+                if (variableSymbol->type != nullptr && variableSymbol->type->getTypeId() == Type::TUPLE) {
+                    // Only swap/redefine type if the parameter type is tuple
+                    auto oldType = llvmFunction.call(
+                        "variableSwapType", 
+                        { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject }
+                    );
+                    subroutineSymbol->oldParameterTypes.push_back(oldType);
+                } else {
+                    subroutineSymbol->oldParameterTypes.push_back(nullptr);
+                }
             }
         }
     }
@@ -1491,6 +1483,14 @@ namespace gazprea
             auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
             if (variableSymbol->typeQualifier == "const") {
                 llvmFunction.call("variableDestructThenFree", variableSymbol->llvmPointerToVariableObject);
+            } else {
+                if (subroutineSymbol->oldParameterTypes[i] != nullptr) {
+                    auto subroutineParameterType = llvmFunction.call(
+                        "variableSwapType", 
+                        { variableSymbol->llvmPointerToVariableObject, subroutineSymbol->oldParameterTypes[i] }
+                    );
+                    llvmFunction.call("typeDestructThenFree", subroutineParameterType);
+                }
             }
         }
     }
