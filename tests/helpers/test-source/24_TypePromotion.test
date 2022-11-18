@@ -26,15 +26,18 @@ procedure main() returns int {
     first.3 -> std_out; // Print 0
 
     // Testing binary operation promotion
-    0.5 == 0 -> std_out; // Print 0
-    INTMAX == 2.14748e+09 -> std_out; // Print 1
+    boolean firstTest = 0.5 == 0;
+    firstTest -> std_out; // Print 0
+    firstTest = INTMAX == 2.14748e+09;
+    firstTest -> std_out; // Print 1
     
-    FLOATMAX - INTMAX + 5.0 -> std_out; // Print 3.40282e+38
+    real secondTest =  FLOATMAX - INTMAX + 5.0;
+    secondTest -> std_out; // Print 3.40282e+38
 
     return 0;
 }
-#split_token
-#split_token
+##split_token
+##split_token
 2.14748e+09
 -2.14748e+09
 2.14748e+09

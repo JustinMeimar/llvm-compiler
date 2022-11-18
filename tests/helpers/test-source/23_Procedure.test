@@ -1,0 +1,84 @@
+// Procedure Test
+/*
+Procedure restrictions:
+    - Cannot call with aliasing
+    - All variables are var if not explicitly defined
+    - 
+*/
+
+typedef integer int;
+typedef boolean bool;
+typedef character char;
+typedef real float;
+
+const int INT_MAX = 2147483647;
+//const int INT_MIN = -2147483648;
+const float INT_MAX_IN_FLOAT = 2.14748e+09;
+const float FLOAT_MAX = 3.40282347e+38;
+
+procedure recursive(int x) returns int {
+    if x == 5 return x;
+    x -> std_out;
+    '\n' -> std_out;
+    return recursive(x+1);
+}
+
+procedure truncate (float b) returns int {
+    return as<int>(b) + 5;
+}
+
+procedure changeRef (var tuple(int b, real) hi) {
+    hi.b = 123;
+    hi.2 = 53.;
+}
+
+procedure constRef (tuple (real, int, float asdf) meh) {
+    meh.1 = 5132.234;
+    meh.2 = as<int>(43.34);
+    meh.asdf = as<float>(23);
+}
+
+procedure main() returns int {
+    //
+    recursive(0) -> std_out; // Should print 5
+    '\n' -> std_out;
+    '\"' -> std_out; // Should print "
+    truncate(10.3423465) -> std_out; // Should print 15
+    '\"' -> std_out; // Should print "
+    '\n' -> std_out;
+    tuple(int a, real b) oof = (314, 5678.23);
+    call changeRef(oof);
+
+    oof.a-> std_out; // Should print 123
+    '\n' -> std_out;
+    oof.b -> std_out; // Should print 53
+    '\n' -> std_out;
+
+
+    tuple (real, int, float) hello = (1.1, 58, 0.1);
+    call constRef(hello);
+
+    hello.1-> std_out; // Should print 1.1
+    '\n' -> std_out;
+    hello.2 -> std_out; // Should print 58
+    '\n' -> std_out;
+    hello.3 -> std_out; // Should print 0.1
+    '\n' -> std_out;
+
+    return 0;
+}
+
+##split_token
+##split_token
+0
+1
+2
+3
+4
+5
+"15"
+123
+53
+1.1
+58
+0.1
