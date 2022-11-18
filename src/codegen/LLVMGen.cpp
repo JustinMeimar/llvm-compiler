@@ -1106,7 +1106,26 @@ namespace gazprea
                 arguments.push_back(expressionAST->llvmValue);
             }
         }
+
+        std::vector<llvm::Value *> oldTypeVector;
+        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+            if (variableSymbol->typeQualifier == "var") {
+                auto oldType = llvmFunction.call("variableGetType", { t->children[1]->children[i]->llvmValue });
+                oldTypeVector.push_back(oldType);   
+            } else {
+                oldTypeVector.push_back(nullptr);
+            }
+        }
+
         ir.CreateCall(subroutineSymbol->llvmFunction, arguments);
+
+        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+            if (variableSymbol->typeQualifier == "var") {
+                llvmFunction.call("variableSwapType", { t->children[1]->children[i]->llvmValue, oldTypeVector[i] });
+            }
+        }
     }
 
     void LLVMGen::visitParameterAtom(std::shared_ptr<AST> t) {
