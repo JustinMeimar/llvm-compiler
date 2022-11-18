@@ -11,7 +11,5 @@ const float FLOAT_MAX = 3.40282347e+38;
 procedure main() returns int {
     //
     
-    const speaker = 
-
     return 0;
 }

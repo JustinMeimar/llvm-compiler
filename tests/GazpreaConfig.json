@@ -1,12 +1,12 @@
 {
-  "inDir": "/mnt/c/ProgrammingTools/ClionProjects/Gazprea/gazprea-nagc/tests/input",
-  "outDir": "/mnt/c/ProgrammingTools/ClionProjects/Gazprea/gazprea-nagc/tests/output",
-  "inStrDir": "/mnt/c/ProgrammingTools/ClionProjects/Gazprea/gazprea-nagc/tests/inStream",
+  "inDir": "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/tests/input",
+  "outDir": "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/tests/output",
+  "inStrDir": "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/tests/inStream",
   "testedExecutablePaths": {
-    "nagcpp": "/mnt/c/ProgrammingTools/ClionProjects/Gazprea/gazprea-nagc/bin/gazc"
+    "nagcpp": "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/bin/gazc"
   },
   "runtimes": {
-    "nagcpp": "/mnt/c/ProgrammingTools/ClionProjects/Gazprea/gazprea-nagc/bin/libgazrt.so"
+    "nagcpp": "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/bin/libgazrt.so"
   },
   "toolchains": {
     "gazprea": [
@@ -21,7 +21,7 @@
       },
       {
         "stepName": "lli",
-        "executablePath": "/usr/local/bin/lli",
+        "executablePath": "/home/riscyseven/llvm-project/bin/lli",
         "arguments": [
           "$INPUT"
         ],

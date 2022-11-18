@@ -1,6 +1,7 @@
 typedef integer int;
 typedef boolean bool;
 typedef character char;
+typedef tuple tup;
 typedef real float;
 
 const int INT_MAX = 2147483647;
@@ -10,8 +11,6 @@ const float FLOAT_MAX = 3.40282347e+38;
 
 procedure main() returns int {
     //
-    
-    const speaker = 
 
     return 0;
 }
