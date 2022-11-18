@@ -9,9 +9,43 @@ const float INT_MAX_IN_FLOAT = 2.14748e+09;
 const float FLOAT_MAX = 3.40282347e+38;
 
 procedure main() returns int {
-    //
+    // Testing boolean
+    var speaker = false; // Type boolean
+    speaker = (1+5 == 6) xor speaker; // T xor F -> True
+    speaker -> std_out; // Should print T
+
+    // Testing Char
+    const char newline = '\n';
+    newline -> std_out;
+    var employee = '\\';
+    employee -> std_out; 
+
+    newline -> std_out;
+
+    // Testing real
+    var computer = .4276e-7;
+    computer -> std_out;
+
+    newline -> std_out;
+    // Testing tuple
+    const tension = (12.4, '\t', false, 23, FLOAT_MAX);
     
-    const speaker = 
+    var integer x = null;
+    loop while x <= 3 {
+        x = x + 1;
+        tension.2 -> std_out;
+    }
+
+    tension.3 -> std_out; // Print F
+    '\n' -> std_out;
+    tension.5 -> std_out; // print \
 
     return 0;
 }
+#split_token
+#splot_token
+T
+\
+4.276e-08
+                F
+3.40282e+38
