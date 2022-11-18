@@ -143,5 +143,17 @@ ConstAssignmentError::ConstAssignmentError(std::string nodeText, std::string ful
     msg = sstream.str();
 }
 
+InvalidDeclarationError::InvalidDeclarationError(std::string nodeText, std::string fullText, int line, int charPos) {
+    std::stringstream sstream;
+    sstream << "type of the variabel being assigned to unknown "
+        << "\033[36m" << nodeText << "\033[0m" << 
+        " " << line << "\033[0m"<< ":" << charPos << "\n"
+        << "\t|\n"
+        << line << "\t|" << " '" << fullText << "'\n"
+        << "\t|\n"; 
+
+    msg = sstream.str();
+}
+
 } // namespace gazprea
 
