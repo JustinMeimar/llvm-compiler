@@ -1,16 +1,58 @@
 /* Testing the if and else statements */typedef integer int;
 typedef boolean bool;
 typedef character char;
-typedef tuple tup;
 typedef real float;
 
-const ints INT_MAX = 2147483647;
-const ints INT_MIN = -2147483648;
-const floats INT_MAX_IN_FLOAT = 2.14748e+09;
-const floats FLOAT_MAX = 3.40282347e+38;
+const int INT_MAX = 2147483647;
+const int INT_MIN = -2147483648;
+const float INT_MAX_IN_FLOAT = 2.14748e+09;
+const float FLOAT_MAX = 3.40282347e+38;
 
 procedure main() returns int {
-    //
+    bool somebody = (12.4 == 10);
+    
+    if somebody '\n' -> std_output; // False
+
+    var once_told = as<bool>('\0'); // False
+
+    if (once_told) { // False
+        true -> std_output;
+    } else {
+        false -> std_output; // Prints F
+    }
+
+    const me_the_world = as<bool>(15); // True
+
+    var count = 0; // 0
+
+    if me_the_world xor me_the_world count = count + 1; // False
+    else count = count - 1; // True
+
+    boolean is_gonna_rollme = as<bool>(0); // False
+
+    '\n' -> std_output; // Prints \n
+
+    if (count == 1) { // False
+    } else if (not is_gonna_rollme) { // True
+        'y' -> std_output;
+        'e' -> std_output;
+        'e' -> std_output;
+        't' -> std_output;
+        '\n' -> std_output;
+        if (count > 0) {
+            count = count + 100;
+            if (count > 100) {
+                count = count * 100;
+                if (count <= 10) {
+                    count = 0;
+                }
+            }
+        }
+    } else {
+        count = count / 5;
+    }
+
+    count -> std_output; // Prints -1
 
     return 0;
 }

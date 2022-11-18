@@ -1,19 +1,59 @@
 typedef integer int;
 typedef boolean bool;
 typedef character char;
-typedef tuple tup;
 typedef real float;
 
 const int INT_MAX = 2147483647;
 const int INT_MIN = -2147483648;
 const float INT_MAX_IN_FLOAT = 2.14748e+09;
 const float FLOAT_MAX = 3.40282347e+38;
-const float FLOAT_MIN = 1.17549e-38;
+//const float FLOAT_MIN = 1.17549e-38;
 
 procedure main() returns int {
     // 
 
     loop break;
+
+    var x = 2147483647 - 10;
+    loop while x < INT_MAX {
+        x = x + 1;
+        x -> std_output;
+        ',' -> std_output;
+        ' ' -> std_output;
+    }
+
+    '\n' -> std_output;
+
+    x = INT_MAX - 5;
+    loop {
+        x = x + 1;
+        x -> std_output;
+    } while x < INT_MAX;
+
+    '\n' -> std_output;
+
+    var y = 25.12 - 2;
+    loop while y <= 34.1245 {
+        y = y + 1;
+        y -> std_output;
+    }
+
+    /*loop test in [2147483638, 2147483639, 2147483640, 2147483641, 2147483642, 2147483643,
+     2147483644, 2147483645, 2147483646, 2147483647] {
+        xyz -> std_output;
+        '\n' -> std_output;
+     }*/ //Part 2
+
+    int axc = as<int>(12.3) + 4;
+    '\n' -> std_output;
+    loop {
+        axc = axc - 1;
+        if axc >= 12 continue;
+        axc -> std_output;
+        if (axc == 10) {
+            break;
+        }
+    }
 
     return 0;
 }

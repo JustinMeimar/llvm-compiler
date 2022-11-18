@@ -28,7 +28,7 @@ procedure main() returns int {
 
     newline -> std_out;
     // Testing tuple
-    const tension = (12.4, '\t', false, 23, FLOAT_MAX);
+    const tension = (12.4, '\n', false, 23, FLOAT_MAX);
     
     var integer x = null;
     loop while x <= 3 {
@@ -47,5 +47,10 @@ procedure main() returns int {
 T
 \
 4.276e-08
-                F
+
+
+
+
+
+F
 3.40282e+38

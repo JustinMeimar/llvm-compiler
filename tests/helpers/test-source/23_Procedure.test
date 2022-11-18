@@ -73,7 +73,6 @@ procedure main() returns int {
 
     return 0;
 }
-
 #split_token
 #split_token
 0
