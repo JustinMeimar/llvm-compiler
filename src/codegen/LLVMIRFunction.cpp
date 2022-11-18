@@ -229,6 +229,16 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), int64Ty, runtimeVariableTy->getPointerTo()->getPointerTo() }, false),
         "variableInitFromVectorLiteral"
     );
+    
+    declareFunction(
+        llvm::FunctionType::get(runtimeTypeTy->getPointerTo(), { runtimeVariableTy->getPointerTo(), runtimeTypeTy->getPointerTo() }, false),
+        "variableSwapType"
+    );
+
+    declareFunction(
+        llvm::FunctionType::get(runtimeTypeTy->getPointerTo(), { runtimeVariableTy->getPointerTo() }, false),
+        "variableGetType"
+    );
 }
 
 llvm::Function *LLVMIRFunction::declareFunction(llvm::FunctionType *fTy, const std::string &name) {

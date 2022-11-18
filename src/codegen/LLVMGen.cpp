@@ -227,6 +227,7 @@ namespace gazprea
                     variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
                 } else {
                     variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
+                    llvmFunction.call("variableSwapType", { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject });
                 }
                 
             }
@@ -268,6 +269,7 @@ namespace gazprea
                     variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
                 } else {
                     variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
+                    llvmFunction.call("variableSwapType", { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject });
                 }
             }
             visit(t->children[3]);
@@ -1084,8 +1086,25 @@ namespace gazprea
                 arguments.push_back(expressionAST->llvmValue);
             }
         }
+
+        std::vector<llvm::Value *> oldTypeVector;
+        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+            if (variableSymbol->typeQualifier == "var") {
+                auto oldType = llvmFunction.call("variableGetType", { t->children[1]->children[i]->llvmValue });
+                oldTypeVector.push_back(oldType);   
+            } else {
+                oldTypeVector.push_back(nullptr);
+            }
+        }
         auto llvmReturnValue = ir.CreateCall(subroutineSymbol->llvmFunction, arguments);
         t->llvmValue = llvmReturnValue;
+        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+            if (variableSymbol->typeQualifier == "var") {
+                llvmFunction.call("variableSwapType", { t->children[1]->children[i]->llvmValue, oldTypeVector[i] });
+            }
+        }
     }
 
     void LLVMGen::visitCallSubroutineStatement(std::shared_ptr<AST> t) {
@@ -1106,7 +1125,26 @@ namespace gazprea
                 arguments.push_back(expressionAST->llvmValue);
             }
         }
+
+        std::vector<llvm::Value *> oldTypeVector;
+        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+            if (variableSymbol->typeQualifier == "var") {
+                auto oldType = llvmFunction.call("variableGetType", { t->children[1]->children[i]->llvmValue });
+                oldTypeVector.push_back(oldType);   
+            } else {
+                oldTypeVector.push_back(nullptr);
+            }
+        }
+
         ir.CreateCall(subroutineSymbol->llvmFunction, arguments);
+
+        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+            if (variableSymbol->typeQualifier == "var") {
+                llvmFunction.call("variableSwapType", { t->children[1]->children[i]->llvmValue, oldTypeVector[i] });
+            }
+        }
     }
 
     void LLVMGen::visitParameterAtom(std::shared_ptr<AST> t) {
