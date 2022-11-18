@@ -1,0 +1,16 @@
+procedure main() returns integer {
+    boolean b = false;
+    b <- std_input;
+    b -> std_output;
+    b <- std_input;
+    b -> std_output;
+    b <- std_input;
+    b -> std_output;
+    b <- std_input;
+    b -> std_output;
+
+    return 0;
+}
+#split_token
+T F T#split_token
+TFTF

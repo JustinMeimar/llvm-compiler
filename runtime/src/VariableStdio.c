@@ -287,7 +287,7 @@ int readNextToken() {
         if (ch == EOF || isspace(ch)) {
             // success, return the token
             result_token_length = n;
-            return 0;
+            return ch == EOF ? 2 : 0;
         }
         // otherwise keep going
     }
@@ -302,7 +302,7 @@ int readNextToken() {
 
 int32_t readIntegerFromStdin() {
     int result = readNextToken();
-    if (result == 2) {  // eof
+    if (result == 2 && result_token_length == 0) {  // eof
         rewindInputBuffer();
         stream_state = 2;
         return false;
@@ -344,7 +344,7 @@ int32_t readIntegerFromStdin() {
             }
         }
         // success
-        updateRewindPoint(getPrevPos(cur_pos));
+        updateRewindPoint(result == 2 ? cur_pos : getPrevPos(cur_pos));
         rewindInputBuffer();
         stream_state = 0;
         return (int32_t)(sign * integer);
@@ -354,7 +354,7 @@ int32_t readIntegerFromStdin() {
 
 float readRealFromStdin() {
     int result = readNextToken();
-    if (result == 2) {  // eof
+    if (result == 2 && result_token_length == 0) {  // eof
         rewindInputBuffer();
         stream_state = 2;
         return false;
@@ -469,7 +469,7 @@ float readRealFromStdin() {
             stream_state = 1;
             return 0.0f;
         } else {  // success
-            updateRewindPoint(getPrevPos(cur_pos));  // don't actually eat the space
+            updateRewindPoint(result == 2 ? cur_pos : getPrevPos(cur_pos));
             rewindInputBuffer();
             stream_state = 0;
             return sign * value * powf(10.0f, (float)(exp * expsign));
@@ -480,7 +480,7 @@ float readRealFromStdin() {
 bool readBooleanFromStdin() {
     // read until a non-whitespace character is encountered, then read one more character to see if the boolean is valid
     int result = readNextToken();
-    if (result == 2) {  // eof
+    if (result == 2 && result_token_length == 0) {  // eof
         rewindInputBuffer();
         stream_state = 2;
         return false;
@@ -489,7 +489,7 @@ bool readBooleanFromStdin() {
     } else {
         char ch = token_buffer[0];
         if (result_token_length == 1 && (ch == 'T' || ch == 'F')) {  // success
-            updateRewindPoint(getPrevPos(cur_pos));  // don't actually eat the space
+            updateRewindPoint(result == 2 ? cur_pos : getPrevPos(cur_pos));  // not EOF then there is a whitespace
             rewindInputBuffer();
             stream_state = 0;
             return ch == 'T';

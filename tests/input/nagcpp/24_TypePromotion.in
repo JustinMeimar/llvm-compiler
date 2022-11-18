@@ -29,7 +29,7 @@ procedure main() returns int {
     boolean firstTest = 0.5 == 0;
     firstTest -> std_out; // Print F
     firstTest = INTMAX == 2.14748e+09;
-    firstTest -> std_out; // Print T
+    firstTest -> std_out; // Print F
     
     real secondTest =  FLOATMAX - INTMAX + 5.0;
     secondTest -> std_out; // Print 3.40282e+38

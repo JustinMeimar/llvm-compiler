@@ -1,0 +1,46 @@
+procedure main() returns integer {
+	tuple(boolean e, integer) e = (true, 4);
+	var q = e;
+	integer e12 = 3;
+    e.2 -> std_output;
+	e.e -> std_output;
+	as<integer[*]>(1..2) -> std_output;
+	{
+		integer e = 0;
+		as<integer[*]>(e..2) -> std_output;
+		e+3 -> std_output;
+	}
+	
+	'\n' -> std_output;
+	1.2 -> std_output;
+	-12e+1-> std_output;  // -120
+	-e12+1 -> std_output;  // -2
+	1.-> std_output;
+	1. -> std_output;
+	.1 -> std_output;
+	1e2 -> std_output;
+	1e+1 -> std_output;
+
+	'\n' -> std_output;
+	1.2e-1+2.e1-.1e2+3e-0 -> std_output;
+	
+	'\n' -> std_output;
+	{
+		boolean q = true;
+		if q e.2 -> std_output;
+	}
+	if null != q.e .2-> std_output;
+	if null != 0. 1.0 -> std_output;
+	if null != 0.1 .0 -> std_output;
+	if null != 1. .1 -> std_output;
+	if null != 1. 1 -> std_output;
+	if null != 1 .1 -> std_output;
+
+	return 0;
+}
+#split_token
+#split_token
+4T[1 2][0 1 2]3
+1.2-120-2110.110010
+13.12
+40.200.110.1

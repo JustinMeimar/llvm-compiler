@@ -177,7 +177,6 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
     /// interval -> ndarray
     if (rhsTypeID == TYPEID_INTERVAL) {
         this->m_type = typeMalloc();
-        typeInitFromCopy(this->m_type, targetType);
         if (targetTypeID == TYPEID_NDARRAY) {
             // interval -> vector of integer or real
             ArrayType *CTI = targetType->m_compoundTypeInfo;
@@ -200,11 +199,15 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
             for (int64_t i = 0; i < resultSize; i++) {
                 vec[i] = interval[0] + (int32_t)i;
             }
-            if (eid != ELEMENT_INTEGER) {
+            int64_t dims[1] = {resultSize};
+            typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, eid, 1, dims);
+            if (eid == ELEMENT_INTEGER) {
+                this->m_data = vec;
+            } else if (eid != ELEMENT_REAL) {
+                targetTypeError(targetType, "Attempt to convert interval to:");
+            } else {
                 arrayMallocFromCast(eid, ELEMENT_INTEGER, resultSize, vec, &this->m_data);
                 free(vec);
-            } else {
-                this->m_data = vec;
             }
         } else {
             targetTypeError(targetType, "Attempt to convert interval to:");

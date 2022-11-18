@@ -22,6 +22,9 @@ procedure main() returns integer {
         ' ' -> std_output;
         a <- std_input;
         a -> std_output;
+        ' ' -> std_output;
+        a <- std_input;
+        a -> std_output;
     }
 
     return 0;
