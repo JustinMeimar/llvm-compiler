@@ -3,7 +3,7 @@ procedure a(tuple(integer, integer) b) {
 }
 
 procedure main() returns integer {
-    call a();
+    call a(null);
 
     return 0;
 }

@@ -73,6 +73,25 @@ void typeInitFromUnknownType(Type *this) {
     this->m_compoundTypeInfo = NULL;
 }
 
+///------------------------------TUPLE---------------------------------------------------------------
+
+void variableSetStrIdArray(Variable *this, int64_t *stridArray) {
+    if (this->m_type->m_typeId != TYPEID_TUPLE) {
+        targetTypeError(this->m_type, "Attempt to set strIdArray of variable of type:");
+    }
+    TupleType *CTI = this->m_type->m_compoundTypeInfo;
+    memcpy(CTI->m_idxToStrid, stridArray, CTI->m_nField * sizeof(int64_t));
+}
+
+Type *variableSwapType(Variable *this, Type *newType) {
+    if (this->m_type->m_typeId != TYPEID_TUPLE || newType->m_typeId != TYPEID_TUPLE) {
+        targetTypeError(newType, "Attempt to set type to a different type:");
+    }
+    // TODO: type checking between type pair
+    Type *temp = this->m_type;
+    this->m_type = newType;
+    return temp;
+}
 
 ///------------------------------VARIABLE---------------------------------------------------------------
 

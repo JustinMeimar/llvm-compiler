@@ -1,0 +1,9 @@
+procedure main() returns integer {
+    tuple(integer, real) x;
+    x.1 -> std_output;
+    x.2 -> std_output;
+    return 0;
+}
+#split_token
+#split_token
+00

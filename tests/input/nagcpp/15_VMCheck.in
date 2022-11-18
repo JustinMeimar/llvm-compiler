@@ -1,0 +1,29 @@
+typedef integer int;
+typedef boolean bool;
+typedef character char;
+typedef real float;
+
+const int INT_MAX = 2147483647;
+//const int INT_MIN = -2147483648;
+const float INT_MAX_IN_FLOAT = 2.14748e+09;
+const float FLOAT_MAX = 3.40282347e+38;
+
+procedure main() returns int {
+    var x = 10; var y = 12;
+    real[3] test = [1, x/6, y/2];
+    int[3] test2 = [1*23, x%2, y*3];
+
+    real[*] p = [];
+    int[*] asdf = [];
+    char[*] nb = [];
+    bool[*] mom = [];
+
+    int[2] why = [INT_MAX, INT_MAX];
+    float[*] could = [INT_MAX_IN_FLOAT, FLOAT_MAX, INT_MAX];
+
+    float[3] shaw = could;
+
+    char[identity] yes = ['x'];
+
+    return 0;
+}

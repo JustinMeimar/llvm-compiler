@@ -1,8 +1,0 @@
-/* Invalid Test Case 2 */
-
-procedure returnfive(integer x) returns integer {
-    x = 5; // illegal
-    return x;
-}
-
-call returnfive(10);

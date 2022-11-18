@@ -40,6 +40,11 @@ void typeInitFromEmptyArray(Type *this);
 // unknown type
 void typeInitFromUnknownType(Type *this);
 
+///------------------------------TUPLE---------------------------------------------------------------
+
+void variableSetStrIdArray(Variable *this, int64_t *stridArray);  // for tuple var function parameter
+Type *variableSwapType(Variable *this, Type *newType);  // alternative way
+
 ///------------------------------VARIABLE LITERAL---------------------------------------------------------------
 
 // LLVM::Value *v = llvmfunction->call(variableMalloc());

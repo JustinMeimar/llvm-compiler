@@ -1,0 +1,17 @@
+procedure changeTup4(var a) {
+  a.b = 3;
+}
+procedure changeTup1(var tuple(integer b, integer) a) {
+  call changeTup4(a);
+}
+
+procedure main() returns integer {
+  tuple(integer d, integer e) a = (1, 1);
+  call changeTup1(a);
+  a.d -> std_output;
+
+  return 0;
+}
+#split_token
+#split_token
+3

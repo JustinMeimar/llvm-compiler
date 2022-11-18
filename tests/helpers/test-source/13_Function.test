@@ -1,16 +1,46 @@
 typedef integer int;
 typedef boolean bool;
 typedef character char;
-typedef tuple tup;
 typedef real float;
 
-const ints INT_MAX = 2147483647;
-const ints INT_MIN = -2147483648;
-const floats INT_MAX_IN_FLOAT = 2.14748e+09;
-const floats FLOAT_MAX = 3.40282347e+38;
+const int INT_MAX = 2147483647;
+//const int INT_MIN = -2147483648;
+const float INT_MAX_IN_FLOAT = 2.14748e+09;
+const float FLOAT_MAX = 3.40282347e+38;
+
+function winner(int perception) returns integer = 15 % (1+12); // Returns 2
+
+function recursive(int x) returns int {
+    if x == 5 return x;
+    return recursive(x+1);
+}
+
+function signature(int one, int two, int three, float five, char nine) returns real;
 
 procedure main() returns int {
-    //
+    // 
+    int feedback = signature(1, 2, 3, 5.0, '9') + as<int>('1');
+    feedback -> std_out; // Should print 117
+    '\n' -> std_out;
+
+    int y = recursive (0);
+
+    y -> std_out; // Prints 5
+    '\n' -> std_out;
+
+    const winners = winner(10);
+    winners -> std_out; // Prints 2
+    '\n' -> std_out;
 
     return 0;
 }
+
+function signature(int one, int two, int three, float five, char nine) returns int {
+    const int sum = one + two + three + as<int>(five) + as<int>(nine);
+    return sum;
+}
+#split_token
+#split_token
+117
+5
+2
