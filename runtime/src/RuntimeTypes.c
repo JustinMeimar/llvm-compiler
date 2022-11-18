@@ -10,10 +10,11 @@
 ///------------------------------TYPE AND VARIABLE---------------------------------------------------------------
 
 Type *typeMalloc() {
+    Type *type = malloc(sizeof(Type));
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(malloc type)\n");
+    fprintf(stderr, "(malloc type %p)\n", (void *)type);
 #endif
-    return malloc(sizeof(Type));
+    return type;
 }
 
 void typeInitFromCopy(Type *this, Type *other) {
@@ -99,7 +100,7 @@ void typeInitFromArrayType(Type *this, TypeID typeID, ElementTypeID eid, int8_t 
 
 void typeDestructor(Type *this) {
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(destruct type)");
+    fprintf(stderr, "(destruct type %p)", (void *)this);
     typeDebugPrint(this);
     fprintf(stderr, "\n");
 #endif
@@ -132,7 +133,7 @@ void typeDestructor(Type *this) {
 void typeDestructThenFree(Type *this) {
     typeDestructor(this);
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(free type)\n");
+    fprintf(stderr, "(free type %p)\n", (void *)this);
 #endif
     free(this);
 }

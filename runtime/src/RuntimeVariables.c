@@ -139,6 +139,9 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         }
         this->m_fieldPos = -1;
         this->m_parent = this->m_data;
+#ifdef DEBUG_PRINT
+        variableInitDebugPrint(this, "empty array -> any");
+#endif
         return;
     }
 
@@ -214,6 +217,9 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         }
         this->m_fieldPos = -1;
         this->m_parent = this->m_data;
+#ifdef DEBUG_PRINT
+        variableInitDebugPrint(this, "interval -> ndarray");
+#endif
         return;
     }
 
@@ -236,6 +242,9 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
             this->m_fieldPos = -1;
             this->m_parent = this->m_data;
         }
+#ifdef DEBUG_PRINT
+        variableInitDebugPrint(this, "any -> tuple");
+#endif
         return;
     }
 
@@ -290,15 +299,19 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
 
         this->m_fieldPos = -1;
         this->m_parent = this->m_data;
+#ifdef DEBUG_PRINT
+        variableInitDebugPrint(this, "array/string -> array/string");
+#endif
         return;
     }
 }
 
 Variable *variableMalloc() {
+    Variable *var = malloc(sizeof(Variable));
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(malloc var)\n");
+    fprintf(stderr, "(malloc var %p)\n", (void *)var);
 #endif
-    return malloc(sizeof(Variable));
+    return var;
 }
 
 void variableInitFromMemcpy(Variable *this, Variable *other) {
@@ -331,6 +344,9 @@ void variableInitFromMemcpy(Variable *this, Variable *other) {
     }
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "memcpy");
+#endif
 }
 
 void variableInitFromIdentifier(Variable *this, Variable *other) {
@@ -362,6 +378,9 @@ void variableInitFromNull(Variable *this, Type *type) {
     }
     this->m_parent = this->m_data;
     this->m_fieldPos = -1;
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "null -> any");
+#endif
 }
 
 // <type> var = identity;
@@ -385,6 +404,9 @@ void variableInitFromIdentity(Variable *this, Type *type) {
     }
     this->m_parent = this->m_data;
     this->m_fieldPos = -1;
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "identity -> any");
+#endif
 }
 
 void variableInitFromUnaryOp(Variable *this, Variable *operand, UnaryOpCode opcode) {
@@ -415,6 +437,9 @@ void variableInitFromUnaryOp(Variable *this, Variable *operand, UnaryOpCode opco
     }
     this->m_parent = this->m_data;
     this->m_fieldPos = -1;
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "unary op");
+#endif
 }
 
 void computeIvlByIntBinop(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode) {
@@ -489,6 +514,9 @@ void binopPromoteComputationAndDispose(Variable *this, Variable *op1, Variable *
 
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "from binop helper");
+#endif
 }
 
 
@@ -510,6 +538,9 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
 
         this->m_fieldPos = -1;
         this->m_parent = this->m_data;
+#ifdef DEBUG_PRINT
+        variableInitDebugPrint(this, "binop with empty array");
+#endif
         return;
     } else if (op1Type->m_typeId == TYPEID_EMPTY_ARRAY || op2Type->m_typeId == TYPEID_EMPTY_ARRAY) {
         errorAndExit("Unexpected empty array in binary op!");
@@ -524,6 +555,9 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
     switch (opcode) {
         case BINARY_INDEX: {
             // TODO
+#ifdef DEBUG_PRINT
+            variableInitDebugPrint(this, "binop index(unimplemented!)");
+#endif
         } break;
         case BINARY_EXPONENT:
         case BINARY_MULTIPLY:
@@ -674,6 +708,9 @@ void variableInitFromConcat(Variable *this, Variable *op1, Variable *op2) {
 
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "binop concat");
+#endif
 }
 
 void variableInitFromBinaryOp(Variable *this, Variable *op1, Variable *op2, BinOpCode opcode) {
@@ -760,6 +797,9 @@ void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed
     arrayMallocFromPromote(CTI->m_elementTypeID, ELEMENT_MIXED, size, mixed->m_data, &this->m_data);
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "mixed array promote to same type");
+#endif
 }
 
 void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail) {
@@ -768,6 +808,9 @@ void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *
     this->m_data = intervalTypeMallocDataFromHeadTail(variableGetIntegerValue(head), variableGetIntegerValue(tail));
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "interval head tail");
+#endif
 }
 
 void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step) {
@@ -784,6 +827,9 @@ void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step)
     for (int64_t i = 0; i < dims[0]; i++) {
         vec[i] = interval[0] + (int32_t)i * k;
     }
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "interval step");
+#endif
 }
 
 void variableInitFromNDArray(Variable *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims,
@@ -805,6 +851,9 @@ void variableInitFromNDArray(Variable *this, TypeID typeID, ElementTypeID eid, i
     }
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "from ndarray");
+#endif
 }
 
 Variable *variableGetTupleField(Variable *tuple, int64_t pos) {
@@ -826,7 +875,7 @@ Variable *variableGetTupleFieldFromID(Variable *tuple, int64_t id) {
 
 void variableDestructor(Variable *this) {
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(destruct var)");
+    fprintf(stderr, "(destruct var %p)", (void *)this);
     variableDebugPrint(this);
     fprintf(stderr, "\n");
 #endif
@@ -865,7 +914,7 @@ void variableDestructor(Variable *this) {
 void variableDestructThenFree(Variable *this) {
     variableDestructor(this);
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(free var)\n");
+    fprintf(stderr, "(free var %p)\n", (void *)this);
 #endif
     free(this);
 }

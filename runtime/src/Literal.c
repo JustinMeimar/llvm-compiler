@@ -3,6 +3,7 @@
 #include "Literal.h"
 #include "NDArray.h"
 #include "RuntimeErrors.h"
+#include "VariableStdio.h"
 
 ///------------------------------TYPE---------------------------------------------------------------
 
@@ -211,6 +212,9 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
     }
     this->m_parent = this->m_data;
     this->m_fieldPos = -1;
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "from vector literal");
+#endif
 }
 
 void variableInitFromString(Variable *this, int64_t strLength, int8_t *str) {
@@ -231,16 +235,28 @@ void variableInitFromTupleLiteral(Variable *this, int64_t nField, Variable **var
 
     this->m_fieldPos = -1;
     this->m_parent = this->m_data;
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "from tuple literal");
+#endif
 }
 
 void variableInitFromStdInput(Variable *this) {
     variableEmptyInitFromTypeID(this, TYPEID_STREAM_IN);
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "a std_input");
+#endif
 }
 
 void variableInitFromStdOutput(Variable *this) {
     variableEmptyInitFromTypeID(this, TYPEID_STREAM_OUT);
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "a std_output");
+#endif
 }
 
 void variableInitFromEmptyArray(Variable *this) {
     variableEmptyInitFromTypeID(this, TYPEID_EMPTY_ARRAY);
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "an empty array");
+#endif
 }

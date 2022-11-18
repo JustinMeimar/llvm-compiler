@@ -68,6 +68,14 @@ void typeDebugPrint(Type *this) {
     fprintf(fd, ">");
 }
 
+void typeInitDebugPrint(Type *this, char *msg) {
+    FILE *fd = stderr;
+    fprintf(fd, "(init type %p '", (void *)this);
+    fprintf(fd, "%s", msg);
+    fprintf(fd, "')");
+    typeDebugPrint(this);
+    fprintf(fd, "\n");
+}
 
 
 void variablePrintToStream(Variable *this, Variable *stream) {
@@ -182,6 +190,15 @@ void variableDebugPrint(Variable *this) {
         default: break;
     }
     fprintf(stderr, ")");
+}
+
+void variableInitDebugPrint(Variable *this, char *msg) {
+    FILE *fd = stderr;
+    fprintf(fd, "(init var %p '", (void *)this);
+    fprintf(fd, "%s", msg);
+    fprintf(fd, "')");
+    variableDebugPrint(this);
+    fprintf(fd, "\n");
 }
 
 ///------------------------------STREAM_STD_INPUT---------------------------------------------------------------

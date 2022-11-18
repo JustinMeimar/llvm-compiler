@@ -70,7 +70,7 @@ def main():
             run_program(args)
 
             # run program
-            args = ["valgrind", binaryFile]
+            args = ["valgrind", "--leak-check=yes", binaryFile]
             with open(test_ins_path, "r") as inFile:
                 print(run_program(args, inFile).decode("UTF-8"), file=sys.stderr, flush=True)
 
