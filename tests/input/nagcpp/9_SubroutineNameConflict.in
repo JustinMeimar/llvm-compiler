@@ -1,0 +1,35 @@
+procedure malloc() {}
+procedure free() {}
+procedure varMalloc() {}
+procedure varFree() {}
+procedure vMalloc() {}
+procedure vFree() {}
+procedure variableMalloc() {}
+procedure variableFree() {}
+procedure mallocVariable() {}
+procedure freeVariable() {}
+procedure malloc_variable() {}
+procedure malloc_free() {}
+procedure tupleMalloc() {}
+procedure tupMalloc() {}
+procedure tMalloc() {}
+procedure tupleElementMalloc() {}
+procedure scalarMalloc() {}
+procedure scalarFree() {}
+procedure intervalMalloc() {}
+procedure intervalFree() {}
+procedure typeMalloc() {}
+procedure variableTypeMalloc() {}
+procedure varTyMalloc() {}
+procedure variabelTyMalloc() {}
+procedure warpMalloc() {}
+procedure mallocWrapper() {}
+procedure mallocWrap() {}
+procedure freeWrap() {}
+procedure freeWrapper() {}
+procedure wrapFree() {}
+
+procedure main() returns integer {
+    1 -> std_output; 
+    return 0;
+}

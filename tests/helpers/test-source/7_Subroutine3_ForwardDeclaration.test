@@ -1,0 +1,12 @@
+function f(integer x) returns integer;
+
+procedure main() returns integer {
+  integer y = f(13);
+  y -> std_output;
+  return 0;
+}
+
+function f(integer x) returns integer = x^2;
+#split_token
+#split_token
+169

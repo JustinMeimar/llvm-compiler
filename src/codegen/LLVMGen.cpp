@@ -196,7 +196,9 @@ namespace gazprea
             returnType,
             parameterTypes,
             false);
-        auto subroutine = llvm::cast<llvm::Function>(mod.getOrInsertFunction(subroutineSymbol->name, subroutineTy).getCallee());
+        std::string prefix = subroutineSymbol->name == "main" ? "" : "Gazprea.";
+
+        auto subroutine = llvm::cast<llvm::Function>(mod.getOrInsertFunction(prefix + subroutineSymbol->name, subroutineTy).getCallee());
         subroutineSymbol->llvmFunction = subroutine;
 
         if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EMPTY_BODY_TOKEN){
