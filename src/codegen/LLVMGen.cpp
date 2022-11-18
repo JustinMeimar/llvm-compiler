@@ -269,6 +269,7 @@ namespace gazprea
                     variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
                 } else {
                     variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
+                    llvmFunction.call("variableSwapType", { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject });
                 }
             }
             visit(t->children[3]);
