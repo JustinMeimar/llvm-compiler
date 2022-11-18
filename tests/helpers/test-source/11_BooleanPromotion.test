@@ -1,0 +1,20 @@
+procedure main() returns integer {
+
+    boolean b0 = 1.0 == 1;
+    b0 -> std_output; 
+    boolean b1 = 1.0 < 1;
+    b1 -> std_output; 
+    boolean b2 = 1 != 1.1;
+    b2 -> std_output; 
+    boolean b3 = 1 >= 1.0;
+    b3 -> std_output; 
+    boolean b4 = 1.001 == 1;
+    b4 -> std_output;
+ 
+    return 0;
+}
+
+#split_token
+#split_token
+
+TFTTF

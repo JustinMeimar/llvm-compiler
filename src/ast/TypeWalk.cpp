@@ -159,16 +159,25 @@ namespace gazprea {
         visitChildren(t);
         auto RHSTy = t->children[1]->evalType;
         auto numLHSExpressions = t->children[0]->children.size();
+        auto *ctx = dynamic_cast<GazpreaParser::AssignmentStatementContext*>(t->parseTree);  // for exception line & charPos 
+        
         if (RHSTy == nullptr) {
-            // The expression can be from an inferred_type parameter
+            auto LHSExpressionAST = t->children[0]->children[0];
+            auto vs = std::dynamic_pointer_cast<VariableSymbol>(LHSExpressionAST->children[0]->symbol);
+            if(vs != nullptr && vs->typeQualifier == "const") {
+                throw ConstAssignmentError(t->children[0]->getText(), ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+            }
             return;
         }
         if (numLHSExpressions == 1) {
             auto LHSExpressionAST = t->children[0]->children[0];
+            auto vs = std::dynamic_pointer_cast<VariableSymbol>(LHSExpressionAST->children[0]->symbol);
+            if(vs != nullptr && vs->typeQualifier == "const") {
+                throw ConstAssignmentError(t->children[0]->getText(), ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+            }
             if (LHSExpressionAST->evalType == nullptr) {
                 return;
             }
-
             if (LHSExpressionAST->evalType->getTypeId() == Type::TUPLE && RHSTy->getTypeId() == Type::TUPLE) {
                 auto tupleTypeInRHSExpression = std::dynamic_pointer_cast<TupleType>(RHSTy);
                 auto tupleTypeInLHSExpression = std::dynamic_pointer_cast<TupleType>(LHSExpressionAST->evalType);
@@ -348,7 +357,6 @@ namespace gazprea {
                 break;
             case GazpreaParser::ISEQUAL:
             case GazpreaParser::ISNOTEQUAL:
-                std::cout << node1->evalType->getTypeId() << "  " << node2->evalType->getTypeId() << std::endl;
                 t->evalType = tp->getResultType(tp->equalityResultType, node1, node2, t);
                 break; 
         }     
