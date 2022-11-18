@@ -43,7 +43,7 @@ procedure main() returns int {
     return 0;
 }
 #split_token
-#splot_token
+#split_token
 T
 \
 4.276e-08

@@ -179,9 +179,9 @@ void elementMallocFromCast(ElementTypeID resultID, ElementTypeID srcID, void *sr
         *result = resultBool;
         switch (srcID) {
             case ELEMENT_CHARACTER:
-                *resultBool = *((int8_t *)src) == 0; break;
+                *resultBool = *((int8_t *)src) != 0; break;
             case ELEMENT_INTEGER:
-                *resultBool = *((int32_t *)src) == 0; break;
+                *resultBool = *((int32_t *)src) != 0; break;
             case ELEMENT_REAL:
                 errorAndExit("Attempt to cast real to boolean!"); break;
             default: errorAndExit("This should not happen!"); break;

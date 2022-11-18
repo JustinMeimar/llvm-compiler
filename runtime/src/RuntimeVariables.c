@@ -105,6 +105,15 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         targetTypeError(rhsType, "Null or identity not allowed to be rhs:");
     }
 
+    ///- scalar null/identity -> any
+    if (typeIsScalarNull(rhsType)) {
+        variableInitFromNull(this, targetType);
+        return;
+    } else if (typeIsScalarIdentity(rhsType)) {
+        variableInitFromIdentity(this, targetType);
+        return;
+    }
+
     ///- empty array -> any
     if (rhsTypeID == TYPEID_EMPTY_ARRAY) {
         // empty array -> ndarray/string
@@ -137,20 +146,8 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
     if (targetTypeID == TYPEID_INTERVAL) {
         // ndarray/interval -> interval
         if (rhsTypeID == TYPEID_NDARRAY) {
-            // only possible case is when the ndarray is a scalar null/identity
-            ArrayType *CTI = rhsType->m_compoundTypeInfo;
-            ElementTypeID eid = CTI->m_elementTypeID;
-            if (CTI->m_nDim != 0 || (eid != ELEMENT_NULL && eid != ELEMENT_IDENTITY))
-                targetTypeError(rhsType, "Attempt to convert to interval from:");
-            this->m_type = typeMalloc();
-            typeInitFromIntervalType(this->m_type, INTEGER_BASE_INTERVAL);
-            if (eid == ELEMENT_NULL) {
-                variableInitFromNull(this, NULL);
-            } else if (eid == ELEMENT_IDENTITY) {
-                variableInitFromIdentity(this, NULL);
-            } else {
-                targetTypeError(rhsType, "Attempt to convert to interval from:");
-            }
+            // only possible case is when the ndarray is a scalar null/identity, which is checked before
+            targetTypeError(rhsType, "Attempt to convert to interval from:");
         } else if (rhsTypeID == TYPEID_INTERVAL) {
             // we just copy it
             variableInitFromMemcpy(this, rhs);
@@ -221,20 +218,21 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
     /// any -> tuple
     if (rhsTypeID == TYPEID_TUPLE || targetTypeID == TYPEID_TUPLE) {
         if (rhsTypeID != TYPEID_TUPLE || targetTypeID != TYPEID_TUPLE) {
-            errorAndExit("Tuple can not be converted to/from any other type!");
+            targetTypeError(rhsType, "Tuple can not be converted to/from any other type, rhsType:");
+        } else {
+            // tuple -> tuple
+            // we convert variables pair-wise
+            this->m_type = typeMalloc();
+            TupleType *rhsCTI = rhsType->m_compoundTypeInfo;
+            TupleType *targetCTI = targetType->m_compoundTypeInfo;
+            if (rhsCTI->m_nField != targetCTI->m_nField) {
+                errorAndExit("Tuple can not be converted to/from tuple of different size!");
+            }
+            typeInitFromCopy(this->m_type, targetType);
+            this->m_data = tupleTypeMallocDataFromPCADP(targetCTI, rhs, config);
+            this->m_fieldPos = -1;
+            this->m_parent = this->m_data;
         }
-        // tuple -> tuple
-        // we convert variables pair-wise
-        TupleType *rhsCTI = rhsType->m_compoundTypeInfo;
-        TupleType *targetCTI = targetType->m_compoundTypeInfo;
-        if (rhsCTI->m_nField != targetCTI->m_nField) {
-            errorAndExit("Tuple can not be converted to/from tuple of different size!");
-        }
-        this->m_type = typeMalloc();
-        typeInitFromCopy(this->m_type, targetType);
-        this->m_data = tupleTypeMallocDataFromPCADP(targetCTI, rhs, config);
-        this->m_fieldPos = -1;
-        this->m_parent = this->m_data;
         return;
     }
 

@@ -1,11 +1,9 @@
-procedure a(tuple(integer, integer) b) {
-    
-}
-
 procedure main() returns integer {
-    call a(null);
-
+    tuple(integer, real) x;
+    x.1 -> std_output;
+    x.2 -> std_output;
     return 0;
 }
 #split_token
 #split_token
+00

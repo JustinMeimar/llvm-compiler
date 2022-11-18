@@ -3,6 +3,7 @@
 typedef integer ints;
 typedef boolean bools;
 typedef character chars;
+typedef tuple tups;
 typedef real floats;
 
 const ints INT_MAX = 2147483647;
