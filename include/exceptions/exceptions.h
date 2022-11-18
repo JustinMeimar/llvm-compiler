@@ -140,6 +140,16 @@ class InvalidArgumentError : public std::exception {
         }
 };
 
+class ConstAssignmentError : public std::exception {
+    private:
+        std::string msg;
+    public:
+        ConstAssignmentError(std::string nodeText, std::string fullText, int line, int charPos);
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+};
+
 } // namespace gazpreak
 
 

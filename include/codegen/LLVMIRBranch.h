@@ -13,7 +13,9 @@ public:
     int numConditionals;
     int numPredicatedLoops;
     int numIteratorLoops;
-    
+
+    bool hitReturnStat = true;
+     
     std::vector<llvm::BasicBlock*> blockStack; 
     std::vector<llvm::BasicBlock*> loopBlockStack; // keep track of which loop to break out of
 
