@@ -83,6 +83,10 @@ void variableSetStrIdArray(Variable *this, int64_t *stridArray) {
     memcpy(CTI->m_idxToStrid, stridArray, CTI->m_nField * sizeof(int64_t));
 }
 
+Type *variableGetType(Variable *this) {
+    return this->m_type;
+}
+
 Type *variableSwapType(Variable *this, Type *newType) {
     if (this->m_type->m_typeId != TYPEID_TUPLE || newType->m_typeId != TYPEID_TUPLE) {
         targetTypeError(newType, "Attempt to set type to a different type:");

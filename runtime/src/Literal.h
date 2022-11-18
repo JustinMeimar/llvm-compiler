@@ -43,6 +43,7 @@ void typeInitFromUnknownType(Type *this);
 ///------------------------------TUPLE---------------------------------------------------------------
 
 void variableSetStrIdArray(Variable *this, int64_t *stridArray);  // for tuple var function parameter
+Type *variableGetType(Variable *this);
 Type *variableSwapType(Variable *this, Type *newType);  // alternative way
 
 ///------------------------------VARIABLE LITERAL---------------------------------------------------------------
