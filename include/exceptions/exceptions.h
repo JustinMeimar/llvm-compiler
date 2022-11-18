@@ -150,6 +150,16 @@ class ConstAssignmentError : public std::exception {
         }
 };
 
+class InvalidDeclarationError : public std::exception {
+    private:
+    public:
+        std::string msg;
+        InvalidDeclarationError(std::string nodeText, std::string fullText, int line, int charPos);
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+};
+
 } // namespace gazpreak
 
 

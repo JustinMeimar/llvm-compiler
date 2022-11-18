@@ -114,7 +114,7 @@ namespace gazprea {
             variableDeclarationSymbol->type = t->children[2]->evalType;
             return;
         }
-        
+
         auto varTy = t->children[1]->evalType;  // Filled in by visitChildren(t), and specifically, visitIdentifier(t);
         auto exprTy = t->children[2]->evalType;
 
@@ -122,7 +122,10 @@ namespace gazprea {
             // The expression can be from an inferred_type parameter
             return;
         }
-        
+        if (varTy == nullptr) {
+            auto *ctx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext*>(t->parseTree);
+            throw InvalidDeclarationError(t->children[1]->getText(), ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        } 
         if (exprTy->getTypeId() == Type::IDENTITYNULL) {
             t->children[2]->promoteToType = varTy;
 

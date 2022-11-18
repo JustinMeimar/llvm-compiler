@@ -1,0 +1,44 @@
+procedure main() returns integer {
+
+    integer x = 5;
+    real r = 3.14;
+    character a = 'a';
+    boolean b = true;
+
+    //logical result type
+    boolean T = true;
+    boolean F = false;
+
+    T xor F -> std_output;
+    F xor T -> std_output;
+    F or T -> std_output;
+    T or F -> std_output;
+    T and (T xor F) -> std_output;
+    F or (F and T) -> std_output;
+    F and not T -> std_output;
+    not F or T -> std_output;
+
+    //arithemtic result type
+    
+    1 + 4.5 == 5.5 -> std_output;
+    4.15 + 1 == 5.15 -> std_output;
+    4.15 + 4.15 == 9.30 -> std_output;
+    1 - 1 == 0 -> std_output;
+
+    //result & equality result type
+
+    1 <= 1.0 -> std_output;
+    1 > 1.0 -> std_output;
+    1 != 12.1 -> std_output;
+    1 == 1.0e0 -> std_output;
+    not (1 == 1.000) -> std_output;
+    4.15 >= 5 -> std_output;
+    5 >= 4.15 -> std_output;
+
+
+    return 0;
+}
+
+#split_token
+#split_token
+TTTTTFFTTTFTTFTTFFT
