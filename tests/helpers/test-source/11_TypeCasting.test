@@ -1,0 +1,23 @@
+// Testing Type casting
+
+typedef integer ints;
+typedef boolean bools;
+typedef character chars;
+typedef tuple tups;
+typedef real floats;
+
+const ints INT_MAX = 2147483647;
+const ints INT_MIN = -2147483648;
+const floats INT_MAX_IN_FLOAT = 2.14748e+09;
+const floats FLOAT_MAX = 3.40282347e+38;
+const floats FLOAT_MIN = 1.17549e-38;
+
+procedure main() returns int {
+    // Testing int casting
+    bools one = null; // Should be false for now
+     
+
+    return 0;
+}
+#split_token
+#split_token

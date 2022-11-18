@@ -1,0 +1,12 @@
+/* Invalid Test Case 1 */
+
+/* Simple alias test */
+procedure helloworld(var integer x, var integer y) returns integer {
+    return a + b;
+}
+
+integer a = 1;
+integer b = 2;
+
+call helloworld(a, b); // Legal
+call helloworld(a, a); // Illegal
