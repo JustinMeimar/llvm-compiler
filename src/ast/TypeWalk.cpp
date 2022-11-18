@@ -164,9 +164,9 @@ namespace gazprea {
         if (RHSTy == nullptr) {
             auto LHSExpressionAST = t->children[0]->children[0];
             auto vs = std::dynamic_pointer_cast<VariableSymbol>(LHSExpressionAST->children[0]->symbol);
-            // if(vs != nullptr && vs->typeQualifier == "const") {
-                // throw ConstAssignmentError(t->children[0]->getText(), ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
-            // }
+            if(vs != nullptr && vs->typeQualifier == "const") {
+                throw ConstAssignmentError(t->children[0]->getText(), ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+            }
             return;
         }
         if (numLHSExpressions == 1) {

@@ -1,0 +1,29 @@
+procedure fib(var a) returns integer {
+    if(a == 0){ 
+        return 0; 
+    }
+    if(a == 1){ 
+        return 1; 
+    }
+    integer temp = fib(a-1) + fib(a -2);
+    return temp;
+}
+
+procedure main() returns integer {
+
+    integer f = fib(17);
+    f -> std_output;
+
+    integer a = 0; //acumulate
+    integer i = 0; 
+    loop while (i < 16) {
+        integer j = fib(i);
+        a = a + j;
+        a -> std_output;
+        i = i + 1;
+    }
+    a -> std_output;
+
+    return 0;
+}
+

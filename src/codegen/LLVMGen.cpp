@@ -296,6 +296,7 @@ namespace gazprea
             && t->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
                 llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
             }
+            llvmBranch.hitReturnStat = true;
             ir.CreateRet(returnIntegerValue);
             return;
         }
@@ -303,6 +304,7 @@ namespace gazprea
         && t->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
         }
+        llvmBranch.hitReturnStat = true;
         ir.CreateRet(runtimeVariableObject);
     }
 
@@ -631,8 +633,12 @@ namespace gazprea
         }
         //If Body
         ir.SetInsertPoint(IfBodyBB);
+        llvmBranch.hitReturnStat = false;
         visit(t->children[1]);
-        ir.CreateBr(Merge);
+        if (!llvmBranch.hitReturnStat){
+            ir.CreateBr(Merge);
+        }
+        llvmBranch.hitReturnStat = false;
         // Handle Arbitrary Number of Else If
         int elseIfIdx = 2; // 0 is if expr  1 is if body 2 starts else if
         llvm::BasicBlock* residualElseIfHeader = nullptr; //we declare next else if header in previous itteration because we need it for the conditional branch
@@ -661,8 +667,12 @@ namespace gazprea
             } 
             //Fill Body
             ir.SetInsertPoint(elseIfBodyBlock);
+            llvmBranch.hitReturnStat = false;
             visit(elifNode->children[1]);
-            ir.CreateBr(Merge);
+            if (!llvmBranch.hitReturnStat){
+                ir.CreateBr(Merge);
+            }
+            llvmBranch.hitReturnStat = false;
             elseIfIdx++; //Elif Counter
         } 
         // Else Caluse (Optional) 
@@ -671,8 +681,12 @@ namespace gazprea
             int elseIdx = t->children.size()-1;
             auto elseNode = t->children[elseIdx]->children[0]; 
             ir.SetInsertPoint(ElseBlock);
+            llvmBranch.hitReturnStat = false;
             visit(elseNode);
-            ir.CreateBr(Merge);
+            if (!llvmBranch.hitReturnStat) {
+                ir.CreateBr(Merge);
+            }
+            llvmBranch.hitReturnStat = false;
         }
         // Merge
         parentFunc->getBasicBlockList().push_back(Merge); 
