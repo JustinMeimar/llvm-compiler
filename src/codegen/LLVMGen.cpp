@@ -995,6 +995,15 @@ namespace gazprea
     }
 
     void LLVMGen::visitUnaryOperation(std::shared_ptr<AST> t) {
+        if (t->children[0]->getNodeType() == GazpreaParser::MINUS 
+        && t->children[1]->getNodeType() == GazpreaParser::IntegerConstant
+        && t->children[1]->parseTree->getText() == "2147483648") {
+            // Handle the edge case: integer x = -2147483648;
+            auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromIntegerScalar", {runtimeVariableObject, ir.getInt32(-2147483648)});
+            t->llvmValue = runtimeVariableObject;
+            return;
+        }
         visitChildren(t);
         int opCode;
         switch (t->children[0]->getNodeType()) {
