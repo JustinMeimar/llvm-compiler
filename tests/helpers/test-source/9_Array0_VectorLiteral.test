@@ -1,8 +1,0 @@
-procedure main() returns integer {
-    integer[3] x = [1, 2, 3];
-    x -> std_output;
-    return 0;
-}
-#split_token
-#split_token
-[1 2 3]
