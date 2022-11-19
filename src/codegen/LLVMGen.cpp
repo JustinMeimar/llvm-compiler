@@ -199,7 +199,7 @@ namespace gazprea
             returnType,
             parameterTypes,
             false);
-        std::string prefix = subroutineSymbol->name == "main" ? "" : "gazprea.";
+        std::string prefix = subroutineSymbol->name == "main" ? "" : "gazprea.subroutine.";
 
         auto subroutine = llvm::cast<llvm::Function>(mod.getOrInsertFunction(prefix + subroutineSymbol->name, subroutineTy).getCallee());
         subroutineSymbol->llvmFunction = subroutine;
@@ -215,52 +215,40 @@ namespace gazprea
             initializeGlobalVariables();
         }
         visit(t->children[1]);  // Populate Argument Symbol's llvmValue
-        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
-            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
-            if (variableSymbol->typeQualifier == "const") {
-                auto runtimeVariableParameterObject = llvmFunction.call("variableMalloc", {});
-                llvmFunction.call("variableInitFromParameter", { runtimeVariableParameterObject, variableSymbol->llvmPointerToTypeObject, subroutine->getArg(i) });
-                variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
-                llvmFunction.call("typeDestructThenFree", variableSymbol->llvmPointerToTypeObject);
-            } else {
-                variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
-                llvmFunction.call("variableSwapType", { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject });
-                // TODO: FREE
-                // llvmFunction.call("typeDestructThenFree", variableSymbol->llvmPointerToTypeObject);
-            }
-        }
+        initializeSubroutineParameters(subroutineSymbol);
         visit(t->children[3]);  // Visit body
         
         if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EXPRESSION_BODY_TOKEN) {
             // Subroutine with Expression Body
             if (t->children[2]->isNil()) {
+                freeSubroutineParameters(subroutineSymbol);
                 ir.CreateRetVoid();
-            } else {
-                auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
-                llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, t->children[3]->children[0]->llvmValue });
-                
-                if (subroutineSymbol->name == "main") {
-                    auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", {runtimeVariableObject});
+                return;
+            }
 
-                    if (t->children[3]->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
-                    && t->children[3]->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
-                        llvmFunction.call("variableDestructThenFree", { t->children[3]->children[0]->llvmValue });
-                    }
-                    freeGlobalVariables();
-                    ir.CreateRet(returnIntegerValue);
-                } else {
-                    if (t->children[3]->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
-                    && t->children[3]->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
-                        llvmFunction.call("variableDestructThenFree", { t->children[3]->children[0]->llvmValue });
-                    }
-                    ir.CreateRet(runtimeVariableObject);
-                }
+            auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, t->children[3]->children[0]->llvmValue });
+            
+            if (t->children[3]->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+            && t->children[3]->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
+                llvmFunction.call("variableDestructThenFree", { t->children[3]->children[0]->llvmValue });
+            }
+            freeSubroutineParameters(subroutineSymbol);
+            
+            if (subroutineSymbol->name == "main") {
+                auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", runtimeVariableObject);
+                llvmFunction.call("variableDestructThenFree", runtimeVariableObject);
+                freeGlobalVariables();
+                ir.CreateRet(returnIntegerValue);
+            } else {
+                ir.CreateRet(runtimeVariableObject);
             }
         } else {
             // subroutine declaration and definition;
             if (t->children[2]->isNil()) {
                 // Free all variables in a block if no return statement in a subroutine
                 freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
+                freeSubroutineParameters(subroutineSymbol);
                 ir.CreateRetVoid();
             }
         }
@@ -276,30 +264,28 @@ namespace gazprea
             throw BadReturnTypeError(subroutineSymbol->type->getName(),ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
             );
         }
+        
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, t->children[0]->llvmValue });
-        if (subroutineSymbol->name == "main") {
-            auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { runtimeVariableObject });
-            if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
-            && t->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
-                llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
-            }
-            llvmBranch.hitReturnStat = true;
-            
-            freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
-            freeGlobalVariables();
-            ir.CreateRet(returnIntegerValue);
-            return;
-        }
-
-        // Non-main subroutine
+        
         if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
         && t->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
         }
+        freeSubroutineParameters(subroutineSymbol);
         llvmBranch.hitReturnStat = true;
-        freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
-        ir.CreateRet(runtimeVariableObject);
+        
+        if (subroutineSymbol->name == "main") {
+            auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { runtimeVariableObject });
+            freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
+            freeGlobalVariables();
+            llvmFunction.call("variableDestructThenFree", runtimeVariableObject);
+            ir.CreateRet(returnIntegerValue);
+        } else {
+            // Non-main subroutine
+            freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
+            ir.CreateRet(runtimeVariableObject);
+        }
     }
 
     void LLVMGen::visitVarDeclarationStatement(std::shared_ptr<AST> t) {
@@ -886,6 +872,11 @@ namespace gazprea
         llvmFunction.call("variableInitFromCast", { runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue });
         t->llvmValue = runtimeVariableObject;
         llvmFunction.call("typeDestructThenFree", t->children[0]->llvmValue);
+        
+        if (t->children[1]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+        && t->children[1]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
+            llvmFunction.call("variableDestructThenFree", { t->children[1]->llvmValue });
+        }
     }
 
     void LLVMGen::visitTypedef(std::shared_ptr<AST> t) {
@@ -1095,6 +1086,7 @@ namespace gazprea
             auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
             if (variableSymbol->typeQualifier == "var") {
                 llvmFunction.call("variableSwapType", { t->children[1]->children[i]->llvmValue, oldTypeVector[i] });
+                // llvmFunction.call("typeDestructThenFree", newType);
             }
         }
     }
@@ -1135,6 +1127,7 @@ namespace gazprea
             auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
             if (variableSymbol->typeQualifier == "var") {
                 llvmFunction.call("variableSwapType", { t->children[1]->children[i]->llvmValue, oldTypeVector[i] });
+                // llvmFunction.call("typeDestructThenFree", newType);
             }
         }
     }
@@ -1466,6 +1459,38 @@ namespace gazprea
             auto vs = std::dynamic_pointer_cast<VariableSymbol>(val);
             if (vs != nullptr) {
                 llvmFunction.call("variableDestructThenFree", vs->llvmPointerToVariableObject);
+            }
+        }
+    }
+
+    void LLVMGen::initializeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol) {
+        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+            if (variableSymbol->typeQualifier == "const") {
+                auto runtimeVariableParameterObject = llvmFunction.call("variableMalloc", {});
+                llvmFunction.call(
+                    "variableInitFromParameter", 
+                    {
+                        runtimeVariableParameterObject, 
+                        variableSymbol->llvmPointerToTypeObject, 
+                        subroutineSymbol->llvmFunction->getArg(i) 
+                    }
+                );
+                variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
+                llvmFunction.call("typeDestructThenFree", variableSymbol->llvmPointerToTypeObject);
+            } else {
+                variableSymbol->llvmPointerToVariableObject = subroutineSymbol->llvmFunction->getArg(i);
+                llvmFunction.call("variableSwapType", { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject });
+            }
+        }
+    }
+
+    void LLVMGen::freeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol) {
+        // Free all variables from variableInitFromParameter()
+        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+            if (variableSymbol->typeQualifier == "const") {
+                llvmFunction.call("variableDestructThenFree", variableSymbol->llvmPointerToVariableObject);
             }
         }
     }

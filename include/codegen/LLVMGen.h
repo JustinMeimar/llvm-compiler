@@ -107,6 +107,8 @@ class LLVMGen {
         void initializeGlobalVariables();
         void freeGlobalVariables();
         void freeAllVariablesDeclaredInBlockScope(std::shared_ptr<LocalScope> scope);
+        void initializeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol);
+        void freeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol);
 };
 
 }
