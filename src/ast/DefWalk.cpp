@@ -130,8 +130,18 @@ namespace gazprea {
         visitChildren(t);
     } 
     void DefWalk::visitBlock(std::shared_ptr<AST> t) {
-        currentScope = std::make_shared<LocalScope>(currentScope); // push scope
-        t->scope = currentScope;
+        auto blockScope = std::make_shared<LocalScope>(currentScope);
+        t->scope = blockScope;
+        currentScope = blockScope; // push scope
+
+        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(currentScope->getEnclosingScope());
+        if (subroutineSymbol != nullptr) {
+            // If the parent scope is subroutine symbol
+            blockScope->parentIsSubroutineSymbol = true;
+            subroutineSymbol->subroutineDirectChildScope = blockScope;
+        } else {
+            blockScope->parentIsSubroutineSymbol = false;
+        }
         visitChildren(t);
         currentScope = currentScope->getEnclosingScope(); // pop scope
     }

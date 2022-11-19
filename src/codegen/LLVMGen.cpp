@@ -169,6 +169,9 @@ namespace gazprea
             case GazpreaParser::VECTOR_LITERAL_TOKEN:
                 visitVectorMatrixLiteral(t);
                 break;
+            case GazpreaParser::BLOCK_TOKEN:
+                visitBlock(t);
+                break;
             default: // The other nodes we don't care about just have their children visited
                 visitChildren(t);
             }
@@ -277,6 +280,13 @@ namespace gazprea
             visit(t->children[3]);
 
             if (t->children[2]->isNil()) {
+                // Free all variables in a block if no return statement in a subroutine
+                for (auto const& [key, val] : subroutineSymbol->subroutineDirectChildScope->symbols) {
+                    auto vs = std::dynamic_pointer_cast<VariableSymbol>(val);
+                    if (vs != nullptr) {
+                        llvmFunction.call("variableDestructThenFree", vs->llvmPointerToVariableObject);
+                    }
+                }
                 ir.CreateRetVoid();
             }
         }
@@ -1433,6 +1443,22 @@ namespace gazprea
         } else {
             auto index = std::stoi(t->children[1]->parseTree->getText());
             t->llvmValue = llvmFunction.call("variableGetTupleField", { t->children[0]->llvmValue, ir.getInt64(index) }); 
+        }
+    }
+
+    void LLVMGen::visitBlock(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto localScope = std::dynamic_pointer_cast<LocalScope>(t->scope);
+        if (localScope->parentIsSubroutineSymbol) {
+            // If the scope is a subroutine's block, don't free anything
+            return;
+        }
+        // Free all variables in a block
+        for (auto const& [key, val] : localScope->symbols) {
+            auto vs = std::dynamic_pointer_cast<VariableSymbol>(val);
+            if (vs != nullptr) {
+                llvmFunction.call("variableDestructThenFree", vs->llvmPointerToVariableObject);
+            }
         }
     }
 
