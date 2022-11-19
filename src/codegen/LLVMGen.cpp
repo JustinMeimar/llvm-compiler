@@ -230,9 +230,12 @@ namespace gazprea
                     auto runtimeVariableParameterObject = llvmFunction.call("variableMalloc", {});
                     llvmFunction.call("variableInitFromParameter", { runtimeVariableParameterObject, variableSymbol->llvmPointerToTypeObject, subroutine->getArg(i) });
                     variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
+                    llvmFunction.call("typeDestructThenFree", variableSymbol->llvmPointerToTypeObject);
                 } else {
                     variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
                     llvmFunction.call("variableSwapType", { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject });
+                    // TODO: FREE
+                    // llvmFunction.call("typeDestructThenFree", variableSymbol->llvmPointerToTypeObject);
                 }
                 
             }
@@ -243,6 +246,12 @@ namespace gazprea
             } else {
                 if (subroutineSymbol->name == "main") {
                     auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", {t->children[3]->children[0]->llvmValue});
+                    // Free all global variables
+                    for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
+                        auto globalVarAddress = mod.getNamedGlobal(variableSymbol->name);
+                        auto globalVar = ir.CreateLoad(runtimeVariableTy->getPointerTo(), globalVarAddress);
+                        llvmFunction.call("variableDestructThenFree", globalVar);
+                    }
                     ir.CreateRet(returnIntegerValue);
                 } else {
                     ir.CreateRet(t->children[3]->children[0]->llvmValue);
@@ -274,6 +283,7 @@ namespace gazprea
                     variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
                 } else {
                     variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
+                    // If the type is not TupleType, then this "variableSwapType" call below does not do anything
                     llvmFunction.call("variableSwapType", { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject });
                 }
             }
@@ -311,6 +321,22 @@ namespace gazprea
                 llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
             }
             llvmBranch.hitReturnStat = true;
+            
+            // Free all variables in a block if no return statement in a subroutine
+            for (auto const& [key, val] : subroutineSymbol->subroutineDirectChildScope->symbols) {
+                auto vs = std::dynamic_pointer_cast<VariableSymbol>(val);
+                if (vs != nullptr) {
+                    llvmFunction.call("variableDestructThenFree", vs->llvmPointerToVariableObject);
+                }
+            }
+
+            // Free all global variables
+            for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
+                auto globalVarAddress = mod.getNamedGlobal(variableSymbol->name);
+                auto globalVar = ir.CreateLoad(runtimeVariableTy->getPointerTo(), globalVarAddress);
+                llvmFunction.call("variableDestructThenFree", globalVar);
+            }
+            
             ir.CreateRet(returnIntegerValue);
             return;
         }
@@ -319,6 +345,14 @@ namespace gazprea
             llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
         }
         llvmBranch.hitReturnStat = true;
+
+        // Free all variables in a block if no return statement in a subroutine
+        for (auto const& [key, val] : subroutineSymbol->subroutineDirectChildScope->symbols) {
+            auto vs = std::dynamic_pointer_cast<VariableSymbol>(val);
+            if (vs != nullptr) {
+                llvmFunction.call("variableDestructThenFree", vs->llvmPointerToVariableObject);
+            }
+        }
         ir.CreateRet(runtimeVariableObject);
     }
 
@@ -1208,6 +1242,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromBooleanScalar", {baseType});
                 llvmFunction.call("typeInitFromVectorSizeSpecification", {runtimeTypeObject, dimension1Expression, baseType});
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             }
             case Type::CHARACTER_1: {
@@ -1226,6 +1261,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromCharacterScalar", {baseType});
                 llvmFunction.call("typeInitFromVectorSizeSpecification", {runtimeTypeObject, dimension1Expression, baseType});
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             }
             case Type::INTEGER_1: {
@@ -1244,6 +1280,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromIntegerScalar", {baseType});
                 llvmFunction.call("typeInitFromVectorSizeSpecification", {runtimeTypeObject, dimension1Expression, baseType});
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             }
             case Type::REAL_1: {
@@ -1262,6 +1299,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromRealScalar", {baseType});
                 llvmFunction.call("typeInitFromVectorSizeSpecification", {runtimeTypeObject, dimension1Expression, baseType});
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             }
             case Type::BOOLEAN_2: {
@@ -1284,6 +1322,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromBooleanScalar", {baseType});
                 llvmFunction.call("typeInitFromMatrixSizeSpecification", {runtimeTypeObject, dimension1Expression, dimension2Expression, baseType});
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             }
             case Type::CHARACTER_2: {
@@ -1306,6 +1345,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromCharacterScalar", {baseType});
                 llvmFunction.call("typeInitFromMatrixSizeSpecification", {runtimeTypeObject, dimension1Expression, dimension2Expression, baseType});
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             }
             case Type::INTEGER_2: {
@@ -1328,6 +1368,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromIntegerScalar", {baseType});
                 llvmFunction.call("typeInitFromMatrixSizeSpecification", {runtimeTypeObject, dimension1Expression, dimension2Expression, baseType});
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             }
             case Type::REAL_2: {
@@ -1350,6 +1391,7 @@ namespace gazprea
                 baseType = llvmFunction.call("typeMalloc", {});
                 llvmFunction.call("typeInitFromRealScalar", {baseType});
                 llvmFunction.call("typeInitFromMatrixSizeSpecification", {runtimeTypeObject, dimension1Expression, dimension2Expression, baseType});
+                llvmFunction.call("typeDestructThenFree", baseType);
                 break;
             }
             case Type::TUPLE: {
@@ -1429,7 +1471,6 @@ namespace gazprea
             auto tupleType = std::dynamic_pointer_cast<TupleType>(t->children[0]->evalType);
             auto identifierName = t->children[1]->parseTree->getText();
             if (tupleType != nullptr) {
-                // inferred_type parameter
                 size_t i;
                 for (i = 0; i < tupleType->orderedArgs.size(); i++) {
                     if (tupleType->orderedArgs[i]->name == identifierName) {
