@@ -199,104 +199,68 @@ namespace gazprea
             returnType,
             parameterTypes,
             false);
-        std::string prefix = subroutineSymbol->name == "main" ? "" : "Gazprea.";
+        std::string prefix = subroutineSymbol->name == "main" ? "" : "gazprea.";
 
         auto subroutine = llvm::cast<llvm::Function>(mod.getOrInsertFunction(prefix + subroutineSymbol->name, subroutineTy).getCallee());
         subroutineSymbol->llvmFunction = subroutine;
 
-        if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EMPTY_BODY_TOKEN){
-            // subroutine declaration;
+        if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EMPTY_BODY_TOKEN) {
+            return;
         }
-        else if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EXPRESSION_BODY_TOKEN) {
-            // Expression Body
-            currentSubroutine = subroutine;
-            llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
-            ir.SetInsertPoint(bb);
 
-            // Initialize Global Variable
-            if (subroutineSymbol->name == "main") {
-                for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
-                    auto globalVar = mod.getNamedGlobal(variableSymbol->name);
-                    visit(variableSymbol->def->children[2]);
-                    ir.CreateStore(variableSymbol->def->children[2]->llvmValue, globalVar);
-                }
+        currentSubroutine = subroutine;
+        llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
+        ir.SetInsertPoint(bb);
+        if (subroutineSymbol->name == "main") {
+            initializeGlobalVariables();
+        }
+        visit(t->children[1]);  // Populate Argument Symbol's llvmValue
+        for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
+            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+            if (variableSymbol->typeQualifier == "const") {
+                auto runtimeVariableParameterObject = llvmFunction.call("variableMalloc", {});
+                llvmFunction.call("variableInitFromParameter", { runtimeVariableParameterObject, variableSymbol->llvmPointerToTypeObject, subroutine->getArg(i) });
+                variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
+                llvmFunction.call("typeDestructThenFree", variableSymbol->llvmPointerToTypeObject);
+            } else {
+                variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
+                llvmFunction.call("variableSwapType", { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject });
+                // TODO: FREE
+                // llvmFunction.call("typeDestructThenFree", variableSymbol->llvmPointerToTypeObject);
             }
-
-            // Populate Argument Symbol's llvmValue
-            visit(t->children[1]);
-            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
-                auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
-                if (variableSymbol->typeQualifier == "const") {
-                    auto runtimeVariableParameterObject = llvmFunction.call("variableMalloc", {});
-                    llvmFunction.call("variableInitFromParameter", { runtimeVariableParameterObject, variableSymbol->llvmPointerToTypeObject, subroutine->getArg(i) });
-                    variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
-                    llvmFunction.call("typeDestructThenFree", variableSymbol->llvmPointerToTypeObject);
-                } else {
-                    variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
-                    llvmFunction.call("variableSwapType", { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject });
-                    // TODO: FREE
-                    // llvmFunction.call("typeDestructThenFree", variableSymbol->llvmPointerToTypeObject);
-                }
-                
-            }
-            visit(t->children[3]);
-
+        }
+        visit(t->children[3]);  // Visit body
+        
+        if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EXPRESSION_BODY_TOKEN) {
+            // Subroutine with Expression Body
             if (t->children[2]->isNil()) {
                 ir.CreateRetVoid();
             } else {
+                auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+                llvmFunction.call("variableInitFromMemcpy", { runtimeVariableObject, t->children[3]->children[0]->llvmValue });
+                
                 if (subroutineSymbol->name == "main") {
-                    auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", {t->children[3]->children[0]->llvmValue});
-                    // Free all global variables
-                    for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
-                        auto globalVarAddress = mod.getNamedGlobal(variableSymbol->name);
-                        auto globalVar = ir.CreateLoad(runtimeVariableTy->getPointerTo(), globalVarAddress);
-                        llvmFunction.call("variableDestructThenFree", globalVar);
+                    auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", {runtimeVariableObject});
+
+                    if (t->children[3]->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+                    && t->children[3]->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
+                        llvmFunction.call("variableDestructThenFree", { t->children[3]->children[0]->llvmValue });
                     }
+                    freeGlobalVariables();
                     ir.CreateRet(returnIntegerValue);
                 } else {
-                    ir.CreateRet(t->children[3]->children[0]->llvmValue);
+                    if (t->children[3]->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
+                    && t->children[3]->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
+                        llvmFunction.call("variableDestructThenFree", { t->children[3]->children[0]->llvmValue });
+                    }
+                    ir.CreateRet(runtimeVariableObject);
                 }
             }
-        }
-        else {
+        } else {
             // subroutine declaration and definition;
-            currentSubroutine = subroutine;
-            llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
-            ir.SetInsertPoint(bb);
-
-            // Initialize Global Variable
-            if (subroutineSymbol->name == "main") {
-                for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
-                    auto globalVar = mod.getNamedGlobal(variableSymbol->name);
-                    visit(variableSymbol->def->children[2]);
-                    ir.CreateStore(variableSymbol->def->children[2]->llvmValue, globalVar);
-                }
-            }
-
-            // Populate Argument Symbol's llvmValue
-            visit(t->children[1]);
-            for (size_t i = 0; i < subroutineSymbol->orderedArgs.size(); i++) {
-                auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
-                if (variableSymbol->typeQualifier == "const") {
-                    auto runtimeVariableParameterObject = llvmFunction.call("variableMalloc", {});
-                    llvmFunction.call("variableInitFromParameter", { runtimeVariableParameterObject, variableSymbol->llvmPointerToTypeObject, subroutine->getArg(i) });
-                    variableSymbol->llvmPointerToVariableObject = runtimeVariableParameterObject;
-                } else {
-                    variableSymbol->llvmPointerToVariableObject = subroutine->getArg(i);
-                    // If the type is not TupleType, then this "variableSwapType" call below does not do anything
-                    llvmFunction.call("variableSwapType", { variableSymbol->llvmPointerToVariableObject, variableSymbol->llvmPointerToTypeObject });
-                }
-            }
-            visit(t->children[3]);
-
             if (t->children[2]->isNil()) {
                 // Free all variables in a block if no return statement in a subroutine
-                for (auto const& [key, val] : subroutineSymbol->subroutineDirectChildScope->symbols) {
-                    auto vs = std::dynamic_pointer_cast<VariableSymbol>(val);
-                    if (vs != nullptr) {
-                        llvmFunction.call("variableDestructThenFree", vs->llvmPointerToVariableObject);
-                    }
-                }
+                freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
                 ir.CreateRetVoid();
             }
         }
@@ -322,37 +286,19 @@ namespace gazprea
             }
             llvmBranch.hitReturnStat = true;
             
-            // Free all variables in a block if no return statement in a subroutine
-            for (auto const& [key, val] : subroutineSymbol->subroutineDirectChildScope->symbols) {
-                auto vs = std::dynamic_pointer_cast<VariableSymbol>(val);
-                if (vs != nullptr) {
-                    llvmFunction.call("variableDestructThenFree", vs->llvmPointerToVariableObject);
-                }
-            }
-
-            // Free all global variables
-            for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
-                auto globalVarAddress = mod.getNamedGlobal(variableSymbol->name);
-                auto globalVar = ir.CreateLoad(runtimeVariableTy->getPointerTo(), globalVarAddress);
-                llvmFunction.call("variableDestructThenFree", globalVar);
-            }
-            
+            freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
+            freeGlobalVariables();
             ir.CreateRet(returnIntegerValue);
             return;
         }
+
+        // Non-main subroutine
         if (t->children[0]->children[0]->getNodeType() != GazpreaParser::IDENTIFIER_TOKEN
         && t->children[0]->children[0]->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", { t->children[0]->llvmValue });
         }
         llvmBranch.hitReturnStat = true;
-
-        // Free all variables in a block if no return statement in a subroutine
-        for (auto const& [key, val] : subroutineSymbol->subroutineDirectChildScope->symbols) {
-            auto vs = std::dynamic_pointer_cast<VariableSymbol>(val);
-            if (vs != nullptr) {
-                llvmFunction.call("variableDestructThenFree", vs->llvmPointerToVariableObject);
-            }
-        }
+        freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
         ir.CreateRet(runtimeVariableObject);
     }
 
@@ -1490,12 +1436,33 @@ namespace gazprea
     void LLVMGen::visitBlock(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto localScope = std::dynamic_pointer_cast<LocalScope>(t->scope);
-        if (localScope->parentIsSubroutineSymbol) {
-            // If the scope is a subroutine's block, don't free anything
-            return;
+        if (!localScope->parentIsSubroutineSymbol) {
+            freeAllVariablesDeclaredInBlockScope(localScope);
         }
-        // Free all variables in a block
-        for (auto const& [key, val] : localScope->symbols) {
+        // If the scope is a subroutine's block, don't free anything
+    }
+
+    void LLVMGen::initializeGlobalVariables() {
+        // Initialize global variables (should only call in the beginning of main())
+        for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
+            auto globalVar = mod.getNamedGlobal(variableSymbol->name);
+            visit(variableSymbol->def->children[2]);
+            ir.CreateStore(variableSymbol->def->children[2]->llvmValue, globalVar);
+        }
+    }
+
+    void LLVMGen::freeGlobalVariables() {
+        // Free all global variables
+        for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
+            auto globalVarAddress = mod.getNamedGlobal(variableSymbol->name);
+            auto globalVar = ir.CreateLoad(runtimeVariableTy->getPointerTo(), globalVarAddress);
+            llvmFunction.call("variableDestructThenFree", globalVar);
+        }
+    }
+
+    void LLVMGen::freeAllVariablesDeclaredInBlockScope(std::shared_ptr<LocalScope> scope) {
+        // Free all VariableSymbol in the Scope
+        for (auto const& [key, val] : scope->symbols) {
             auto vs = std::dynamic_pointer_cast<VariableSymbol>(val);
             if (vs != nullptr) {
                 llvmFunction.call("variableDestructThenFree", vs->llvmPointerToVariableObject);

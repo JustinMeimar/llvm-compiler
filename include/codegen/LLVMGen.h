@@ -104,6 +104,9 @@ class LLVMGen {
 
         //Helper Methods 
         void Print();
+        void initializeGlobalVariables();
+        void freeGlobalVariables();
+        void freeAllVariablesDeclaredInBlockScope(std::shared_ptr<LocalScope> scope);
 };
 
 }
