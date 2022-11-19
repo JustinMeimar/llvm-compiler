@@ -25,6 +25,7 @@ namespace gazprea {
         std::vector<std::shared_ptr<Symbol>> orderedArgs;
         llvm::Function *llvmFunction;
         std::shared_ptr<LocalScope> subroutineDirectChildScope;
+        std::vector<llvm::Value *> oldParameterTypes;
         SubroutineSymbol(std::string name, std::shared_ptr<Type> retType, std::shared_ptr<Scope> enclosingScope, bool isProcedure, bool isBuiltIn);
         std::shared_ptr<Symbol> resolve(const std::string &name);
         void define(std::shared_ptr<Symbol> sym);
