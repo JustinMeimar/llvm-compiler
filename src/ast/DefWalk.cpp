@@ -79,7 +79,7 @@ namespace gazprea {
         }
  
         visitChildren(t);
-        if (currentScope->getScopeName() == "global") {
+        if (currentScope->getScopeName() == "gazprea.scope.global") {
             vs->isGlobalVariable = true;
             symtab->globals->globalVariableSymbols.push_back(vs);
         } else {
@@ -176,7 +176,11 @@ namespace gazprea {
     }
 
     void DefWalk::visitReturn(std::shared_ptr<AST> t) {
-        t->scope = currentSubroutineScope;
+        // t->scope = currentSubroutineScope;
+        // currentScope->containReturn = true;
+        t->scope = currentScope;
+        t->scope->containReturn = true;
+        t->subroutineSymbol = currentSubroutineScope;
         visitChildren(t);
     }
 

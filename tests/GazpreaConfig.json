@@ -21,7 +21,7 @@
       },
       {
         "stepName": "lli",
-        "executablePath": "/home/riscyseven/llvm-project/bin/lli",
+        "executablePath": "/home/jamesle01/llvm-ins/bin/lli",
         "arguments": [
           "$INPUT"
         ],

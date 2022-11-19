@@ -247,7 +247,6 @@ namespace gazprea
             // subroutine declaration and definition;
             if (t->children[2]->isNil()) {
                 // Free all variables in a block if no return statement in a subroutine
-                freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
                 freeSubroutineParameters(subroutineSymbol);
                 ir.CreateRetVoid();
             }
@@ -256,7 +255,7 @@ namespace gazprea
 
     void LLVMGen::visitReturn(std::shared_ptr<AST> t) {
         visitChildren(t);
-        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->scope);
+        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->subroutineSymbol);
         //throw incompatible return type exception
         if(t->children[0]->evalType != nullptr && subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
             std::cout << "Subroutine does not return ";
@@ -277,13 +276,26 @@ namespace gazprea
         
         if (subroutineSymbol->name == "main") {
             auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { runtimeVariableObject });
-            freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
+
+            std::shared_ptr<Scope> temp = t->scope;
+            while (temp->getEnclosingScope()->getEnclosingScope()->getScopeName() != "gazprea.scope.global") {
+                freeAllVariablesDeclaredInBlockScope(std::dynamic_pointer_cast<LocalScope>(temp));
+                temp = temp->getEnclosingScope();
+            }
+
             freeGlobalVariables();
             llvmFunction.call("variableDestructThenFree", runtimeVariableObject);
             ir.CreateRet(returnIntegerValue);
         } else {
             // Non-main subroutine
-            freeAllVariablesDeclaredInBlockScope(subroutineSymbol->subroutineDirectChildScope);
+
+            // Recursively free the current scope of return Statement and all of its enclosing scope (traverse up until subroutineSymbol)
+            std::shared_ptr<Scope> temp = t->scope;
+            while (temp->getEnclosingScope()->getEnclosingScope()->getScopeName() != "gazprea.scope.global") {
+                // The enclosing scope of the subroutine symbol is global variable
+                freeAllVariablesDeclaredInBlockScope(std::dynamic_pointer_cast<LocalScope>(temp));
+                temp = temp->getEnclosingScope();
+            }
             ir.CreateRet(runtimeVariableObject);
         }
     }
@@ -1429,10 +1441,9 @@ namespace gazprea
     void LLVMGen::visitBlock(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto localScope = std::dynamic_pointer_cast<LocalScope>(t->scope);
-        if (!localScope->parentIsSubroutineSymbol) {
+        if (!localScope->containReturn) {
             freeAllVariablesDeclaredInBlockScope(localScope);
         }
-        // If the scope is a subroutine's block, don't free anything
     }
 
     void LLVMGen::initializeGlobalVariables() {
