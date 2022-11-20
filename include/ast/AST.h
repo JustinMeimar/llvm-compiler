@@ -27,17 +27,17 @@ namespace gazprea {
         std::vector<std::shared_ptr<AST>> children; // normalized list of children
       	
 		//LLVM Codegen
-		llvm::Value* llvmValue;
+		llvm::Value* llvmValue = nullptr;
 
 		//TypeWalk
-		std::shared_ptr<Type> evalType;
-		std::shared_ptr<Type> promoteToType;
+		std::shared_ptr<Type> evalType = nullptr;
+		std::shared_ptr<Type> promoteToType = nullptr;
 		std::vector<std::shared_ptr<Type>> tuplePromoteTypeList;
 
-        std::shared_ptr<Symbol> symbol; // Populate by Def and Ref pass
-        std::shared_ptr<Type> type;  // Only use for visitUnqualifiedType() and its subrules in Ref pass
-        std::shared_ptr<Scope> scope;  // Populate by Def pass
-		std::shared_ptr<Scope> subroutineSymbol;  // Populate by Def Pass, only use in visitReturn()
+        std::shared_ptr<Symbol> symbol = nullptr; // Populate by Def and Ref pass
+        std::shared_ptr<Type> type = nullptr;  // Only use for visitUnqualifiedType() and its subrules in Ref pass
+        std::shared_ptr<Scope> scope = nullptr;  // Populate by Def pass
+		std::shared_ptr<Scope> subroutineSymbol = nullptr;  // Populate by Def Pass, only use in visitReturn()
 
 		//Methods	
 		virtual ~AST();	

@@ -109,6 +109,8 @@ class LLVMGen {
         void freeAllVariablesDeclaredInBlockScope(std::shared_ptr<LocalScope> scope);
         void initializeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol);
         void freeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol);
+        void freeExpressionIfNecessary(std::shared_ptr<AST> t);
+        void freeExprAtomIfNecessary(std::shared_ptr<AST> t);
 };
 
 }
