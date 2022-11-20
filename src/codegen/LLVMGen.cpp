@@ -769,7 +769,7 @@ namespace gazprea
         llvmBranch.createPrePredConditionalBB("PrePredLoop");
         visit(t->children[0]);      // Conditional Expr
         auto exprValue = llvmFunction.call("variableGetBooleanValue", {t->children[0]->llvmValue});
-        
+
         freeExpressionIfNecessary(t->children[0]);
         
         llvm::Value* condition = ir.CreateICmpNE(exprValue, ir.getInt32(0)); 
@@ -788,7 +788,7 @@ namespace gazprea
         llvmBranch.createPostPredConditionalBB(); 
         visit(t->children[1]);      //grab value from post predicate
         auto exprValue = llvmFunction.call("variableGetBooleanValue", {t->children[1]->llvmValue});
-        
+
         freeExpressionIfNecessary(t->children[1]);
         
         llvm::Value *condition = ir.CreateICmpNE(exprValue, ir.getInt32(0));
