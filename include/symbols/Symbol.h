@@ -22,8 +22,8 @@ namespace gazprea {
         std::shared_ptr<Scope> scope;   // All symbols know what scope contains them.
         std::shared_ptr<AST> def;
 
-        llvm::Value *llvmPointerToTypeObject;
-        llvm::Value *llvmPointerToVariableObject;
+        llvm::Value *llvmPointerToTypeObject = nullptr;
+        llvm::Value *llvmPointerToVariableObject = nullptr;
 
         Symbol(std::string name);
         Symbol(std::string name, std::shared_ptr<Type> type);
