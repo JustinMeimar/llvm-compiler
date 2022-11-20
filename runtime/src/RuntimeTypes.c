@@ -5,11 +5,16 @@
 #include "RuntimeErrors.h"
 #include "RuntimeVariables.h"
 #include "NDArray.h"
+#include "VariableStdio.h"
 
 ///------------------------------TYPE AND VARIABLE---------------------------------------------------------------
 
 Type *typeMalloc() {
-    return malloc(sizeof(Type));
+    Type *type = malloc(sizeof(Type));
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "(malloc type %p)\n", (void *)type);
+#endif
+    return type;
 }
 
 void typeInitFromCopy(Type *this, Type *other) {
@@ -94,6 +99,11 @@ void typeInitFromArrayType(Type *this, TypeID typeID, ElementTypeID eid, int8_t 
 }
 
 void typeDestructor(Type *this) {
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "(destruct type %p)", (void *)this);
+    typeDebugPrint(this);
+    fprintf(stderr, "\n");
+#endif
     switch (this->m_typeId) {
         case TYPEID_NDARRAY:
         case TYPEID_STRING:
@@ -122,6 +132,9 @@ void typeDestructor(Type *this) {
 
 void typeDestructThenFree(Type *this) {
     typeDestructor(this);
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "(free type %p)\n", (void *)this);
+#endif
     free(this);
 }
 

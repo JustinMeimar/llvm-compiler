@@ -18,6 +18,7 @@
 
 #include "MatrixType.h"
 #include "TypedefTypeSymbol.h"
+#include "LocalScope.h"
 
 namespace gazprea {
 
@@ -52,7 +53,7 @@ class LLVMGen {
         void visitPrePredicatedLoop(std::shared_ptr<AST> t);
         void visitPostPredicatedLoop(std::shared_ptr<AST> t);
         void visitIteratorLoop(std::shared_ptr<AST> t);
-        // void visitBlock(std::shared_ptr<AST> t);
+        void visitBlock(std::shared_ptr<AST> t);
 
         // Expression Atom
         void visitBooleanAtom(std::shared_ptr<AST> t);
@@ -103,6 +104,11 @@ class LLVMGen {
 
         //Helper Methods 
         void Print();
+        void initializeGlobalVariables();
+        void freeGlobalVariables();
+        void freeAllVariablesDeclaredInBlockScope(std::shared_ptr<LocalScope> scope);
+        void initializeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol);
+        void freeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol);
 };
 
 }

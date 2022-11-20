@@ -37,6 +37,7 @@ namespace gazprea {
         std::shared_ptr<Symbol> symbol; // Populate by Def and Ref pass
         std::shared_ptr<Type> type;  // Only use for visitUnqualifiedType() and its subrules in Ref pass
         std::shared_ptr<Scope> scope;  // Populate by Def pass
+		std::shared_ptr<Scope> subroutineSymbol;  // Populate by Def Pass, only use in visitReturn()
 
 		//Methods	
 		virtual ~AST();	

@@ -10,6 +10,7 @@ namespace gazprea {
 
     class Scope : public std::enable_shared_from_this<Scope> {
     public:
+        bool containReturn = false;
         virtual std::string getScopeName() = 0;
 
         /** Where to look next for symbols */

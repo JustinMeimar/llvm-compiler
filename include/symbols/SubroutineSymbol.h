@@ -6,6 +6,7 @@
 
 #include "Symbol.h"
 #include "Type.h"
+#include "LocalScope.h"
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
@@ -23,6 +24,8 @@ namespace gazprea {
         int numTimesDeclare = 0;  // If forward declaration, this value is 2, otherwise 1
         std::vector<std::shared_ptr<Symbol>> orderedArgs;
         llvm::Function *llvmFunction;
+        std::shared_ptr<LocalScope> subroutineDirectChildScope;
+        std::vector<llvm::Value *> oldParameterTypes;
         SubroutineSymbol(std::string name, std::shared_ptr<Type> retType, std::shared_ptr<Scope> enclosingScope, bool isProcedure, bool isBuiltIn);
         std::shared_ptr<Symbol> resolve(const std::string &name);
         void define(std::shared_ptr<Symbol> sym);
