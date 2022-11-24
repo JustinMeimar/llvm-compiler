@@ -6,6 +6,7 @@
 #include "stdlib.h"
 #include "ctype.h"
 #include "limits.h"
+#include "NDArrayVariable.h"
 
 void typeDebugPrint(Type *this) {
     FILE *fd = stderr;
@@ -25,9 +26,6 @@ void typeDebugPrint(Type *this) {
             break;
         case TYPEID_STREAM_OUT:
             fprintf(fd, "stream_out");
-            break;
-        case TYPEID_EMPTY_ARRAY:
-            fprintf(fd, "empty_arr");
             break;
         case TYPEID_UNKNOWN:
             fprintf(fd, "unknown");
@@ -77,7 +75,7 @@ void typeInitDebugPrint(Type *this, char *msg) {
 
 void variablePrintToStream(Variable *this, Variable *stream) {
     if (stream->m_type->m_typeId != TYPEID_STREAM_OUT) {
-        targetTypeError(stream->m_type, "Attempt to print a variable to:");
+        singleTypeError(stream->m_type, "Attempt to print a variable to:");
     }
     variablePrintToStdout(this);
 }
@@ -205,7 +203,7 @@ void variableInitDebugPrint(Variable *this, char *msg) {
 void variableReadFromStdin(Variable *this) {
     TypeID tid = this->m_type->m_typeId;
     if (tid != TYPEID_NDARRAY) {
-        targetTypeError(this->m_type, "Attempt to read from stdin into a variable of type:");
+        singleTypeError(this->m_type, "Attempt to read from stdin into a variable of type:");
     }
     ArrayType *CTI = this->m_type->m_compoundTypeInfo;
     Variable *rhs = variableMalloc();
@@ -219,7 +217,7 @@ void variableReadFromStdin(Variable *this) {
         case ELEMENT_CHARACTER:
             variableInitFromCharacterScalar(rhs, readCharacterFromStdin()); break;
         default:
-            targetTypeError(this->m_type, "Attempt to read from stdin into a variable of type:"); break;
+            singleTypeError(this->m_type, "Attempt to read from stdin into a variable of type:"); break;
     }
     variableAssignment(this, rhs);
     variableDestructThenFree(rhs);

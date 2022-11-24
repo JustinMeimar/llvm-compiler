@@ -4,6 +4,7 @@
 #include "NDArray.h"
 #include "RuntimeErrors.h"
 #include "VariableStdio.h"
+#include "NDArrayVariable.h"
 
 ///------------------------------TYPE---------------------------------------------------------------
 
@@ -24,7 +25,7 @@ void typeInitFromCharacterScalar(Type *this) {
 void typeInitFromVectorSizeSpecification(Type *this, Variable *size, Type *baseType) {
     // make sure the baseType is an unspecified type
     if (!typeIsSpecifiable(baseType)) {
-        targetTypeError(baseType, "Attempt to use type as base type: ");
+        singleTypeError(baseType, "Attempt to use type as base type: ");
     }
     if (size == NULL) {
         typeInitFromVectorSizeSpecificationFromLiteral(this, -1, baseType);
@@ -35,7 +36,7 @@ void typeInitFromVectorSizeSpecification(Type *this, Variable *size, Type *baseT
 
 void typeInitFromMatrixSizeSpecification(Type *this, Variable *nRow, Variable *nCol, Type *baseType) {
     if (!typeIsSpecifiable(baseType)) {
-        targetTypeError(baseType, "Attempt to use type as base type: ");
+        singleTypeError(baseType, "Attempt to use type as base type: ");
     }
     typeInitFromMatrixSizeSpecificationFromLiteral(this,
             nRow ? variableGetIntegerValue(nRow) : -1,
@@ -63,11 +64,6 @@ void typeInitFromTupleType(Type *this, int64_t nField, Type **typeArray, int64_t
     tupleTypeInitFromTypeAndId(this->m_compoundTypeInfo, nField, typeArray, stridArray);
 }
 
-void typeInitFromEmptyArray(Type *this) {
-    this->m_typeId = TYPEID_EMPTY_ARRAY;
-    this->m_compoundTypeInfo = NULL;
-}
-
 void typeInitFromUnknownType(Type *this) {
     this->m_typeId = TYPEID_UNKNOWN;
     this->m_compoundTypeInfo = NULL;
@@ -77,7 +73,7 @@ void typeInitFromUnknownType(Type *this) {
 
 void variableSetStrIdArray(Variable *this, int64_t *stridArray) {
     if (this->m_type->m_typeId != TYPEID_TUPLE) {
-        targetTypeError(this->m_type, "Attempt to set strIdArray of variable of type:");
+        singleTypeError(this->m_type, "Attempt to set strIdArray of variable of type:");
     }
     TupleType *CTI = this->m_type->m_compoundTypeInfo;
     memcpy(CTI->m_idxToStrid, stridArray, CTI->m_nField * sizeof(int64_t));
@@ -129,16 +125,18 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
     bool isMatrix = false;
     for (int64_t i = 0; i < nVars; i++) {
         int8_t nDim = variableGetNDim(vars[i]);
-        if (nDim > 1)
-            targetTypeError(vars[i]->m_type, "Vector literal contains type:");
-        else if (nDim == 1) {
+        if (nDim == 1 || nDim == DIM_UNSPECIFIED) {
             isMatrix = true;
             break;
-        }
+        } else if (nDim > 1 || nDim == DIM_INVALID)
+            singleTypeError(vars[i]->m_type, "Vector literal contains type:");
     }
     MixedTypeElement mixedTemplate = {ELEMENT_NULL, NULL };
     this->m_type = typeMalloc();
-    if (isMatrix) {
+    if (nVars == 0) {  // empty array
+        typeInitFromArrayType(this->m_type, false, ELEMENT_MIXED, DIM_UNSPECIFIED, NULL);
+        this->m_data = arrayMallocFromElementValue(ELEMENT_MIXED, 0, &mixedTemplate);;
+    } else if (isMatrix) {
         // matrix literal
         // one more pass to find out the longest vector among all rows
         int64_t width = 0;
@@ -151,20 +149,20 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
         MixedTypeElement *arr = arrayMallocFromElementValue(ELEMENT_MIXED, dims[0] * dims[1], &mixedTemplate);
 
         for (int64_t i = 0; i < nVars; i++) {
-            Variable *rhs = vars[i];
-            Type *rhsType = rhs->m_type;
+            Variable *curVar = vars[i];
+            Type *curType = curVar->m_type;
             for (int64_t j = 0; j < width; j++) {
                 MixedTypeElement *curElement = arr + i * width + j;
-                switch(rhsType->m_typeId) {
+                switch(curType->m_typeId) {
                     case TYPEID_NDARRAY: {
-                        if (variableGetNDim(rhs) != 1) {
-                            targetTypeError(rhsType, "Invalid dimension in an array (matrix) literal:");
+                        if (variableGetNDim(curVar) != 1) {
+                            singleTypeError(curType, "Invalid dimension in an array (matrix) literal:");
                         }
                         int64_t size = variableGetLength(vars[i]);
                         if (j < size) {
-                            ArrayType *CTI = rhsType->m_compoundTypeInfo;
+                            ArrayType *CTI = curType->m_compoundTypeInfo;
                             ElementTypeID eid = CTI->m_elementTypeID;
-                            void *elementPtr = arrayGetElementPtrAtIndex(eid, rhs->m_data, j);
+                            void *elementPtr = arrayGetElementPtrAtIndex(eid, curVar->m_data, j);
                             if (eid == ELEMENT_MIXED) {
                                 MixedTypeElement *element = elementPtr;
                                 mixedTypeElementInitFromValue(curElement, element->m_elementTypeID, element->m_element);
@@ -175,11 +173,8 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
                             mixedTypeElementInitFromValue(curElement, ELEMENT_NULL, NULL);
                         }
                     } break;
-                    case TYPEID_EMPTY_ARRAY: {
-                        mixedTypeElementInitFromValue(curElement, ELEMENT_NULL, NULL);
-                    } break;
                     default:
-                        targetTypeError(rhsType, "Invalid type in an array (matrix) literal:");
+                        singleTypeError(curType, "Invalid type in an array (matrix) literal:");
                 }
             }
         }
@@ -197,20 +192,19 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
             switch(rhsType->m_typeId) {
                 case TYPEID_NDARRAY: {
                     if (!typeIsScalar(rhsType)) {
-                        targetTypeError(rhsType, "Nonscalar type in an array (vector) literal:");
+                        singleTypeError(rhsType, "Nonscalar type in an array (vector) literal:");
                     }
                     ArrayType *CTI = rhsType->m_compoundTypeInfo;
                     mixedTypeElementInitFromValue(curElement, CTI->m_elementTypeID, rhs->m_data);
                 } break;
                 default:
-                    targetTypeError(rhsType, "Invalid type in an array (vector) literal:");
+                    singleTypeError(rhsType, "Invalid type in an array (vector) literal:");
             }
         }
 
         this->m_data = arr;
     }
-    this->m_parent = this->m_data;
-    this->m_fieldPos = -1;
+    variableAttrInitHelper(this, -1, this->m_data, false);
 #ifdef DEBUG_PRINT
     variableInitDebugPrint(this, "from vector literal");
 #endif
@@ -218,7 +212,7 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
 
 void variableInitFromString(Variable *this, int64_t strLength, int8_t *str) {
     int64_t dims[1] = {strLength};
-    variableInitFromNDArray(this, false, ELEMENT_CHARACTER, 1, dims, str, false);
+    variableInitFromNDArray(this, true, ELEMENT_CHARACTER, 1, dims, str, false);
 }
 
 void variableInitFromTupleLiteral(Variable *this, int64_t nField, Variable **vars) {
@@ -232,8 +226,7 @@ void variableInitFromTupleLiteral(Variable *this, int64_t nField, Variable **var
     // initialize m_data
     this->m_data = tupleTypeMallocDataFromCopyVariableArray(this->m_type->m_compoundTypeInfo, vars);
 
-    this->m_fieldPos = -1;
-    this->m_parent = this->m_data;
+    variableAttrInitHelper(this, -1, this->m_data, false);
 #ifdef DEBUG_PRINT
     variableInitDebugPrint(this, "from tuple literal");
 #endif
@@ -254,7 +247,7 @@ void variableInitFromStdOutput(Variable *this) {
 }
 
 void variableInitFromEmptyArray(Variable *this) {
-    variableEmptyInitFromTypeID(this, TYPEID_EMPTY_ARRAY);
+    variableInitFromVectorLiteral(this, 0, NULL);
 #ifdef DEBUG_PRINT
     variableInitDebugPrint(this, "an empty array");
 #endif

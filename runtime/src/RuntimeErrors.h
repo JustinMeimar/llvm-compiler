@@ -5,5 +5,5 @@
 #include "RuntimeTypes.h"
 
 void errorAndExit(const char *errorMsg);
-void targetTypeError(Type *targetType, const char *errorMsg);  // assignment, declaration, promotion etc.
+void singleTypeError(Type *targetType, const char *errorMsg);  // assignment, declaration, promotion etc.
 void unknownTypeVariableError();

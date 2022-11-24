@@ -18,6 +18,8 @@ set(
   "${CMAKE_CURRENT_SOURCE_DIR}/VariableStdio.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/VariableStdio.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/Bool.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/NDArrayVariable.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/NDArrayVariable.h"
 )
 
 # Build our executable from the source files.

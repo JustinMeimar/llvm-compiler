@@ -6,6 +6,7 @@
 #include "RuntimeVariables.h"
 #include "NDArray.h"
 #include "VariableStdio.h"
+#include "NDArrayVariable.h"
 
 ///------------------------------TYPE AND VARIABLE---------------------------------------------------------------
 
@@ -31,7 +32,6 @@ void typeInitFromCopy(Type *this, Type *other) {
             break;
         case TYPEID_STREAM_IN:
         case TYPEID_STREAM_OUT:
-        case TYPEID_EMPTY_ARRAY:
         case TYPEID_UNKNOWN:
             this->m_compoundTypeInfo = NULL;
             break;
@@ -40,61 +40,28 @@ void typeInitFromCopy(Type *this, Type *other) {
             tupleTypeInitFromCopy(this->m_compoundTypeInfo, other->m_compoundTypeInfo);
             break;
         default:
-            targetTypeError(other, "Failed to copy from type: "); break;
+            singleTypeError(other, "Failed to copy from type: "); break;
     }
 }
 
 void typeInitFromTwoSingleTerms(Type *this, Type *first, Type *second) {
     if (!typeIsScalarInteger(first))
-        targetTypeError(first, "attempt to init from two single terms where the first term is:");
+        singleTypeError(first, "attempt to init from two single terms where the first term is:");
     if (second->m_typeId != TYPEID_INTERVAL) {
-        targetTypeError(second, "attempt to init from two single terms where the second term is:");
+        singleTypeError(second, "attempt to init from two single terms where the second term is:");
     } else {
         IntervalType *CTI = second->m_compoundTypeInfo;
         if (CTI->m_baseTypeID != UNSPECIFIED_BASE_INTERVAL) {
-            targetTypeError(second, "attempt to init from two single terms where the second term is:");
+            singleTypeError(second, "attempt to init from two single terms where the second term is:");
         }
     }
     typeInitFromIntervalType(this, INTEGER_BASE_INTERVAL);
-}
-
-void typeInitFromVectorSizeSpecificationFromLiteral(Type *this, int64_t size, Type *baseType) {
-    ArrayType *baseTypeCTI = (ArrayType *) baseType->m_compoundTypeInfo;
-    this->m_typeId = baseType->m_typeId;  // whether baseType is scalar ndarray or string, the result of specification has the same type as baseType
-    if (typeIsScalarBasic(baseType)) {  // do nothing
-    } else if (baseTypeCTI->m_isString) {
-        if (baseTypeCTI->m_dims[0] != SIZE_UNSPECIFIED)
-            targetTypeError(baseType, "Attempt to specify size for a string that has already specified type! ");
-    } else {
-        targetTypeError(baseType, "Invalid base type: ");
-    }
-    ArrayType *CTI = arrayTypeMalloc();
-    arrayTypeInitFromVectorSize(CTI, baseTypeCTI->m_elementTypeID, size, baseTypeCTI->m_isString, true);
-    this->m_compoundTypeInfo = (void *) CTI;
-}
-
-void typeInitFromMatrixSizeSpecificationFromLiteral(Type *this, int64_t nRow, int64_t nCol, Type *baseType) {
-    ArrayType *baseTypeCTI = (ArrayType *) baseType->m_compoundTypeInfo;
-    this->m_typeId = baseType->m_typeId;
-    if (typeIsScalarBasic(baseType)) {  // do nothing
-    } else {
-        targetTypeError(baseType, "Invalid base type: ");
-    }
-    ArrayType *CTI = arrayTypeMalloc();
-    arrayTypeInitFromMatrixSize(CTI, baseTypeCTI->m_elementTypeID, nRow, nCol, true);
-    this->m_compoundTypeInfo = (void *) CTI;
 }
 
 void typeInitFromIntervalType(Type *this, IntervalTypeBaseTypeID id) {
     this->m_compoundTypeInfo = intervalTypeMalloc();
     intervalTypeInitFromBase(this->m_compoundTypeInfo, id);
     this->m_typeId = TYPEID_INTERVAL;
-}
-
-void typeInitFromArrayType(Type *this, bool isString, ElementTypeID eid, int8_t nDim, int64_t *dims) {
-    this->m_typeId = TYPEID_NDARRAY;
-    this->m_compoundTypeInfo = arrayTypeMalloc();
-    arrayTypeInitFromDims(this->m_compoundTypeInfo, eid, nDim, dims, isString, true, false, false);
 }
 
 void typeDestructor(Type *this) {
@@ -118,7 +85,6 @@ void typeDestructor(Type *this) {
         }
         case TYPEID_STREAM_IN:
         case TYPEID_STREAM_OUT:
-        case TYPEID_EMPTY_ARRAY:
         case TYPEID_UNKNOWN:
             break;
         case NUM_TYPE_IDS:
@@ -137,19 +103,7 @@ void typeDestructThenFree(Type *this) {
 }
 
 // Type Methods
-
-bool typeIsSpecifiable(Type *this) {
-    TypeID id = this->m_typeId;
-    if (id != TYPEID_NDARRAY)
-        return false;
-    ArrayType *CTI = this->m_compoundTypeInfo;
-    if (CTI->m_elementTypeID == ELEMENT_MIXED || CTI->m_elementTypeID == ELEMENT_NULL || CTI->m_elementTypeID == ELEMENT_IDENTITY)
-        return false;
-    return CTI->m_nDim == 0 || (CTI->m_isString && CTI->m_dims[0] == -2);  // scalar basic types or string
-}
-
-// if the type does not have any unknown/unspecified part i.e. a variable can have this type
-bool typeIsConcreteType(Type *this) {
+bool typeIsVariableClassCompatible(Type *this) {
     switch (this->m_typeId) {
 
         case TYPEID_NDARRAY:
@@ -159,7 +113,6 @@ bool typeIsConcreteType(Type *this) {
         case TYPEID_TUPLE:
         case TYPEID_STREAM_IN:
         case TYPEID_STREAM_OUT:
-        case TYPEID_EMPTY_ARRAY:
             return true;
         case TYPEID_UNKNOWN:
         default:
@@ -172,98 +125,8 @@ bool typeIsStream(Type *this) {
     return this->m_typeId == TYPEID_STREAM_IN || this->m_typeId == TYPEID_STREAM_OUT;
 }
 
-bool typeIsScalar(Type *this) {
-    TypeID id = this->m_typeId;
-    if (id != TYPEID_NDARRAY)
-        return false;
-    ArrayType *CTI = this->m_compoundTypeInfo;
-    return CTI->m_nDim == 0;
-}
-
-bool typeIsScalarBasic(Type *this) {
-    TypeID id = this->m_typeId;
-    if (id != TYPEID_NDARRAY)
-        return false;
-    ArrayType *CTI = this->m_compoundTypeInfo;
-    if (CTI->m_elementTypeID == ELEMENT_MIXED || CTI->m_elementTypeID == ELEMENT_NULL || CTI->m_elementTypeID == ELEMENT_IDENTITY)
-        return false;
-    return CTI->m_nDim == 0;
-}
-
-bool typeIsScalarNull(Type *this) {
-    if (this->m_typeId == TYPEID_NDARRAY) {
-        ArrayType *CTI = this->m_compoundTypeInfo;
-        if (CTI->m_elementTypeID == ELEMENT_NULL && CTI->m_nDim == 0)
-            return true;
-    }
-    return false;
-}
-
-bool typeIsScalarIdentity(Type *this) {
-    if (this->m_typeId == TYPEID_NDARRAY) {
-        ArrayType *CTI = this->m_compoundTypeInfo;
-        if (CTI->m_elementTypeID == ELEMENT_IDENTITY && CTI->m_nDim == 0)
-            return true;
-    }
-    return false;
-}
-
-bool typeIsScalarInteger(Type *this) {
-    if (this->m_typeId == TYPEID_NDARRAY) {
-        ArrayType *CTI = this->m_compoundTypeInfo;
-        if (CTI->m_elementTypeID == ELEMENT_INTEGER && CTI->m_nDim == 0)
-            return true;
-    }
-    return false;
-}
-
-bool typeIsArrayNull(Type *this) {
-    if (this->m_typeId == TYPEID_NDARRAY) {
-        ArrayType *CTI = this->m_compoundTypeInfo;
-        if (CTI->m_elementTypeID == ELEMENT_NULL)
-            return true;
-    }
-    return false;
-}
-
-bool typeIsArrayIdentity(Type *this) {
-    if (this->m_typeId == TYPEID_NDARRAY) {
-        ArrayType *CTI = this->m_compoundTypeInfo;
-        if (CTI->m_elementTypeID == ELEMENT_IDENTITY)
-            return true;
-    }
-    return false;
-}
-
 bool typeIsUnknown(Type *this) {
     return this->m_typeId == TYPEID_UNKNOWN;
-}
-
-bool typeIsArrayOrString(Type *this) {
-    return this->m_typeId == TYPEID_NDARRAY;
-}
-
-bool typeIsVectorOrString(Type *this) {
-    if (!typeIsArrayOrString(this))
-        return false;
-    ArrayType *CTI = this->m_compoundTypeInfo;
-    return CTI->m_nDim == 1;
-}
-
-bool typeIsMatrix(Type *this) {
-    TypeID id = this->m_typeId;
-    if (id != TYPEID_NDARRAY)
-        return false;
-    ArrayType *CTI = this->m_compoundTypeInfo;
-    return CTI->m_nDim == 2;
-}
-
-bool typeIsMixedArray(Type *this) {
-    if (this->m_typeId == TYPEID_NDARRAY) {
-        ArrayType *CTI = this->m_compoundTypeInfo;
-        return CTI->m_elementTypeID == ELEMENT_MIXED;
-    }
-    return false;
 }
 
 bool typeIsIntegerInterval(Type *this) {
@@ -273,134 +136,22 @@ bool typeIsIntegerInterval(Type *this) {
     return CTI->m_baseTypeID == INTEGER_BASE_INTERVAL;
 }
 
-bool typeIsIntegerArray(Type *this) {
-    if (typeIsVectorOrString(this))
-        return false;
-    ArrayType *CTI = this->m_compoundTypeInfo;
-    return CTI->m_elementTypeID == ELEMENT_INTEGER;
-}
-
-bool typeIsDomainExprCompatible(Type *this) {
-    return typeIsIntegerArray(this) || typeIsIntegerInterval(this) || this->m_typeId == TYPEID_EMPTY_ARRAY;
+bool typeIsUnspecifiedInterval(Type *this) {
+    if (this->m_typeId == TYPEID_INTERVAL) {
+        return intervalTypeIsUnspecified(this->m_compoundTypeInfo);
+    }
+    return false;
 }
 
 bool typeIsIdentical(Type *this, Type *other) {
     // TODO: implement this (if this is ever needed)
 }
 
+bool typeIsDomainExprCompatible(Type *this) {
+    return typeIsIntegerVector(this) || typeIsIntegerInterval(this);
+}
+
 ///------------------------------COMPOUND TYPE INFO---------------------------------------------------------------
-
-ArrayType *arrayTypeMalloc() {
-    return malloc(sizeof(ArrayType));
-}
-
-void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength, bool isString, bool isOwned) {
-    int64_t dims[1] = {vecLength};
-    arrayTypeInitFromDims(this, elementTypeID, 1, dims, isString, isOwned, false, false);
-}
-
-void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2, bool isOwned) {
-    int64_t dims[2] = {dim1, dim2};
-    arrayTypeInitFromDims(this, elementTypeID, 2, dims, false, isOwned, false, false);
-}
-
-void arrayTypeInitFromCopy(ArrayType *this, ArrayType *other) {
-    arrayTypeInitFromDims(this, other->m_elementTypeID, other->m_nDim, other->m_dims,
-                          other->m_isString, other->m_isOwned, other->m_isRef, other->m_isSelfRef);
-}
-
-void arrayTypeInitFromDims(ArrayType *this, ElementTypeID elementTypeID, int8_t nDim, int64_t *dims,
-                           bool isString, bool isOwned, bool isRef, bool isSelfRef) {
-    this->m_isString = isString;
-    this->m_elementTypeID = elementTypeID;
-    this->m_nDim = nDim;
-    if (nDim != 0) {
-        this->m_dims = malloc(nDim * sizeof(int64_t));
-        memcpy(this->m_dims, dims, nDim * sizeof(int64_t));
-    } else
-        this->m_dims = NULL;
-    this->m_isOwned = isOwned;
-    this->m_isRef = isRef;
-    this->m_isSelfRef = isSelfRef;
-}
-
-void arrayTypeDestructor(ArrayType *this) {
-    free(this->m_dims);
-}
-
-// Array type methods
-
-VecToVecRHSSizeRestriction arrayTypeMinimumCompatibleRestriction(ArrayType *this, ArrayType *target) {
-    VecToVecRHSSizeRestriction compatibleRestriction = vectovec_rhs_must_be_same_size;
-
-    int8_t nDim = target->m_nDim;
-    int64_t *dims = this->m_dims;
-    int64_t *targetDims = target->m_dims;
-
-    int64_t i = 0;
-    while (i < nDim) {
-        if (targetDims[i] != dims[i]) {
-            compatibleRestriction = vectovec_rhs_size_must_not_be_greater;
-            break;
-        }
-        i++;
-    }
-    while (i < nDim) {
-        if (targetDims[i] < dims[i]) {
-            compatibleRestriction = vectovec_rhs_size_can_be_any;
-            break;
-        }
-        i++;
-    }
-    return compatibleRestriction;
-}
-
-bool arrayTypeHasUnknownSize(ArrayType *this) {
-    bool hasUnknown = false;
-    for (int8_t i = 0; i < this->m_nDim; i++) {
-        hasUnknown = hasUnknown || this->m_dims[i] < 0;
-    }
-    return hasUnknown;
-}
-
-int64_t arrayTypeElementSize(ArrayType *this) {
-    return elementGetSize(this->m_elementTypeID);
-}
-int64_t arrayTypeGetTotalLength(ArrayType *this) {
-    int8_t nDim = this->m_nDim;
-    if (nDim == 0) {
-        return 1;
-    } else if (nDim == 1) {
-        return this->m_dims[0];
-    } else if (nDim == 2) {
-        return this->m_dims[0] * this->m_dims[1];
-    }
-}
-
-bool arrayTypeCanBinopSameTypeSameSize(ArrayType *result, ArrayType *op1, ArrayType *op2) {
-    ElementTypeID eid;
-    if (!elementCanBePromotedBetween(op1->m_elementTypeID, op2->m_elementTypeID, &eid))
-        return false;
-    if (op1->m_nDim == 0 && op2->m_nDim != 0) {
-        arrayTypeInitFromCopy(result, op2);
-    } else if (op2->m_nDim == 0 && op1->m_nDim != 0) {
-        arrayTypeInitFromCopy(result, op1);
-    } else if (op1->m_nDim == 0 && op2->m_nDim == 0) {
-        arrayTypeInitFromCopy(result, op1);  // either works, since the two only differs in eid
-    } else if (op1->m_nDim != op2->m_nDim) {  // one vector one matrix
-        return false;
-    } else {  // two vectors or two matrices
-        for (int8_t i = 0; i < op1->m_nDim; i++) {
-            if (op1->m_dims[i] != op2->m_dims[i]) {
-                return false;
-            }
-        }
-        arrayTypeInitFromCopy(result, op1);
-    }
-    result->m_elementTypeID = eid;
-    return true;
-}
-
 // IntervalType---------------------------------------------------------------------------------------------
 
 IntervalType *intervalTypeMalloc() {

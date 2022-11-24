@@ -6,7 +6,7 @@ void errorAndExit(const char *errorMsg) {
     exit(1);
 }
 
-void targetTypeError(Type *targetType, const char *errorMsg) {
+void singleTypeError(Type *targetType, const char *errorMsg) {
     fprintf(stderr, "%s", errorMsg);
     typeDebugPrint(targetType);
     exit(1);

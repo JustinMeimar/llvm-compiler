@@ -21,6 +21,7 @@ bool elementIsMixedType(ElementTypeID id);
 bool elementIsNullIdentity(ElementTypeID id);
 bool elementIsBasicType(ElementTypeID id);
 int64_t elementGetSize(ElementTypeID id);
+void elementAssign(ElementTypeID id, void *target, void *src);
 
 bool elementCanBeCastedFrom(ElementTypeID to, ElementTypeID from);  // does not handle mixed type
 bool elementCanBePromotedFrom(ElementTypeID to, ElementTypeID from);
@@ -59,10 +60,6 @@ bool arrayGetBoolValue(void *arr, int64_t index);
 int8_t arrayGetCharacterValue(void *arr, int64_t index);
 int32_t arrayGetIntegerValue(void *arr, int64_t index);
 float arrayGetRealValue(void *arr, int64_t index);
-void arraySetBoolValue(void *arr, int64_t index, bool value);
-void arraySetCharacterValue(void *arr, int64_t index, int8_t value);
-void arraySetIntegerValue(void *arr, int64_t index, int32_t value);
-void arraySetRealValue(void *arr, int64_t index, float value);
 
 
 /// unary op
