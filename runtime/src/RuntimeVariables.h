@@ -51,7 +51,7 @@ void variableInitFromDomainExpression(Variable *this, Variable *rhs);           
 void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed);
 void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail);
 void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step);  // the new variable is a vector
-void variableInitFromNDArray(Variable *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims,
+void variableInitFromNDArray(Variable *this, bool isString, ElementTypeID eid, int8_t nDim, int64_t *dims,
                              void *value, bool valueIsScalar);
 void variableDestructor(Variable *this);                                                          /// INTERFACE
 void variableDestructThenFree(Variable *this);                                                    /// INTERFACE

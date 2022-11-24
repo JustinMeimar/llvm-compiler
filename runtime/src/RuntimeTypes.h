@@ -23,7 +23,7 @@ void typeInitFromTwoSingleTerms(Type *this, Type *first, Type *second);
 void typeInitFromVectorSizeSpecificationFromLiteral(Type *this, int64_t size, Type *baseType);  // for vector and string
 void typeInitFromMatrixSizeSpecificationFromLiteral(Type *this, int64_t nRow, int64_t nCol, Type *baseType);
 void typeInitFromIntervalType(Type *this, IntervalTypeBaseTypeID id);
-void typeInitFromArrayType(Type *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims);
+void typeInitFromArrayType(Type *this, bool isString, ElementTypeID eid, int8_t nDim, int64_t *dims);
 
 
 void typeDestructor(Type *this);                     /// INTERFACE
@@ -52,19 +52,24 @@ bool typeIsIdentical(Type *this, Type *other);  // checks if the two types are d
 
 ///------------------------------COMPOUND TYPE INFO---------------------------------------------------------------
 // ArrayType---------------------------------------------------------------------------------------------
-typedef struct struct_gazprea_array_or_string_type {
+typedef struct struct_gazprea_array_type {
     ElementTypeID m_elementTypeID;  // type of the element
     int8_t m_nDim;                  // # of dimensions
     int64_t *m_dims;                // each int64_t specify the length of array in one dimension
+    bool m_isOwned;                   // default to true; ownership determines if we are able to free it in destructor
+    bool m_isString;
+    bool m_isRef;                     // if the array is index reference, default to false
+    bool m_isSelfRef;                 // if the array is indexed by itself E.g. a[a], default to false
 } ArrayType;
 
 /// allocate
 ArrayType *arrayTypeMalloc();
 /// constructor
-void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength);
-void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2);  // dim1 is #rows
+void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength, bool isString, bool isOwned);
+void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2, bool isOwned);  // dim1 is #rows
 void arrayTypeInitFromCopy(ArrayType *this, ArrayType *other);
-void arrayTypeInitFromDims(ArrayType *this, ElementTypeID elementTypeID, int8_t nDim, int64_t *dims);
+void arrayTypeInitFromDims(ArrayType *this, ElementTypeID elementTypeID, int8_t nDim, int64_t *dims,
+                           bool isString, bool isOwned, bool isRef, bool isSelfRef);
 /// destructor
 void arrayTypeDestructor(ArrayType *this);
 

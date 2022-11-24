@@ -203,7 +203,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
                 vec[i] = interval[0] + (int32_t)i;
             }
             int64_t dims[1] = {resultSize};
-            typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, eid, 1, dims);
+            typeInitFromArrayType(this->m_type, false, eid, 1, dims);
             if (eid == ELEMENT_INTEGER) {
                 this->m_data = vec;
             } else if (eid != ELEMENT_REAL) {
@@ -248,7 +248,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         return;
     }
 
-    /// array/string -> array/string
+    /// array -> array
     {
         ArrayType *rhsCTI = rhsType->m_compoundTypeInfo;
         int8_t rhsNDim = rhsCTI->m_nDim;
@@ -320,8 +320,7 @@ void variableInitFromMemcpy(Variable *this, Variable *other) {
     TypeID id = this->m_type->m_typeId;
     this->m_data = NULL;
     switch (id) {
-        case TYPEID_NDARRAY:
-        case TYPEID_STRING: {
+        case TYPEID_NDARRAY: {
             ArrayType *CTI = other->m_type->m_compoundTypeInfo;
             this->m_data = arrayMallocFromMemcpy(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI), other->m_data);
         } break;
@@ -363,7 +362,7 @@ void variableInitFromNull(Variable *this, Type *type) {
         typeInitFromCopy(this->m_type, type);
     TypeID typeid = type->m_typeId;
 
-    if (typeid == TYPEID_NDARRAY || typeid == TYPEID_STRING) {
+    if (typeid == TYPEID_NDARRAY) {
         ArrayType *CTI = type->m_compoundTypeInfo;
         if (arrayTypeHasUnknownSize(CTI))
             targetTypeError(type, "Attempt to promote null into unknown type: ");
@@ -389,7 +388,7 @@ void variableInitFromIdentity(Variable *this, Type *type) {
     typeInitFromCopy(this->m_type, type);
     TypeID typeid = type->m_typeId;
 
-    if (typeid == TYPEID_NDARRAY || typeid == TYPEID_STRING) {
+    if (typeid == TYPEID_NDARRAY) {
         ArrayType *CTI = type->m_compoundTypeInfo;
         if (arrayTypeHasUnknownSize(CTI))
             targetTypeError(type, "Attempt to promote identity into unknown type: ");
@@ -459,9 +458,9 @@ void computeSameTypeSameSizeArrayArrayBinop(Variable *this, Variable *op1, Varia
     // init type
     this->m_type = typeMalloc();
     if (resultCollapseToScalar) {
-        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, resultEID, 0, NULL);
+        typeInitFromArrayType(this->m_type, false, resultEID, 0, NULL);
     } else {
-        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, resultEID, op1CTI->m_nDim, op1CTI->m_dims);
+        typeInitFromArrayType(this->m_type, false, resultEID, op1CTI->m_nDim, op1CTI->m_dims);
     }
     ArrayType *CTI = this->m_type->m_compoundTypeInfo;
     if (CTI->m_elementTypeID != resultEID) {
@@ -477,7 +476,7 @@ void computeIvlIvlBinop(Variable *this, Variable *op1, Variable *op2, BinOpCode 
     this->m_type = typeMalloc();
     if (opcode == BINARY_EQ || opcode == BINARY_NE) {
         // result is boolean
-        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, ELEMENT_BOOLEAN, 0, NULL);
+        typeInitFromArrayType(this->m_type, false, ELEMENT_BOOLEAN, 0, NULL);
         this->m_data = arrayMallocFromNull(ELEMENT_BOOLEAN, 1);
     } else {
         typeInitFromIntervalType(this->m_type, INTEGER_BASE_INTERVAL);
@@ -633,7 +632,7 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
             Type *ivlType = typeMalloc();
             typeInitFromIntervalType(ivlType, INTEGER_BASE_INTERVAL);
             Type *intType = typeMalloc();
-            typeInitFromArrayType(intType, TYPEID_NDARRAY, ELEMENT_INTEGER, 0, NULL);
+            typeInitFromArrayType(intType, false, ELEMENT_INTEGER, 0, NULL);
 
             binopPromoteComputationAndDispose(this, op1, op2, opcode, ivlType, intType, computeIvlByIntBinop);
 
@@ -699,10 +698,8 @@ void variableInitFromConcat(Variable *this, Variable *op1, Variable *op2) {
                          &this->m_data, NULL);
     this->m_type = typeMalloc();
     int64_t dims[1] = {arr1Length + arr2Length};
-    TypeID tid = TYPEID_NDARRAY;
-    if (op1Type->m_typeId == TYPEID_STRING || op2Type->m_typeId == TYPEID_STRING)
-        tid = TYPEID_STRING;
-    typeInitFromArrayType(this->m_type, tid, resultEID, 1, dims);
+    bool isString = op1CTI->m_isString || op2CTI->m_isString;
+    typeInitFromArrayType(this->m_type, isString, resultEID, 1, dims);
 
     freeListFreeAll(freeList, free);
 
@@ -778,7 +775,7 @@ void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs) {
 void variableInitFromDomainExpression(Variable *this, Variable *rhs) {
     Type *intVec = typeMalloc();
     int64_t dims[1] = {-1};
-    typeInitFromArrayType(intVec, TYPEID_NDARRAY, ELEMENT_INTEGER, 1, dims);
+    typeInitFromArrayType(intVec, false, ELEMENT_INTEGER, 1, dims);
     variableInitFromPCADP(this, intVec, rhs, &pcadpDomainExpressionConfig);
     typeDestructThenFree(intVec);
 }
@@ -822,7 +819,7 @@ void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step)
     int32_t value = 0;
     int64_t dims[1] = {(interval[1] - interval[0]) / k + 1};
 
-    variableInitFromNDArray(this, TYPEID_NDARRAY, ELEMENT_INTEGER, 1, dims, &value, true);
+    variableInitFromNDArray(this, false, ELEMENT_INTEGER, 1, dims, &value, true);
     int32_t *vec = this->m_data;
     for (int64_t i = 0; i < dims[0]; i++) {
         vec[i] = interval[0] + (int32_t)i * k;
@@ -832,10 +829,10 @@ void variableInitFromIntervalStep(Variable *this, Variable *ivl, Variable *step)
 #endif
 }
 
-void variableInitFromNDArray(Variable *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims,
+void variableInitFromNDArray(Variable *this, bool isString, ElementTypeID eid, int8_t nDim, int64_t *dims,
                              void *value, bool valueIsScalar) {
     this->m_type = typeMalloc();
-    typeInitFromArrayType(this->m_type, typeID, eid, nDim, dims);
+    typeInitFromArrayType(this->m_type, isString, eid, nDim, dims);
     int64_t totalLength = arrayTypeGetTotalLength(this->m_type->m_compoundTypeInfo);
     int64_t elementSize = elementGetSize(eid);
 
@@ -881,7 +878,7 @@ void variableDestructor(Variable *this) {
 #endif
     TypeID id = this->m_type->m_typeId;
 
-    if (id == TYPEID_NDARRAY || id == TYPEID_STRING) {
+    if (id == TYPEID_NDARRAY) {
         // destructor does different things depending on the element type
         ArrayType *CTI = this->m_type->m_compoundTypeInfo;
         arrayFree(CTI->m_elementTypeID, this->m_data, arrayTypeGetTotalLength(CTI));
@@ -892,7 +889,6 @@ void variableDestructor(Variable *this) {
 
     switch (id) {
         case TYPEID_NDARRAY:
-        case TYPEID_STRING:
         case TYPEID_STREAM_IN:
         case TYPEID_STREAM_OUT:
         case TYPEID_EMPTY_ARRAY:
@@ -924,8 +920,7 @@ bool variableIsIntegerArray(Variable *this) { return typeIsIntegerArray(this->m_
 bool variableIsDomainExprCompatible(Variable *this) { return typeIsDomainExprCompatible(this->m_type); }
 int64_t variableGetLength(Variable *this) {
     switch(this->m_type->m_typeId) {
-        case TYPEID_NDARRAY:
-        case TYPEID_STRING: {
+        case TYPEID_NDARRAY: {
             return arrayTypeGetTotalLength(this->m_type->m_compoundTypeInfo);
         } break;
         case TYPEID_INTERVAL: {
@@ -957,7 +952,7 @@ int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx) {
 
 int32_t variableGetIntegerValue(Variable *this) {
     Type *intTy = typeMalloc();
-    typeInitFromArrayType(intTy, TYPEID_NDARRAY, ELEMENT_INTEGER, 0, NULL);
+    typeInitFromArrayType(intTy, false, ELEMENT_INTEGER, 0, NULL);
     Variable *intVar = variableMalloc();
     variableInitFromPromotion(intVar, intTy, this);
     int32_t result = *(int32_t *)intVar->m_data;
@@ -968,7 +963,7 @@ int32_t variableGetIntegerValue(Variable *this) {
 
 bool variableGetBooleanValue(Variable *this) {
     Type *boolTy = typeMalloc();
-    typeInitFromArrayType(boolTy, TYPEID_NDARRAY, ELEMENT_BOOLEAN, 0, NULL);
+    typeInitFromArrayType(boolTy, false, ELEMENT_BOOLEAN, 0, NULL);
     Variable *intVar = variableMalloc();
     variableInitFromPromotion(intVar, boolTy, this);
     bool result = *(bool *)intVar->m_data;
@@ -992,7 +987,6 @@ int8_t variableGetNDim(Variable *this) {
             ArrayType *CTI = type->m_compoundTypeInfo;
             return CTI->m_nDim;
         } break;
-        case TYPEID_STRING:
         case TYPEID_INTERVAL: {
             return 1;
         } break;

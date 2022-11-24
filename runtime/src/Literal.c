@@ -9,16 +9,16 @@
 
 // ndarray
 void typeInitFromBooleanScalar(Type *this) {
-    typeInitFromArrayType(this, TYPEID_NDARRAY, ELEMENT_BOOLEAN, 0, NULL);
+    typeInitFromArrayType(this, false, ELEMENT_BOOLEAN, 0, NULL);
 }
 void typeInitFromIntegerScalar(Type *this) {
-    typeInitFromArrayType(this, TYPEID_NDARRAY, ELEMENT_INTEGER, 0, NULL);
+    typeInitFromArrayType(this, false, ELEMENT_INTEGER, 0, NULL);
 }
 void typeInitFromRealScalar(Type *this) {
-    typeInitFromArrayType(this, TYPEID_NDARRAY, ELEMENT_REAL, 0, NULL);
+    typeInitFromArrayType(this, false, ELEMENT_REAL, 0, NULL);
 }
 void typeInitFromCharacterScalar(Type *this) {
-    typeInitFromArrayType(this, TYPEID_NDARRAY, ELEMENT_CHARACTER, 0, NULL);
+    typeInitFromArrayType(this, false, ELEMENT_CHARACTER, 0, NULL);
 }
 
 void typeInitFromVectorSizeSpecification(Type *this, Variable *size, Type *baseType) {
@@ -45,8 +45,7 @@ void typeInitFromMatrixSizeSpecification(Type *this, Variable *nRow, Variable *n
 
 void typeInitFromUnspecifiedString(Type *this) {
     int64_t dims[1] = {SIZE_UNSPECIFIED };
-    typeInitFromArrayType(this, TYPEID_NDARRAY, ELEMENT_CHARACTER, 1, dims);
-    this->m_typeId = TYPEID_STRING;
+    typeInitFromArrayType(this, false, ELEMENT_CHARACTER, 1, dims);
 }
 
 
@@ -101,31 +100,32 @@ Type *variableSwapType(Variable *this, Type *newType) {
 ///------------------------------VARIABLE---------------------------------------------------------------
 
 void variableInitFromBooleanScalar(Variable *this, bool value) {
-    variableInitFromNDArray(this, TYPEID_NDARRAY, ELEMENT_BOOLEAN, 0, NULL, &value, false);
+    variableInitFromNDArray(this, false, ELEMENT_BOOLEAN, 0, NULL, &value, false);
 }
 
 void variableInitFromIntegerScalar(Variable *this, int32_t value){
-    variableInitFromNDArray(this, TYPEID_NDARRAY, ELEMENT_INTEGER, 0, NULL, &value, false);
+    variableInitFromNDArray(this, false, ELEMENT_INTEGER, 0, NULL, &value, false);
 }
 
 void variableInitFromRealScalar(Variable *this, float value){
-    variableInitFromNDArray(this, TYPEID_NDARRAY, ELEMENT_REAL, 0, NULL, &value, false);
+    variableInitFromNDArray(this, false, ELEMENT_REAL, 0, NULL, &value, false);
 }
 
 void variableInitFromCharacterScalar(Variable *this, int8_t value){
-    variableInitFromNDArray(this, TYPEID_NDARRAY, ELEMENT_CHARACTER, 0, NULL, &value, false);
+    variableInitFromNDArray(this, false, ELEMENT_CHARACTER, 0, NULL, &value, false);
 }
 
 void variableInitFromNullScalar(Variable *this) {
-    variableInitFromNDArray(this, TYPEID_NDARRAY, ELEMENT_NULL, 0, NULL, NULL, false);
+    variableInitFromNDArray(this, false, ELEMENT_NULL, 0, NULL, NULL, false);
 }
 
 void variableInitFromIdentityScalar(Variable *this){
-    variableInitFromNDArray(this, TYPEID_NDARRAY, ELEMENT_IDENTITY, 0, NULL, NULL, false);
+    variableInitFromNDArray(this, false, ELEMENT_IDENTITY, 0, NULL, NULL, false);
 }
 
 void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **vars) {
     // one pass to check if the result is a vector or a matrix, another to convert it into mixed array
+    // TODO: update this to allow promotion etc.
     bool isMatrix = false;
     for (int64_t i = 0; i < nVars; i++) {
         int8_t nDim = variableGetNDim(vars[i]);
@@ -147,7 +147,7 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
             width = width > size ? width : size;
         }
         int64_t dims[2] = {nVars, width};
-        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, ELEMENT_MIXED, 2, dims);
+        typeInitFromArrayType(this->m_type, false, ELEMENT_MIXED, 2, dims);
         MixedTypeElement *arr = arrayMallocFromElementValue(ELEMENT_MIXED, dims[0] * dims[1], &mixedTemplate);
 
         for (int64_t i = 0; i < nVars; i++) {
@@ -156,8 +156,7 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
             for (int64_t j = 0; j < width; j++) {
                 MixedTypeElement *curElement = arr + i * width + j;
                 switch(rhsType->m_typeId) {
-                    case TYPEID_NDARRAY:
-                    case TYPEID_STRING: {
+                    case TYPEID_NDARRAY: {
                         if (variableGetNDim(rhs) != 1) {
                             targetTypeError(rhsType, "Invalid dimension in an array (matrix) literal:");
                         }
@@ -189,7 +188,7 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
     } else {
         // vector literal
         int64_t dims[1] = {nVars};
-        typeInitFromArrayType(this->m_type, TYPEID_NDARRAY, ELEMENT_MIXED, 1, dims);
+        typeInitFromArrayType(this->m_type, false, ELEMENT_MIXED, 1, dims);
         MixedTypeElement *arr = arrayMallocFromElementValue(ELEMENT_MIXED, nVars, &mixedTemplate);
         for (int64_t i = 0; i < nVars; i++) {
             MixedTypeElement *curElement = arr + i;
@@ -219,7 +218,7 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
 
 void variableInitFromString(Variable *this, int64_t strLength, int8_t *str) {
     int64_t dims[1] = {strLength};
-    variableInitFromNDArray(this, TYPEID_STRING, ELEMENT_CHARACTER, 1, dims, str, false);
+    variableInitFromNDArray(this, false, ELEMENT_CHARACTER, 1, dims, str, false);
 }
 
 void variableInitFromTupleLiteral(Variable *this, int64_t nField, Variable **vars) {

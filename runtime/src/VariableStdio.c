@@ -14,9 +14,6 @@ void typeDebugPrint(Type *this) {
         case TYPEID_NDARRAY:
             fprintf(fd, "ndarray");
             break;
-        case TYPEID_STRING:
-            fprintf(fd, "string");
-            break;
         case TYPEID_INTERVAL:
             fprintf(fd, "interval");
             break;
@@ -40,10 +37,10 @@ void typeDebugPrint(Type *this) {
             break;
     }
     switch (this->m_typeId) {
-        case TYPEID_NDARRAY:
-        case TYPEID_STRING: {
+        case TYPEID_NDARRAY: {
             ArrayType *CTI = this->m_compoundTypeInfo;
-            fprintf(fd, ",eid=%d,nDim=%d", CTI->m_elementTypeID, CTI->m_nDim);
+            fprintf(fd, ",eid=%d,nDim=%d,isString=%d,isOwned=%d,isRef=%d,isSelfRef=%d", CTI->m_elementTypeID, CTI->m_nDim,
+                CTI->m_isString, CTI->m_isOwned, CTI->m_isRef, CTI->m_isSelfRef);
             for (int8_t i = 0; i < CTI->m_nDim; i++) {
                 fprintf(fd, ",dim[%d]=%ld", i, CTI->m_dims[i]);
             }
@@ -115,48 +112,51 @@ void elementPrintToFile(FILE *fd, ElementTypeID id, void *value) {
 }
 
 void variablePrintToFile(FILE *fd, Variable *this) {
+    // only arrays and string can be printed
     Type *type = this->m_type;
-    if (type->m_typeId == TYPEID_STRING) {
+    if (type->m_typeId == TYPEID_NDARRAY) {
         ArrayType *CTI = type->m_compoundTypeInfo;
-        int64_t size = arrayTypeGetTotalLength(CTI);
-        int8_t *str = this->m_data;
-        for (int64_t i = 0; i < size; i++) {
-            fprintf(fd, "%c", str[i]);
-        }
-    } else if (type->m_typeId == TYPEID_NDARRAY) {
-        ArrayType *CTI = type->m_compoundTypeInfo;
-        ElementTypeID eid = CTI->m_elementTypeID;
-        char *dataPos = this->m_data;
-        if (CTI->m_nDim == 0)  // scalar
-            elementPrintToFile(fd, eid, dataPos);
-        else {
-            int64_t elementSize = arrayTypeElementSize(CTI);
-            int64_t *dims = CTI->m_dims;
-            if (CTI->m_nDim == 1) {  // vector
-                fprintf(fd, "[");
-                for (int64_t i = 0; i < dims[0]; i++) {
-                    elementPrintToFile(fd, eid, dataPos + i * elementSize);
-                    if (i != dims[0] - 1) {
-                        fprintf(fd, " ");
-                    }
-                }
-                fprintf(fd, "]");
-            } else {  // matrix
-                fprintf(fd, "[");
-                for (int64_t i = 0; i < dims[0]; i++) {
+
+        if (CTI->m_isString) {
+            int64_t size = arrayTypeGetTotalLength(CTI);
+            int8_t *str = this->m_data;
+            for (int64_t i = 0; i < size; i++) {
+                fprintf(fd, "%c", str[i]);
+            }
+        } else {
+            ElementTypeID eid = CTI->m_elementTypeID;
+            char *dataPos = this->m_data;
+            if (CTI->m_nDim == 0)  // scalar
+                elementPrintToFile(fd, eid, dataPos);
+            else {
+                int64_t elementSize = arrayTypeElementSize(CTI);
+                int64_t *dims = CTI->m_dims;
+                if (CTI->m_nDim == 1) {  // vector
                     fprintf(fd, "[");
-                    for (int64_t j = 0; j < dims[1]; j++) {
-                        elementPrintToFile(fd, eid, dataPos + (i * dims[1] + j) * elementSize);
-                        if (j != dims[1] - 1) {
+                    for (int64_t i = 0; i < dims[0]; i++) {
+                        elementPrintToFile(fd, eid, dataPos + i * elementSize);
+                        if (i != dims[0] - 1) {
                             fprintf(fd, " ");
                         }
                     }
                     fprintf(fd, "]");
-                    if (i != dims[0] - 1) {
-                        fprintf(fd, " ");
+                } else {  // matrix
+                    fprintf(fd, "[");
+                    for (int64_t i = 0; i < dims[0]; i++) {
+                        fprintf(fd, "[");
+                        for (int64_t j = 0; j < dims[1]; j++) {
+                            elementPrintToFile(fd, eid, dataPos + (i * dims[1] + j) * elementSize);
+                            if (j != dims[1] - 1) {
+                                fprintf(fd, " ");
+                            }
+                        }
+                        fprintf(fd, "]");
+                        if (i != dims[0] - 1) {
+                            fprintf(fd, " ");
+                        }
                     }
+                    fprintf(fd, "]");
                 }
-                fprintf(fd, "]");
             }
         }
     }
@@ -170,8 +170,7 @@ void variableDebugPrint(Variable *this) {
     fprintf(stderr, "(Var");
     typeDebugPrint(this->m_type);
     switch(this->m_type->m_typeId) {
-        case TYPEID_NDARRAY:
-        case TYPEID_STRING: {
+        case TYPEID_NDARRAY: {
             // use the spec print method
             variablePrintToFile(stderr, this);
         } break;

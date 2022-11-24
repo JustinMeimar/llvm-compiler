@@ -12,8 +12,7 @@ extern const int64_t SIZE_UNSPECIFIED;  // for string only
 /// TYPES
 typedef enum enum_gazprea_typeid {
     /// spec
-    TYPEID_NDARRAY,
-    TYPEID_STRING,
+    TYPEID_NDARRAY,   // scalar, vector, string and matrix
     TYPEID_INTERVAL,  // not a compound type because it is always constant size
     TYPEID_TUPLE,
 
@@ -46,6 +45,14 @@ typedef enum enum_gazprea_interval_base_typeid {
     INTEGER_BASE_INTERVAL,
     UNSPECIFIED_BASE_INTERVAL,  // the interval alone
 } IntervalTypeBaseTypeID;
+
+
+/// Array index reference types
+typedef enum enum_gazprea_index_reference_typeid {
+    ARRAY_INDEX_REF_VECTOR_SELF,  // use 1 variable
+    ARRAY_INDEX_REF_VECTOR_NON_SELF,  // use 2 variables
+    ARRAY_INDEX_REF_MATRIX,  // use 3 variables
+} IndexRefTypeID;
 
 
 /// Unary/Binary Ops
