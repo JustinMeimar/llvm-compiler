@@ -119,9 +119,46 @@ void variableInitFromIdentityScalar(Variable *this){
     variableInitFromNDArray(this, false, ELEMENT_IDENTITY, 0, NULL, NULL, false);
 }
 
+void variableInitFromMatrixLiteralHelper(Variable *this, int64_t nVars, Variable **vars, int64_t longestLen) {
+    MixedTypeElement mixedTemplate = {ELEMENT_NULL, NULL };
+    int64_t dims[2] = {nVars, longestLen};
+    this->m_type = typeMalloc();
+    typeInitFromArrayType(this->m_type, false, ELEMENT_MIXED, 2, dims);
+    MixedTypeElement *arr = arrayMallocFromElementValue(ELEMENT_MIXED, dims[0] * dims[1], &mixedTemplate);
+
+    for (int64_t i = 0; i < nVars; i++) {
+        Variable *curVar = vars[i];
+        Type *curType = curVar->m_type;
+        for (int64_t j = 0; j < longestLen; j++) {
+            MixedTypeElement *curElement = arr + i * longestLen + j;
+            if (curType->m_typeId != TYPEID_NDARRAY)
+                singleTypeError(curType, "Invalid type in an array (matrix) literal:");
+
+            int64_t size = variableGetLength(vars[i]);
+            if (j < size) {
+                ArrayType *CTI = curType->m_compoundTypeInfo;
+                ElementTypeID eid = CTI->m_elementTypeID;
+                void *elementPtr = arrayGetElementPtrAtIndex(eid, curVar->m_data, j);
+                if (eid == ELEMENT_MIXED) {
+                    MixedTypeElement *element = elementPtr;
+                    mixedTypeElementInitFromValue(curElement, element->m_elementTypeID,
+                                                  element->m_element);
+                } else {
+                    mixedTypeElementInitFromValue(curElement, eid, elementPtr);
+                }
+            } else {
+                mixedTypeElementInitFromValue(curElement, ELEMENT_NULL, NULL);
+            }
+        }
+    }
+
+    this->m_data = arr;
+    variableAttrInitHelper(this, -1, this->m_data, false);
+}
+
 void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **vars) {
     // one pass to check if the result is a vector or a matrix, another to convert it into mixed array
-    // TODO: update this to allow promotion etc.
+
     bool isMatrix = false;
     for (int64_t i = 0; i < nVars; i++) {
         int8_t nDim = variableGetNDim(vars[i]);
@@ -131,63 +168,46 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
         } else if (nDim > 1 || nDim == DIM_INVALID)
             singleTypeError(vars[i]->m_type, "Vector literal contains type:");
     }
-    MixedTypeElement mixedTemplate = {ELEMENT_NULL, NULL };
-    this->m_type = typeMalloc();
+
+    int64_t longestLen = 0;
+    if (isMatrix) {
+        // one more pass to find out the longest vector among all rows
+        for (int64_t i = 0; i < nVars; i++) {
+            int64_t size = variableGetLength(vars[i]);
+            longestLen = longestLen > size ? longestLen : size;
+        }
+    }
+
+    Variable **modifiedVars = malloc(nVars * sizeof(Variable *));
+    for (int64_t i = 0; i < nVars; i++) {
+        if (isMatrix && typeIsScalar(vars[i]->m_type)) {
+            int64_t dims[1] = {longestLen};
+            variableInitFromScalarToConcreteArray(modifiedVars[i], vars[i], 1, dims, false);
+        } else if (variableGetIndexRefTypeID(vars[i]) != NDARRAY_INDEX_REF_NOT_A_REF) {
+            variableInitFromNDArrayIndexRefToValue(modifiedVars[i], vars[i]);
+        } else {  // do not modify
+            modifiedVars[i] = vars[i];
+        }
+    }
+
     if (nVars == 0) {  // empty array
+        this->m_type = typeMalloc();
+        MixedTypeElement mixedTemplate = {ELEMENT_NULL, NULL };
         typeInitFromArrayType(this->m_type, false, ELEMENT_MIXED, DIM_UNSPECIFIED, NULL);
         this->m_data = arrayMallocFromElementValue(ELEMENT_MIXED, 0, &mixedTemplate);;
     } else if (isMatrix) {
         // matrix literal
-        // one more pass to find out the longest vector among all rows
-        int64_t width = 0;
-        for (int64_t i = 0; i < nVars; i++) {
-            int64_t size = variableGetLength(vars[i]);
-            width = width > size ? width : size;
-        }
-        int64_t dims[2] = {nVars, width};
-        typeInitFromArrayType(this->m_type, false, ELEMENT_MIXED, 2, dims);
-        MixedTypeElement *arr = arrayMallocFromElementValue(ELEMENT_MIXED, dims[0] * dims[1], &mixedTemplate);
-
-        for (int64_t i = 0; i < nVars; i++) {
-            Variable *curVar = vars[i];
-            Type *curType = curVar->m_type;
-            for (int64_t j = 0; j < width; j++) {
-                MixedTypeElement *curElement = arr + i * width + j;
-                switch(curType->m_typeId) {
-                    case TYPEID_NDARRAY: {
-                        if (variableGetNDim(curVar) != 1) {
-                            singleTypeError(curType, "Invalid dimension in an array (matrix) literal:");
-                        }
-                        int64_t size = variableGetLength(vars[i]);
-                        if (j < size) {
-                            ArrayType *CTI = curType->m_compoundTypeInfo;
-                            ElementTypeID eid = CTI->m_elementTypeID;
-                            void *elementPtr = arrayGetElementPtrAtIndex(eid, curVar->m_data, j);
-                            if (eid == ELEMENT_MIXED) {
-                                MixedTypeElement *element = elementPtr;
-                                mixedTypeElementInitFromValue(curElement, element->m_elementTypeID, element->m_element);
-                            } else {
-                                mixedTypeElementInitFromValue(curElement, eid, elementPtr);
-                            }
-                        } else {
-                            mixedTypeElementInitFromValue(curElement, ELEMENT_NULL, NULL);
-                        }
-                    } break;
-                    default:
-                        singleTypeError(curType, "Invalid type in an array (matrix) literal:");
-                }
-            }
-        }
-
-        this->m_data = arr;
+        variableInitFromMatrixLiteralHelper(this, nVars, modifiedVars, longestLen);
     } else {
         // vector literal
+        this->m_type = typeMalloc();
+        MixedTypeElement mixedTemplate = {ELEMENT_NULL, NULL };
         int64_t dims[1] = {nVars};
         typeInitFromArrayType(this->m_type, false, ELEMENT_MIXED, 1, dims);
         MixedTypeElement *arr = arrayMallocFromElementValue(ELEMENT_MIXED, nVars, &mixedTemplate);
         for (int64_t i = 0; i < nVars; i++) {
             MixedTypeElement *curElement = arr + i;
-            Variable *rhs = vars[i];
+            Variable *rhs = modifiedVars[i];
             Type *rhsType = rhs->m_type;
             switch(rhsType->m_typeId) {
                 case TYPEID_NDARRAY: {
@@ -203,8 +223,14 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
         }
 
         this->m_data = arr;
+        variableAttrInitHelper(this, -1, this->m_data, false);
     }
-    variableAttrInitHelper(this, -1, this->m_data, false);
+
+    for (int64_t i = 0; i < nVars; i++) {
+        if (modifiedVars[i] != vars[i])
+            variableDestructThenFree(modifiedVars[i]);
+    }
+    free(modifiedVars);
 #ifdef DEBUG_PRINT
     variableInitDebugPrint(this, "from vector literal");
 #endif

@@ -838,6 +838,12 @@ void variableInitFromPCADPToIntegerScalar(Variable *this, Variable *rhs, PCADPCo
     typeDestructThenFree(intTy);
 }
 
+void variableInitFromScalarToConcreteArray(Variable *this, Variable *scalar, int8_t nDim, int64_t *dims, bool isString) {
+    void *val = variableNDArrayGet(scalar, 0);
+    ArrayType *scalarCTI = scalar->m_type->m_compoundTypeInfo;
+    variableInitFromNDArray(this, isString, scalarCTI->m_elementTypeID, nDim, dims, val, true);
+}
+
 void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed) {
     Type *rhsType = mixed->m_type;
     ArrayType *rhsCTI = rhsType->m_compoundTypeInfo;

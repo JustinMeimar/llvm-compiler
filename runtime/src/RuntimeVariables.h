@@ -58,6 +58,7 @@ void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs);   
 void variableInitFromDomainExpression(Variable *this, Variable *rhs);                             /// INTERFACE
 void variableInitFromPCADPToIntegerVector(Variable *this, Variable *rhs, PCADPConfig *config);
 void variableInitFromPCADPToIntegerScalar(Variable *this, Variable *rhs, PCADPConfig *config);
+void variableInitFromScalarToConcreteArray(Variable *this, Variable *scalar, int8_t nDim, int64_t *dims, bool isString);
 
 void variableInitFromMixedArrayPromoteToSameType(Variable *this, Variable *mixed);
 void variableInitFromIntervalHeadTail(Variable *this, Variable *head, Variable *tail);
