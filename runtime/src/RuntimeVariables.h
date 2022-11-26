@@ -67,12 +67,14 @@ void variableInitFromNDArray(Variable *this, bool isString, ElementTypeID eid, i
                              void *value, bool valueIsScalar);
 void variableDestructor(Variable *this);                                                          /// INTERFACE
 void variableDestructThenFree(Variable *this);                                                    /// INTERFACE
+void variableDestructThenFreeImpl(Variable *this);
 
 /// INTERFACE - for domain variable i.e. "i in 1..10"
 bool variableIsIntegerInterval(Variable *this);
 bool variableIsIntegerArray(Variable *this);
 bool variableIsDomainExprCompatible(Variable *this);
 int64_t variableGetLength(Variable *this);
+void variableInitFromIntegerArrayElementAtIndex(Variable *this, Variable *arr, int64_t idx);
 int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx);  // works for both vectors and integer intervals
 
 void variableSetIsBlockScoped(Variable *this, bool isBlockScoped);

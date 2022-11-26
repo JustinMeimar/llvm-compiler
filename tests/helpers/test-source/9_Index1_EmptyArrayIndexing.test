@@ -8,10 +8,9 @@ procedure main() returns integer {
     '\n' -> std_output;
     testString -> std_output;  // ef
     '\n' -> std_output;
-    [][[]] -> std_output;  // []
-    [][empty] -> std_output;  // []
     testBool[empty] -> std_output;  // []
     testBool[[]] -> std_output;  // []
+    '\n' -> std_output;
     testString[empty] -> std_output;  // no output
     testString[[]] -> std_output;  // no output
     '\n' -> std_output;
@@ -24,5 +23,6 @@ procedure main() returns integer {
 #split_token
 []
 ef
-[][][][]
+[][]
+
 [][]

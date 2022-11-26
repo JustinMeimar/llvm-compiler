@@ -169,6 +169,9 @@ void variableInitFromMatrixLiteralHelper(Variable *this, int64_t nVars, Variable
 
     this->m_data = arr;
     variableAttrInitHelper(this, -1, this->m_data, false);
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "from matrix literal");
+#endif
 }
 
 void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **vars) {
@@ -199,6 +202,9 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
             int64_t dims[1] = {longestLen};
             variableInitFromScalarToConcreteArray(modifiedVars[i], vars[i], 1, dims, false);
         } else if (variableGetIndexRefTypeID(vars[i]) != NDARRAY_INDEX_REF_NOT_A_REF) {
+#ifdef DEBUG_PRINT
+            fprintf(stderr, "calling refToValue from vector literal\n");
+#endif
             variableInitFromNDArrayIndexRefToValue(modifiedVars[i], vars[i]);
         } else {  // do not modify
             modifiedVars[i] = vars[i];
@@ -206,10 +212,7 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
     }
 
     if (nVars == 0) {  // empty array
-        this->m_type = typeMalloc();
-        MixedTypeElement mixedTemplate = {ELEMENT_NULL, NULL };
-        typeInitFromArrayType(this->m_type, false, ELEMENT_MIXED, DIM_UNSPECIFIED, NULL);
-        this->m_data = arrayMallocFromElementValue(ELEMENT_MIXED, 0, &mixedTemplate);;
+        variableInitFromEmptyArray(this);
     } else if (isMatrix) {
         // matrix literal
         variableInitFromMatrixLiteralHelper(this, nVars, modifiedVars, longestLen);
@@ -239,16 +242,20 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
 
         this->m_data = arr;
         variableAttrInitHelper(this, -1, this->m_data, false);
+#ifdef DEBUG_PRINT
+        variableInitDebugPrint(this, "from vector literal");
+#endif
     }
 
     for (int64_t i = 0; i < nVars; i++) {
-        if (modifiedVars[i] != vars[i])
-            variableDestructThenFree(modifiedVars[i]);
+        if (modifiedVars[i] != vars[i]) {
+#ifdef DEBUG_PRINT
+            fprintf(stderr, "daf#2\n");
+#endif
+            variableDestructThenFreeImpl(modifiedVars[i]);
+        }
     }
     free(modifiedVars);
-#ifdef DEBUG_PRINT
-    variableInitDebugPrint(this, "from vector literal");
-#endif
 }
 
 void variableInitFromString(Variable *this, int64_t strLength, int8_t *str) {
@@ -288,7 +295,11 @@ void variableInitFromStdOutput(Variable *this) {
 }
 
 void variableInitFromEmptyArray(Variable *this) {
-    variableInitFromVectorLiteral(this, 0, NULL);
+    this->m_type = typeMalloc();
+    MixedTypeElement mixedTemplate = {ELEMENT_NULL, NULL };
+    typeInitFromArrayType(this->m_type, false, ELEMENT_MIXED, DIM_UNSPECIFIED, NULL);
+    this->m_data = arrayMallocFromElementValue(ELEMENT_MIXED, 0, &mixedTemplate);;
+    variableAttrInitHelper(this, -1, this->m_data, false);
 #ifdef DEBUG_PRINT
     variableInitDebugPrint(this, "an empty array");
 #endif

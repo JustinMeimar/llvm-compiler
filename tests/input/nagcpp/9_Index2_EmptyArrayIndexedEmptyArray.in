@@ -1,0 +1,7 @@
+procedure main() returns integer {
+    integer[0] empty = [];
+    [][[]] -> std_output;  // []
+    [][empty] -> std_output;  // []
+
+    return 0;
+}

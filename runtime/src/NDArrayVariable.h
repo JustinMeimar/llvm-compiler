@@ -98,7 +98,7 @@ void variableInitFromVectorIndexing(Variable *this, Variable *arr, Variable *ind
 void variableInitFromMatrixIndexing(Variable *this, Variable *arr, Variable *rowIndex, Variable *colIndex); /// INTERFACE
 void variableNDArrayDestructor(Variable *this);  // called in variableFree()
 
-void variableNDArrayCopy(Variable *this, Variable *other);
+void variableInitFromNDArrayCopy(Variable *this, Variable *other);
 bool variableNDArrayCopyIfIsTemporary(Variable *other, Variable **result);  // return true if is temporary and a copy is performed
 
 void *variableNDArrayGet(Variable *this, int64_t pos);

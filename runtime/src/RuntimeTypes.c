@@ -13,7 +13,8 @@
 Type *typeMalloc() {
     Type *type = malloc(sizeof(Type));
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(malloc type %p)\n", (void *)type);
+    if (!reentry)
+        fprintf(stderr, "(malloc type %p)\n", (void *)type);
 #endif
     return type;
 }
@@ -66,9 +67,11 @@ void typeInitFromIntervalType(Type *this, IntervalTypeBaseTypeID id) {
 
 void typeDestructor(Type *this) {
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(destruct type %p)", (void *)this);
-    typeDebugPrint(this);
-    fprintf(stderr, "\n");
+    if (!reentry) {
+        fprintf(stderr, "(destruct type %p)", (void *) this);
+        typeDebugPrint(this);
+        fprintf(stderr, "\n");
+    }
 #endif
     switch (this->m_typeId) {
         case TYPEID_NDARRAY:
@@ -97,7 +100,8 @@ void typeDestructor(Type *this) {
 void typeDestructThenFree(Type *this) {
     typeDestructor(this);
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(free type %p)\n", (void *)this);
+    if (!reentry)
+        fprintf(stderr, "(free type %p)\n", (void *)this);
 #endif
     free(this);
 }
@@ -352,7 +356,10 @@ void *tupleTypeMallocDataFromPCADP(TupleType *this, Variable *src, PCADPConfig *
 void tupleTypeFreeData(TupleType *this, void *data) {
     Variable **vars = data;
     for (int64_t i = 0; i < this->m_nField; i++) {
-        variableDestructThenFree(vars[i]);
+#ifdef DEBUG_PRINT
+        fprintf(stderr, "daf#13\n");
+#endif
+        variableDestructThenFreeImpl(vars[i]);
     }
     free(vars);
 }

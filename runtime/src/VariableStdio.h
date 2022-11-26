@@ -5,6 +5,10 @@
 #include "Bool.h"
 #include "NDArray.h"
 
+#ifdef DEBUG_PRINT
+extern bool reentry;
+#endif
+
 typedef struct struct_gazprea_variable Variable;
 typedef struct struct_gazprea_type Type;
 

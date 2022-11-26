@@ -1,0 +1,9 @@
+procedure main() returns integer {
+    string testString = "ef";
+    integer[0] empty = [];
+
+    var c = testString[empty];
+
+
+    return 0;
+}
