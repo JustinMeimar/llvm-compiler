@@ -94,8 +94,8 @@ NDArrayTypeID typeGetNDArrayTypeID(Type *this);
 
 void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable *rowIndex, Variable *colIndex, int64_t nIndex);
 void variableInitFromNDArrayIndexRefToValue(Variable *this, Variable *ref);
-void variableInitFromVectorIndexing(Variable *this, Variable *arr, Variable *index);
-void variableInitFromMatrixIndexing(Variable *this, Variable *arr, Variable *rowIndex, Variable *colIndex);
+void variableInitFromVectorIndexing(Variable *this, Variable *arr, Variable *index);                        /// INTERFACE
+void variableInitFromMatrixIndexing(Variable *this, Variable *arr, Variable *rowIndex, Variable *colIndex); /// INTERFACE
 void variableNDArrayDestructor(Variable *this);  // called in variableFree()
 
 void variableNDArrayCopy(Variable *this, Variable *other);

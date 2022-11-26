@@ -148,7 +148,7 @@ bool typeIsIdentical(Type *this, Type *other) {
 }
 
 bool typeIsDomainExprCompatible(Type *this) {
-    return typeIsIntegerVector(this) || typeIsIntegerInterval(this);
+    return typeIsIntegerVector(this) || typeIsIntegerInterval(this) || typeIsEmptyArray(this);
 }
 
 ///------------------------------COMPOUND TYPE INFO---------------------------------------------------------------
