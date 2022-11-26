@@ -8,7 +8,7 @@
 typedef struct struct_gazprea_variable Variable;
 typedef struct struct_gazprea_type Type;
 
-
+extern int32_t global_stream_state;  // 0, 1, 2 = success, error, eof
 void typeDebugPrint(Type *this);  // debug print to stdout               /// INTERFACE
 void typeInitDebugPrint(Type *this, char *msg);
 

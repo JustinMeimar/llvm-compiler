@@ -6,6 +6,7 @@
 #include "stdlib.h"
 #include "ctype.h"
 #include "limits.h"
+#include "NDArrayVariable.h"
 
 void typeDebugPrint(Type *this) {
     FILE *fd = stderr;
@@ -13,9 +14,6 @@ void typeDebugPrint(Type *this) {
     switch (this->m_typeId) {
         case TYPEID_NDARRAY:
             fprintf(fd, "ndarray");
-            break;
-        case TYPEID_STRING:
-            fprintf(fd, "string");
             break;
         case TYPEID_INTERVAL:
             fprintf(fd, "interval");
@@ -29,9 +27,6 @@ void typeDebugPrint(Type *this) {
         case TYPEID_STREAM_OUT:
             fprintf(fd, "stream_out");
             break;
-        case TYPEID_EMPTY_ARRAY:
-            fprintf(fd, "empty_arr");
-            break;
         case TYPEID_UNKNOWN:
             fprintf(fd, "unknown");
             break;
@@ -40,10 +35,10 @@ void typeDebugPrint(Type *this) {
             break;
     }
     switch (this->m_typeId) {
-        case TYPEID_NDARRAY:
-        case TYPEID_STRING: {
+        case TYPEID_NDARRAY: {
             ArrayType *CTI = this->m_compoundTypeInfo;
-            fprintf(fd, ",eid=%d,nDim=%d", CTI->m_elementTypeID, CTI->m_nDim);
+            fprintf(fd, ",eid=%d,nDim=%d,isString=%d,isOwned=%d,isRef=%d,isSelfRef=%d", CTI->m_elementTypeID, CTI->m_nDim,
+                CTI->m_isString, CTI->m_isOwned, CTI->m_isRef, CTI->m_isSelfRef);
             for (int8_t i = 0; i < CTI->m_nDim; i++) {
                 fprintf(fd, ",dim[%d]=%ld", i, CTI->m_dims[i]);
             }
@@ -80,7 +75,7 @@ void typeInitDebugPrint(Type *this, char *msg) {
 
 void variablePrintToStream(Variable *this, Variable *stream) {
     if (stream->m_type->m_typeId != TYPEID_STREAM_OUT) {
-        targetTypeError(stream->m_type, "Attempt to print a variable to:");
+        singleTypeError(stream->m_type, "Attempt to print a variable to:");
     }
     variablePrintToStdout(this);
 }
@@ -115,48 +110,62 @@ void elementPrintToFile(FILE *fd, ElementTypeID id, void *value) {
 }
 
 void variablePrintToFile(FILE *fd, Variable *this) {
+    // only arrays and string can be printed
+    Variable *temp = variableConvertLiteralAndRefToConcreteArray(this);
+    if (temp) {
+        variablePrintToFile(fd, temp);
+        variableDestructThenFree(temp);
+        return;
+    }
+
+    if (typeIsEmptyArray(this->m_type)) {
+        fprintf(fd, "[]");
+        return;
+    }
+
     Type *type = this->m_type;
-    if (type->m_typeId == TYPEID_STRING) {
+    if (type->m_typeId == TYPEID_NDARRAY) {
         ArrayType *CTI = type->m_compoundTypeInfo;
-        int64_t size = arrayTypeGetTotalLength(CTI);
-        int8_t *str = this->m_data;
-        for (int64_t i = 0; i < size; i++) {
-            fprintf(fd, "%c", str[i]);
-        }
-    } else if (type->m_typeId == TYPEID_NDARRAY) {
-        ArrayType *CTI = type->m_compoundTypeInfo;
-        ElementTypeID eid = CTI->m_elementTypeID;
-        char *dataPos = this->m_data;
-        if (CTI->m_nDim == 0)  // scalar
-            elementPrintToFile(fd, eid, dataPos);
-        else {
-            int64_t elementSize = arrayTypeElementSize(CTI);
-            int64_t *dims = CTI->m_dims;
-            if (CTI->m_nDim == 1) {  // vector
-                fprintf(fd, "[");
-                for (int64_t i = 0; i < dims[0]; i++) {
-                    elementPrintToFile(fd, eid, dataPos + i * elementSize);
-                    if (i != dims[0] - 1) {
-                        fprintf(fd, " ");
-                    }
-                }
-                fprintf(fd, "]");
-            } else {  // matrix
-                fprintf(fd, "[");
-                for (int64_t i = 0; i < dims[0]; i++) {
+
+        if (CTI->m_isString) {
+            int64_t size = arrayTypeGetTotalLength(CTI);
+            for (int64_t i = 0; i < size; i++) {
+                int8_t *ch = variableNDArrayGet(this, i);
+                fprintf(fd, "%c", *ch);
+            }
+        } else {
+            ElementTypeID eid = CTI->m_elementTypeID;
+            if (CTI->m_nDim == 0)  // scalar
+                elementPrintToFile(fd, eid, variableNDArrayGet(this, 0));
+            else {
+                int64_t elementSize = arrayTypeElementSize(CTI);
+                int64_t *dims = CTI->m_dims;
+                if (CTI->m_nDim == 1) {  // vector
                     fprintf(fd, "[");
-                    for (int64_t j = 0; j < dims[1]; j++) {
-                        elementPrintToFile(fd, eid, dataPos + (i * dims[1] + j) * elementSize);
-                        if (j != dims[1] - 1) {
+                    for (int64_t i = 0; i < dims[0]; i++) {
+                        elementPrintToFile(fd, eid, variableNDArrayGet(this, i));
+                        if (i != dims[0] - 1) {
                             fprintf(fd, " ");
                         }
                     }
                     fprintf(fd, "]");
-                    if (i != dims[0] - 1) {
-                        fprintf(fd, " ");
+                } else {  // matrix
+                    fprintf(fd, "[");
+                    for (int64_t i = 0; i < dims[0]; i++) {
+                        fprintf(fd, "[");
+                        for (int64_t j = 0; j < dims[1]; j++) {
+                            elementPrintToFile(fd, eid, variableNDArrayGet(this, i * dims[1] + j));
+                            if (j != dims[1] - 1) {
+                                fprintf(fd, " ");
+                            }
+                        }
+                        fprintf(fd, "]");
+                        if (i != dims[0] - 1) {
+                            fprintf(fd, " ");
+                        }
                     }
+                    fprintf(fd, "]");
                 }
-                fprintf(fd, "]");
             }
         }
     }
@@ -167,11 +176,10 @@ void variablePrintToStdout(Variable *this) {
 }
 
 void variableDebugPrint(Variable *this) {
-    fprintf(stderr, "(Var");
+    fprintf(stderr, "(Var(blockScoped=%d)", this->m_isBlockScoped);
     typeDebugPrint(this->m_type);
     switch(this->m_type->m_typeId) {
-        case TYPEID_NDARRAY:
-        case TYPEID_STRING: {
+        case TYPEID_NDARRAY: {
             // use the spec print method
             variablePrintToFile(stderr, this);
         } break;
@@ -206,7 +214,7 @@ void variableInitDebugPrint(Variable *this, char *msg) {
 void variableReadFromStdin(Variable *this) {
     TypeID tid = this->m_type->m_typeId;
     if (tid != TYPEID_NDARRAY) {
-        targetTypeError(this->m_type, "Attempt to read from stdin into a variable of type:");
+        singleTypeError(this->m_type, "Attempt to read from stdin into a variable of type:");
     }
     ArrayType *CTI = this->m_type->m_compoundTypeInfo;
     Variable *rhs = variableMalloc();
@@ -220,7 +228,7 @@ void variableReadFromStdin(Variable *this) {
         case ELEMENT_CHARACTER:
             variableInitFromCharacterScalar(rhs, readCharacterFromStdin()); break;
         default:
-            targetTypeError(this->m_type, "Attempt to read from stdin into a variable of type:"); break;
+            singleTypeError(this->m_type, "Attempt to read from stdin into a variable of type:"); break;
     }
     variableAssignment(this, rhs);
     variableDestructThenFree(rhs);
@@ -228,7 +236,7 @@ void variableReadFromStdin(Variable *this) {
 
 ///------------------------------HELPERS---------------------------------------------------------------
 
-int32_t stream_state = 0;  // 0, 1, 2 = success, error, eof
+int32_t global_stream_state = 0;  // 0, 1, 2 = success, error, eof
 #define BUFFER_SIZE 1024
 
 /**
@@ -243,7 +251,7 @@ int cur_pos = 0;  // the next character will start reading from here
 int valid_until = 0;
 
 
-int32_t getStdinState() { return stream_state; }
+int32_t getStdinState() { return global_stream_state; }
 int getNextPos(int pos) { return (pos + 1) % BUFFER_SIZE; }
 int getPrevPos(int pos) { return (pos + BUFFER_SIZE - 1) % BUFFER_SIZE; }
 void rewindInputBuffer() { cur_pos = last_successful_read; }
@@ -321,7 +329,7 @@ int32_t readIntegerFromStdin() {
     int result = readNextToken();
     if (result == 2 && result_token_length == 0) {  // eof
         rewindInputBuffer();
-        stream_state = 2;
+        global_stream_state = 2;
         return false;
     } else if (result == 1) {  // buffer overflow
         errorAndExit("Error: Attempt to read an input longer than the input buffer length 1024!");
@@ -334,12 +342,12 @@ int32_t readIntegerFromStdin() {
             integer = 0;
             if (result_token_length == 1) {  // fail, a single sign is not an integer
                 rewindInputBuffer();
-                stream_state = 1;
+                global_stream_state = 1;
                 return 0;
             }
         } else if (!isdigit(ch)) {
             rewindInputBuffer();
-            stream_state = 1;
+            global_stream_state = 1;
             return 0;
         } else {
             sign = 1;
@@ -356,14 +364,14 @@ int32_t readIntegerFromStdin() {
             }
             if (!isdigit(ch) || sign * integer < INT32_MIN || sign * integer > INT32_MAX) {  // is failure
                 rewindInputBuffer();
-                stream_state = 1;
+                global_stream_state = 1;
                 return 0;
             }
         }
         // success
         updateRewindPoint(result == 2 ? cur_pos : getPrevPos(cur_pos));
         rewindInputBuffer();
-        stream_state = 0;
+        global_stream_state = 0;
         return (int32_t)(sign * integer);
     }
     errorAndExit("This should not happen!");
@@ -373,7 +381,7 @@ float readRealFromStdin() {
     int result = readNextToken();
     if (result == 2 && result_token_length == 0) {  // eof
         rewindInputBuffer();
-        stream_state = 2;
+        global_stream_state = 2;
         return false;
     } else if (result == 1) {  // buffer overflow
         errorAndExit("Error: Attempt to read an input longer than the input buffer length 1024!");
@@ -409,7 +417,7 @@ float readRealFromStdin() {
             see_e_or_dot = true;
         } else {
             rewindInputBuffer();
-            stream_state = 1;
+            global_stream_state = 1;
             return 0.0f;
         }
 
@@ -435,7 +443,7 @@ float readRealFromStdin() {
                         see_e_or_dot = true;
                     } else {
                         rewindInputBuffer();
-                        stream_state = 1;
+                        global_stream_state = 1;
                         return 0.0f;
                     }
                 } break;
@@ -450,7 +458,7 @@ float readRealFromStdin() {
                         see_e_or_dot = true;
                     } else {
                         rewindInputBuffer();
-                        stream_state = 1;
+                        global_stream_state = 1;
                         return 0.0f;
                     }
                 } break;
@@ -462,7 +470,7 @@ float readRealFromStdin() {
                         see_digit_after_exp = true;
                     } else {
                         rewindInputBuffer();
-                        stream_state = 1;
+                        global_stream_state = 1;
                         return 0.0f;
                     }
                     state = 3;
@@ -473,7 +481,7 @@ float readRealFromStdin() {
                         see_digit_after_exp = true;
                     } else {
                         rewindInputBuffer();
-                        stream_state = 1;
+                        global_stream_state = 1;
                         return 0.0f;
                     }
                 } break;
@@ -483,12 +491,12 @@ float readRealFromStdin() {
         }
         if (!see_digit_before_exp || !see_digit_after_exp || !see_e_or_dot) {
             rewindInputBuffer();
-            stream_state = 1;
+            global_stream_state = 1;
             return 0.0f;
         } else {  // success
             updateRewindPoint(result == 2 ? cur_pos : getPrevPos(cur_pos));
             rewindInputBuffer();
-            stream_state = 0;
+            global_stream_state = 0;
             return sign * value * powf(10.0f, (float)(exp * expsign));
         }
     }
@@ -499,7 +507,7 @@ bool readBooleanFromStdin() {
     int result = readNextToken();
     if (result == 2 && result_token_length == 0) {  // eof
         rewindInputBuffer();
-        stream_state = 2;
+        global_stream_state = 2;
         return false;
     } else if (result == 1) {  // buffer overflow
         errorAndExit("Error: Attempt to read an input longer than the input buffer length 1024!");
@@ -508,11 +516,11 @@ bool readBooleanFromStdin() {
         if (result_token_length == 1 && (ch == 'T' || ch == 'F')) {  // success
             updateRewindPoint(result == 2 ? cur_pos : getPrevPos(cur_pos));  // not EOF then there is a whitespace
             rewindInputBuffer();
-            stream_state = 0;
+            global_stream_state = 0;
             return ch == 'T';
         } else {
             rewindInputBuffer();
-            stream_state = 1;
+            global_stream_state = 1;
             return false;
         }
     }
@@ -521,7 +529,7 @@ bool readBooleanFromStdin() {
 int8_t readCharacterFromStdin() {
     int ch = readNextChar();
     updateRewindPoint(cur_pos);  // read character should always success
-    stream_state = 0;
+    global_stream_state = 0;
 
     if (ch == EOF) {
         return -1;

@@ -6,7 +6,21 @@
 
 void mixedTypeElementInitFromValue(MixedTypeElement *this, ElementTypeID eid, void *value) {
     this->m_elementTypeID = eid;
-    this->m_element = arrayMallocFromElementValue(eid, 1, value);
+    switch (eid) {
+        case ELEMENT_INTEGER:
+        case ELEMENT_REAL:
+        case ELEMENT_BOOLEAN:
+        case ELEMENT_CHARACTER: {
+            int64_t elementSize = elementGetSize(eid);
+            this->m_element = malloc(elementSize);
+            elementAssign(eid, this->m_element, value);
+        } break;
+        case ELEMENT_NULL:
+        case ELEMENT_IDENTITY:
+            this->m_element = NULL; break;
+        default:
+            errorAndExit("Invalid eid for element of mixed array!");
+    }
 }
 
 bool elementIsMixedType(ElementTypeID id) {
@@ -37,6 +51,29 @@ int64_t elementGetSize(ElementTypeID id) {
             break;
     }
     return 0;
+}
+
+void elementAssign(ElementTypeID id, void *target, void *src) {
+    switch (id) {
+        case ELEMENT_INTEGER:
+            *(int32_t *)target = *(int32_t *)src; break;
+        case ELEMENT_REAL:
+            *(float *)target = *(float *)src; break;
+        case ELEMENT_BOOLEAN:
+            *(bool *)target = *(bool *)src; break;
+        case ELEMENT_CHARACTER:
+            *(int8_t *)target = *(int8_t *)src; break;
+        case ELEMENT_MIXED: {
+            MixedTypeElement *targetElement = target;
+            MixedTypeElement *srcElement = src;
+
+            ElementTypeID newID = srcElement->m_elementTypeID;
+            arrayFree(targetElement->m_elementTypeID, targetElement->m_element, 1);
+            targetElement->m_elementTypeID = newID;
+            mixedTypeElementInitFromValue(targetElement, newID, srcElement->m_element);
+        } break;
+        default: break;
+    }
 }
 
 bool elementCanBeCastedFrom(ElementTypeID to, ElementTypeID from) {
@@ -373,6 +410,8 @@ void *arrayMallocFromNull(ElementTypeID id, int64_t size) {
             return arrayMallocFromCharacterValue(size, 0);
         case ELEMENT_REAL:
             return arrayMallocFromRealValue(size, 0.0f);
+        case ELEMENT_MIXED:
+            errorAndExit("Attempt to malloc a mixed type array from null!");
         default: break;
     }
     return NULL;
@@ -397,8 +436,18 @@ void *arrayMallocFromElementValue(ElementTypeID id, int64_t size, void *value) {
     if (elementIsBasicType(id) || id == ELEMENT_MIXED) {
         int64_t elementSize = elementGetSize(id);
         char *target = malloc(elementSize * size);
-        for (int64_t i = 0; i < size; i++) {
-            memcpy(target + i * elementSize, value, elementSize);
+
+        if (id == ELEMENT_MIXED) {
+            MixedTypeElement *element = value;
+            for (int64_t i = 0; i < size; i++) {
+                MixedTypeElement *curTarget = (void *)(target + i * elementSize);
+                mixedTypeElementInitFromValue(curTarget, element->m_elementTypeID, element->m_element);
+            }
+        } else {
+            for (int64_t i = 0; i < size; i++) {
+                void *curTarget = target + i * elementSize;
+                memcpy(curTarget, value, elementSize);
+            }
         }
         return (void *)target;
     }
@@ -474,18 +523,6 @@ int32_t arrayGetIntegerValue(void *arr, int64_t index) {
 }
 float arrayGetRealValue(void *arr, int64_t index) {
     return ((float *)arr)[index];
-}
-void arraySetBoolValue(void *arr, int64_t index, bool value) {
-    ((bool *)arr)[index] = value;
-}
-void arraySetCharacterValue(void *arr, int64_t index, int8_t value) {
-    ((int8_t *)arr)[index] = value;
-}
-void arraySetIntegerValue(void *arr, int64_t index, int32_t value) {
-    ((int32_t *)arr)[index] = value;
-}
-void arraySetRealValue(void *arr, int64_t index, float value) {
-    ((float *)arr)[index] = value;
 }
 
 void arrayMallocFromUnaryOp(ElementTypeID id, UnaryOpCode opcode, void *src, int64_t length, void **result) {

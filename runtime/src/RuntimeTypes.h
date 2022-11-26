@@ -19,68 +19,23 @@ typedef struct struct_gazprea_type {
 Type *typeMalloc();                                  /// INTERFACE
 
 void typeInitFromCopy(Type *this, Type *other);
-void typeInitFromTwoSingleTerms(Type *this, Type *first, Type *second);
-void typeInitFromVectorSizeSpecificationFromLiteral(Type *this, int64_t size, Type *baseType);  // for vector and string
-void typeInitFromMatrixSizeSpecificationFromLiteral(Type *this, int64_t nRow, int64_t nCol, Type *baseType);
+void typeInitFromTwoSingleTerms(Type *this, Type *first, Type *second);     /// INTERFACE
 void typeInitFromIntervalType(Type *this, IntervalTypeBaseTypeID id);
-void typeInitFromArrayType(Type *this, TypeID typeID, ElementTypeID eid, int8_t nDim, int64_t *dims);
 
 
 void typeDestructor(Type *this);                     /// INTERFACE
 void typeDestructThenFree(Type *this);               /// INTERFACE
 
 /// INTERFACE
-bool typeIsSpecifiable(Type *this);  // basic types and string
-bool typeIsConcreteType(Type *this);  // if the type does not have any unknown/unspecified part i.e. a variable can have this type
+bool typeIsVariableClassCompatible(Type *this);  // if the type does not have any unknown/unspecified part i.e. a variable can have this type
 bool typeIsStream(Type *this);
-bool typeIsScalar(Type *this);
-bool typeIsScalarBasic(Type *this);
-bool typeIsScalarNull(Type *this);
-bool typeIsScalarIdentity(Type *this);
-bool typeIsScalarInteger(Type *this);
-bool typeIsArrayNull(Type *this);
-bool typeIsArrayIdentity(Type *this);
 bool typeIsUnknown(Type *this);
-bool typeIsArrayOrString(Type *this);  // does not include ref type
-bool typeIsVectorOrString(Type *this);
-bool typeIsMatrix(Type *this);
-bool typeIsMixedArray(Type *this);
 bool typeIsIntegerInterval(Type *this);
-bool typeIsIntegerArray(Type *this);
-bool typeIsDomainExprCompatible(Type *this);
+bool typeIsUnspecifiedInterval(Type *this);
 bool typeIsIdentical(Type *this, Type *other);  // checks if the two types are describing the same types
+bool typeIsDomainExprCompatible(Type *this);
 
 ///------------------------------COMPOUND TYPE INFO---------------------------------------------------------------
-// ArrayType---------------------------------------------------------------------------------------------
-typedef struct struct_gazprea_array_or_string_type {
-    ElementTypeID m_elementTypeID;  // type of the element
-    int8_t m_nDim;                  // # of dimensions
-    int64_t *m_dims;                // each int64_t specify the length of array in one dimension
-} ArrayType;
-
-/// allocate
-ArrayType *arrayTypeMalloc();
-/// constructor
-void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength);
-void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2);  // dim1 is #rows
-void arrayTypeInitFromCopy(ArrayType *this, ArrayType *other);
-void arrayTypeInitFromDims(ArrayType *this, ElementTypeID elementTypeID, int8_t nDim, int64_t *dims);
-/// destructor
-void arrayTypeDestructor(ArrayType *this);
-
-/// methods
-VecToVecRHSSizeRestriction arrayTypeMinimumCompatibleRestriction(ArrayType *this, ArrayType *target);
-bool arrayTypeHasUnknownSize(ArrayType *this);
-int64_t arrayTypeElementSize(ArrayType *this);
-int64_t arrayTypeGetTotalLength(ArrayType *this);
-bool arrayTypeCanBinopSameTypeSameSize(ArrayType *result, ArrayType *op1, ArrayType *op2);
-
-// note given a VectorType object, we can't distinguish between
-// 1. vector
-// 2. vector reference (vec[vec], mat[vec, scalar] or mat[scalar, vec])
-// we need to look at Type.m_typeid to determine which one is the actual type of this variable
-
-
 // IntervalType---------------------------------------------------------------------------------------------
 typedef struct struct_gazprea_interval_type {
     IntervalTypeBaseTypeID m_baseTypeID;

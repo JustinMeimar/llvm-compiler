@@ -8,12 +8,13 @@
 
 extern const int64_t SIZE_UNKNOWN;
 extern const int64_t SIZE_UNSPECIFIED;  // for string only
+extern const int8_t DIM_INVALID;  // non-ndarray have no dimension
+extern const int8_t DIM_UNSPECIFIED;  // an empty array have unspecified dimension
 
 /// TYPES
 typedef enum enum_gazprea_typeid {
     /// spec
-    TYPEID_NDARRAY,
-    TYPEID_STRING,
+    TYPEID_NDARRAY,   // scalar, vector, empty vector, string and matrix
     TYPEID_INTERVAL,  // not a compound type because it is always constant size
     TYPEID_TUPLE,
 
@@ -21,7 +22,6 @@ typedef enum enum_gazprea_typeid {
     // basic types
     TYPEID_STREAM_IN,
     TYPEID_STREAM_OUT,
-    TYPEID_EMPTY_ARRAY,     // empty vector or matrix
     TYPEID_UNKNOWN,         // unknown type is for declaration/parameter atom with inferred type
 
     NUM_TYPE_IDS            // number of ids in the enum
@@ -46,6 +46,24 @@ typedef enum enum_gazprea_interval_base_typeid {
     INTEGER_BASE_INTERVAL,
     UNSPECIFIED_BASE_INTERVAL,  // the interval alone
 } IntervalTypeBaseTypeID;
+
+
+/// Classifies ndarray
+typedef enum enum_gazprea_ndarray_typeid {
+    NDARRAY_MIXED,
+    NDARRAY_CONCRETE,
+    NDARRAY_REFERENCE,
+    NDARRAY_NOT_AN_NDARRAY,
+    NDARRAY_INVALID,
+} NDArrayTypeID;
+
+/// Classifies ndarray index ref
+typedef enum enum_gazprea_ndarray_index_ref_typeid {
+    NDARRAY_INDEX_REF_SELF,
+    NDARRAY_INDEX_REF_1D,
+    NDARRAY_INDEX_REF_2D,
+    NDARRAY_INDEX_REF_NOT_A_REF,
+} NDArrayIndexRefTypeID;
 
 
 /// Unary/Binary Ops

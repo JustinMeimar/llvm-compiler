@@ -35,8 +35,6 @@ void typeInitFromIntegerInterval(Type *this);
  * @param stridArray an array of mapped string ids, stridArray[i] should be the name of field in position i+1, or -1 if the field has no name
  */
 void typeInitFromTupleType(Type *this, int64_t nField, Type **typeArray, int64_t *stridArray);
-// empty array
-void typeInitFromEmptyArray(Type *this);
 // unknown type
 void typeInitFromUnknownType(Type *this);
 
