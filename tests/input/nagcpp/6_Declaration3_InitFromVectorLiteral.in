@@ -3,7 +3,7 @@ procedure main() returns integer {
     a0 -> std_output;
 
     character[*] a1 = [];
-    a0 -> std_output;
+    a1 -> std_output;
 
     boolean[1] a2 = [];
     a2 -> std_output;
@@ -14,16 +14,16 @@ procedure main() returns integer {
     '\n' -> std_output;
 
     integer[1] a4 = [3];
-    a0 -> std_output;
+    a4 -> std_output;
 
     character[1] a5 = ['d'];
-    a0 -> std_output;
+    a5 -> std_output;
 
     boolean[3] a6 = [null, identity];
-    a2 -> std_output;
+    a6 -> std_output;
 
     real[1] a7 = [identity];
-    a3 -> std_output;
+    a7 -> std_output;
 
     return 0;
 }
