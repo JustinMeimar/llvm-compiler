@@ -1,9 +1,18 @@
 procedure main() returns integer {
-    tuple(integer, real) x;
+    tuple(integer, real, boolean, character) x;
     x.1 -> std_output;
     x.2 -> std_output;
+    x.1 = 2 + 3;
+    x.1 -> std_output;
+    tuple(integer, real, boolean, character) y = identity;
+    y.3 -> std_output;
+    y.3 = false;
+    y.3 -> std_output;
+    var z = (1, 1.0, false, ' ');
+    z.4 = 'u';
+    z.4 -> std_output;
     return 0;
 }
 #split_token
 #split_token
-00
+005TF

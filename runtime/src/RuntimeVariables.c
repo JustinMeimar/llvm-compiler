@@ -124,11 +124,11 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
     ///- scalar null/identity -> any
     if (typeIsScalarNull(rhsType)) {
         variableInitFromNull(this, targetType);
-        this->m_isBlockScoped = true;
+        variableSetIsBlockScoped(this, config->m_resultIsBlockScoped);
         return;
     } else if (typeIsScalarIdentity(rhsType)) {
         variableInitFromIdentity(this, targetType);
-        this->m_isBlockScoped = true;
+        variableSetIsBlockScoped(this, config->m_resultIsBlockScoped);
         return;
     }
 
@@ -141,7 +141,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         } else if (rhsTypeID == TYPEID_INTERVAL) {
             // we just copy it
             variableInitFromMemcpy(this, rhs);
-            this->m_isBlockScoped = true;
+            variableSetIsBlockScoped(this, config->m_resultIsBlockScoped);
         } else {
             singleTypeError(rhsType, "Attempt to convert to interval from:");
         }
@@ -156,14 +156,14 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
             ArrayType *rhsCTI = rhsType->m_compoundTypeInfo;
             if (rhsCTI->m_elementTypeID == ELEMENT_MIXED) {
                 variableInitFromMixedArrayPromoteToSameType(this, rhs);
-                this->m_isBlockScoped = true;
+                variableSetIsBlockScoped(this, config->m_resultIsBlockScoped);
             } else {
                 variableInitFromMemcpy(this, rhs);
-                this->m_isBlockScoped = true;
+                variableSetIsBlockScoped(this, config->m_resultIsBlockScoped);
             }
         } else {
             variableInitFromMemcpy(this, rhs);
-            this->m_isBlockScoped = true;
+            variableSetIsBlockScoped(this, config->m_resultIsBlockScoped);
         }
         return;
     }
@@ -342,7 +342,7 @@ void variableInitFromMemcpy(Variable *this, Variable *other) {
         case TYPEID_UNKNOWN:
         case NUM_TYPE_IDS:
         default:
-            unknownTypeVariableError();
+            singleTypeError(this->m_type, "Unexpected type: ");
             break;
     }
     variableAttrInitHelper(this, -1, this->m_data, false);
@@ -364,18 +364,28 @@ void variableInitFromNull(Variable *this, Type *type) {
         typeInitFromCopy(this->m_type, type);
     TypeID typeid = type->m_typeId;
 
-    if (typeid == TYPEID_NDARRAY) {
-        ArrayType *CTI = type->m_compoundTypeInfo;
-        if (arrayTypeHasUnknownSize(CTI))
-            singleTypeError(type, "Attempt to promote null into unknown type: ");
-        this->m_data = arrayMallocFromNull(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI));
-    } else if (typeid == TYPEID_INTERVAL) {
-        IntervalType *CTI = type->m_compoundTypeInfo;
-        if (intervalTypeIsUnspecified(CTI))
-            singleTypeError(type, "Attempt to promote null into unknown type: ");
-        this->m_data = intervalTypeMallocDataFromNull();
-    } else if (typeid == TYPEID_TUPLE) {
-        this->m_data = tupleTypeMallocDataFromNull(type->m_compoundTypeInfo);
+    switch (typeid) {
+        case TYPEID_NDARRAY: {
+            ArrayType *CTI = type->m_compoundTypeInfo;
+            if (arrayTypeHasUnknownSize(CTI))
+                singleTypeError(type, "Attempt to promote null into unknown type: ");
+            this->m_data = arrayMallocFromNull(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI));
+        } break;
+        case TYPEID_INTERVAL: {
+            IntervalType *CTI = type->m_compoundTypeInfo;
+            if (intervalTypeIsUnspecified(CTI))
+                singleTypeError(type, "Attempt to promote null into unknown type: ");
+            this->m_data = intervalTypeMallocDataFromNull();
+        } break;
+        case TYPEID_TUPLE: {
+            this->m_data = tupleTypeMallocDataFromNull(type->m_compoundTypeInfo);
+        } break;
+        case TYPEID_STREAM_IN:
+        case TYPEID_STREAM_OUT:
+        case TYPEID_UNKNOWN:
+        default:
+            singleTypeError(type, "Can't init variable of type from null: ");
+            break;
     }
     variableAttrInitHelper(this, -1, this->m_data, false);
 #ifdef DEBUG_PRINT
@@ -389,18 +399,28 @@ void variableInitFromIdentity(Variable *this, Type *type) {
     typeInitFromCopy(this->m_type, type);
     TypeID typeid = type->m_typeId;
 
-    if (typeid == TYPEID_NDARRAY) {
-        ArrayType *CTI = type->m_compoundTypeInfo;
-        if (arrayTypeHasUnknownSize(CTI))
-            singleTypeError(type, "Attempt to promote identity into unknown type: ");
-        this->m_data = arrayMallocFromIdentity(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI));
-    } else if (typeid == TYPEID_INTERVAL) {
-        IntervalType *CTI = type->m_compoundTypeInfo;
-        if (intervalTypeIsUnspecified(CTI))
-            singleTypeError(type, "Attempt to promote null into unknown type: ");
-        this->m_data = intervalTypeMallocDataFromIdentity();
-    } else if (typeid == TYPEID_TUPLE) {
-        this->m_data = tupleTypeMallocDataFromIdentity(type->m_compoundTypeInfo);
+    switch (typeid) {
+        case TYPEID_NDARRAY: {
+            ArrayType *CTI = type->m_compoundTypeInfo;
+            if (arrayTypeHasUnknownSize(CTI))
+                singleTypeError(type, "Attempt to promote identity into unknown type: ");
+            this->m_data = arrayMallocFromIdentity(CTI->m_elementTypeID, arrayTypeGetTotalLength(CTI));
+        } break;
+        case TYPEID_INTERVAL: {
+            IntervalType *CTI = type->m_compoundTypeInfo;
+            if (intervalTypeIsUnspecified(CTI))
+                singleTypeError(type, "Attempt to promote null into unknown type: ");
+            this->m_data = intervalTypeMallocDataFromIdentity();
+        } break;
+        case TYPEID_TUPLE: {
+            this->m_data = tupleTypeMallocDataFromIdentity(type->m_compoundTypeInfo);
+        } break;
+        case TYPEID_STREAM_IN:
+        case TYPEID_STREAM_OUT:
+        case TYPEID_UNKNOWN:
+        default:
+            singleTypeError(type, "Can't init variable of type from null: ");
+            break;
     }
     variableAttrInitHelper(this, -1, this->m_data, false);
 #ifdef DEBUG_PRINT
@@ -952,7 +972,7 @@ void variableDestructor(Variable *this) {
         case TYPEID_UNKNOWN:
         case NUM_TYPE_IDS:
         default:
-            unknownTypeVariableError();
+            singleTypeError(this->m_type, "Unexpected type on variableDestructor() call: ");
             break;
     }
 
@@ -996,6 +1016,18 @@ int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx) {
         default: {
             singleTypeError(this->m_type, "Invalid type for variableGetIntegerElementAtIndex!");
         } break;
+    }
+}
+
+void variableSetIsBlockScoped(Variable *this, bool isBlockScoped) {
+    this->m_isBlockScoped = isBlockScoped;
+    // if this is tuple, then all its children will also need to change
+    if (this->m_type->m_typeId == TYPEID_TUPLE) {
+        TupleType *CTI = this->m_type->m_compoundTypeInfo;
+        Variable **vars = this->m_data;
+        for (int64_t i = 0; i < CTI->m_nField; i++) {
+            vars[i]->m_isBlockScoped = isBlockScoped;
+        }
     }
 }
 
@@ -1064,7 +1096,7 @@ void variableEmptyInitFromTypeID(Variable *this, TypeID id) {
 void variableAttrInitHelper(Variable *this, int64_t fieldPos, void *parent, bool isBlockScoped) {
     this->m_fieldPos = fieldPos;
     this->m_parent = parent;
-    this->m_isBlockScoped = isBlockScoped;
+    variableSetIsBlockScoped(this, isBlockScoped);
 }
 
 bool variableAliasWith(Variable *this, Variable *other) {
@@ -1089,7 +1121,7 @@ void variableAssignment(Variable *this, Variable *rhs) {
     if (refTypeID == NDARRAY_INDEX_REF_NOT_A_REF) {
         variableDestructor(this);
         variableInitFromMemcpy(this, result);
-        this->m_isBlockScoped = true;
+        variableSetIsBlockScoped(this, true);
     } else {  // index assignment
         if (!typeIsArraySameTypeSameSize(this->m_type, result->m_type))
             singleTypeError(result->m_type, "Incompatible rhs type for index assignment: ");

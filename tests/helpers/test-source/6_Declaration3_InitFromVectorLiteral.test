@@ -1,0 +1,33 @@
+procedure main() returns integer {
+    integer[2] a0 = [];
+    a0 -> std_output;
+
+    character[*] a1 = [];
+    a0 -> std_output;
+
+    boolean[1] a2 = [];
+    a2 -> std_output;
+
+    real[*] a3 = [];
+    a3 -> std_output;
+
+    '\n' -> std_output;
+
+    integer[1] a4 = [3];
+    a0 -> std_output;
+
+    character[1] a5 = ['d'];
+    a0 -> std_output;
+
+    boolean[3] a6 = [null, identity];
+    a2 -> std_output;
+
+    real[1] a7 = [identity];
+    a3 -> std_output;
+
+    return 0;
+}
+#split_token
+#split_token
+[0 0][][F][0 0 0]
+[3][d][F T F][1]

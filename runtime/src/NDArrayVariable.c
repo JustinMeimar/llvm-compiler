@@ -4,6 +4,7 @@
 #include "NDArrayVariable.h"
 #include "Literal.h"
 #include "FreeList.h"
+#include "VariableStdio.h"
 
 ArrayType *arrayTypeMalloc() {
     return malloc(sizeof(ArrayType));
@@ -520,7 +521,9 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
         this->m_data = vars;
         variableAttrInitHelper(this, pop1->m_fieldPos, pop1->m_parent, false);
     }
-
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "array index");
+#endif
     freeListFreeAll(freeList, (void (*)(void *)) variableDestructThenFree);
 }
 
@@ -540,6 +543,10 @@ void variableInitFromNDArrayIndexRefToValue(Variable *this, Variable *ref) {
         void *targetPtr = variableNDArrayGet(this, i);
         elementAssign(eid, targetPtr, srcPtr);
     }
+
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "index ref to value");
+#endif
 }
 
 void variableInitFromVectorIndexing(Variable *this, Variable *arr, Variable *index) {

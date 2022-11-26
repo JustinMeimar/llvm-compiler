@@ -56,7 +56,7 @@ int64_t elementGetSize(ElementTypeID id) {
 void elementAssign(ElementTypeID id, void *target, void *src) {
     switch (id) {
         case ELEMENT_INTEGER:
-            *(int64_t *)target = *(int64_t *)src; break;
+            *(int32_t *)target = *(int32_t *)src; break;
         case ELEMENT_REAL:
             *(float *)target = *(float *)src; break;
         case ELEMENT_BOOLEAN:

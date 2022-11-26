@@ -1,0 +1,10 @@
+procedure main() returns integer {
+    [] -> std_output;
+    [true] -> std_output;
+    [1, 2.5] -> std_output;
+
+    return 0;
+}
+#split_token
+#split_token
+[][T][1 2.5]

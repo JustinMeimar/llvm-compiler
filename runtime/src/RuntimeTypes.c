@@ -89,7 +89,7 @@ void typeDestructor(Type *this) {
             break;
         case NUM_TYPE_IDS:
         default:
-            unknownTypeVariableError();
+            singleTypeError(this, "Unexpected type on typeDestructor() call: ");
             break;
     }
 }
@@ -305,8 +305,7 @@ void *tupleTypeMallocDataFromNull(TupleType *this) {
         Type *fieldType = &(this->m_fieldTypeArr[i]);
         vars[i] = variableMalloc();
         variableInitFromNull(vars[i], fieldType);
-        vars[i]->m_parent = vars;
-        vars[i]->m_fieldPos = i;
+        variableAttrInitHelper(vars[i], i, vars, false);
     }
     return vars;
 }
@@ -318,8 +317,7 @@ void *tupleTypeMallocDataFromIdentity(TupleType *this) {
         Type *fieldType = &(this->m_fieldTypeArr[i]);
         vars[i] = variableMalloc();
         variableInitFromIdentity(vars[i], fieldType);
-        vars[i]->m_parent = vars;
-        vars[i]->m_fieldPos = i;
+        variableAttrInitHelper(vars[i], i, vars, false);
     }
     return vars;
 }
@@ -334,8 +332,7 @@ void *tupleTypeMallocDataFromCopyVariableArray(TupleType *this, Variable **other
     for (int64_t i = 0; i < n; i++) {
         vars[i] = variableMalloc();
         variableInitFromMemcpy(vars[i], otherVars[i]);
-        vars[i]->m_parent = vars;
-        vars[i]->m_fieldPos = i;
+        variableAttrInitHelper(vars[i], i, vars, false);
     }
     return vars;
 }
@@ -347,8 +344,7 @@ void *tupleTypeMallocDataFromPCADP(TupleType *this, Variable *src, PCADPConfig *
     for (int64_t i = 0; i < n; i++) {
         vars[i] = variableMalloc();
         variableInitFromPCADP(vars[i], &(this->m_fieldTypeArr[i]), otherVars[i], config);
-        vars[i]->m_parent = vars;
-        vars[i]->m_fieldPos = i;
+        variableAttrInitHelper(vars[i], i, vars, config->m_resultIsBlockScoped);
     }
     return vars;
 }

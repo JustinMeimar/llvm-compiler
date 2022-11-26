@@ -111,28 +111,39 @@ void elementPrintToFile(FILE *fd, ElementTypeID id, void *value) {
 
 void variablePrintToFile(FILE *fd, Variable *this) {
     // only arrays and string can be printed
+    Variable *temp = variableConvertLiteralAndRefToConcreteArray(this);
+    if (temp) {
+        variablePrintToFile(fd, temp);
+        variableDestructThenFree(temp);
+        return;
+    }
+
+    if (typeIsEmptyArray(this->m_type)) {
+        fprintf(fd, "[]");
+        return;
+    }
+
     Type *type = this->m_type;
     if (type->m_typeId == TYPEID_NDARRAY) {
         ArrayType *CTI = type->m_compoundTypeInfo;
 
         if (CTI->m_isString) {
             int64_t size = arrayTypeGetTotalLength(CTI);
-            int8_t *str = this->m_data;
             for (int64_t i = 0; i < size; i++) {
-                fprintf(fd, "%c", str[i]);
+                int8_t *ch = variableNDArrayGet(this, i);
+                fprintf(fd, "%c", *ch);
             }
         } else {
             ElementTypeID eid = CTI->m_elementTypeID;
-            char *dataPos = this->m_data;
             if (CTI->m_nDim == 0)  // scalar
-                elementPrintToFile(fd, eid, dataPos);
+                elementPrintToFile(fd, eid, variableNDArrayGet(this, 0));
             else {
                 int64_t elementSize = arrayTypeElementSize(CTI);
                 int64_t *dims = CTI->m_dims;
                 if (CTI->m_nDim == 1) {  // vector
                     fprintf(fd, "[");
                     for (int64_t i = 0; i < dims[0]; i++) {
-                        elementPrintToFile(fd, eid, dataPos + i * elementSize);
+                        elementPrintToFile(fd, eid, variableNDArrayGet(this, i));
                         if (i != dims[0] - 1) {
                             fprintf(fd, " ");
                         }
@@ -143,7 +154,7 @@ void variablePrintToFile(FILE *fd, Variable *this) {
                     for (int64_t i = 0; i < dims[0]; i++) {
                         fprintf(fd, "[");
                         for (int64_t j = 0; j < dims[1]; j++) {
-                            elementPrintToFile(fd, eid, dataPos + (i * dims[1] + j) * elementSize);
+                            elementPrintToFile(fd, eid, variableNDArrayGet(this, i * dims[1] + j));
                             if (j != dims[1] - 1) {
                                 fprintf(fd, " ");
                             }
@@ -165,7 +176,7 @@ void variablePrintToStdout(Variable *this) {
 }
 
 void variableDebugPrint(Variable *this) {
-    fprintf(stderr, "(Var");
+    fprintf(stderr, "(Var(blockScoped=%d)", this->m_isBlockScoped);
     typeDebugPrint(this->m_type);
     switch(this->m_type->m_typeId) {
         case TYPEID_NDARRAY: {
