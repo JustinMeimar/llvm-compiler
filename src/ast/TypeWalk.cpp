@@ -241,6 +241,7 @@ namespace gazprea {
     
     void TypeWalk::visitIndex(std::shared_ptr<AST> t) {
         visitChildren(t);
+        auto numRHSExpressions = t->children[1]->children.size();
         switch (t->children[0]->evalType->getTypeId()) {
             case Type::BOOLEAN_1:
                 t->evalType = symtab->getType(Type::BOOLEAN);
@@ -255,16 +256,32 @@ namespace gazprea {
                 t->evalType = symtab->getType(Type::REAL);
                 break;
             case Type::BOOLEAN_2:
-                t->evalType = symtab->getType(Type::BOOLEAN_1);
+                if (numRHSExpressions == 1) {
+                    t->evalType = symtab->getType(Type::BOOLEAN_1);
+                } else {
+                    t->evalType = symtab->getType(Type::BOOLEAN);
+                }
                 break;
             case Type::CHARACTER_2:
-                t->evalType = symtab->getType(Type::CHARACTER_1);
+                if (numRHSExpressions == 1) {
+                    t->evalType = symtab->getType(Type::CHARACTER_1);
+                } else {
+                    t->evalType = symtab->getType(Type::CHARACTER);
+                }
                 break;
             case Type::INTEGER_2:
-                t->evalType = symtab->getType(Type::INTEGER_1);
+                if (numRHSExpressions == 1) {
+                    t->evalType = symtab->getType(Type::INTEGER_1);
+                } else {
+                    t->evalType = symtab->getType(Type::INTEGER);
+                }
                 break;
             case Type::REAL_2:
-                t->evalType = symtab->getType(Type::REAL_1);
+                if (numRHSExpressions == 1) {
+                    t->evalType = symtab->getType(Type::REAL_1);
+                } else {
+                    t->evalType = symtab->getType(Type::REAL);
+                }
                 break;
             case Type::STRING:
                 t->evalType = symtab->getType(Type::CHARACTER);
