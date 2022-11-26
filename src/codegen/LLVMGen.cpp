@@ -1086,10 +1086,32 @@ namespace gazprea
     void LLVMGen::visitIndexing(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
-        llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(0)});
+        auto numRHSExpressions = t->children[1]->children.size();
+        if (numRHSExpressions == 1) {
+            llvmFunction.call(
+                "variableInitFromVectorIndexing", 
+                { 
+                    runtimeVariableObject, 
+                    t->children[0]->llvmValue, 
+                    t->children[1]->children[0]->llvmValue 
+                }
+            );
+            freeExprAtomIfNecessary(t->children[1]->children[0]);
+        } else {
+            llvmFunction.call(
+                "variableInitFromMatrixIndexing", 
+                { 
+                    runtimeVariableObject, 
+                    t->children[0]->llvmValue, 
+                    t->children[1]->children[0]->llvmValue, 
+                    t->children[1]->children[1]->llvmValue 
+                }
+            );
+            freeExprAtomIfNecessary(t->children[1]->children[0]);
+            freeExprAtomIfNecessary(t->children[1]->children[1]);
+        }
         t->llvmValue = runtimeVariableObject;
         freeExprAtomIfNecessary(t->children[0]);
-        freeExprAtomIfNecessary(t->children[1]);
     }
 
     void LLVMGen::visitInterval(std::shared_ptr<AST> t) {

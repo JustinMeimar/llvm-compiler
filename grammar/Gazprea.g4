@@ -162,7 +162,7 @@ expr:
     | expr DOT (IntegerConstant | identifier)                                       # TupleAccess
     | '(' wS? expr wS? ')'                                                          # Parenthesis
     | '[' (wS? expressionList)? wS? ']'                                             # VectorLiteral
-    | expr wS? '[' wS? expr wS? ']'                                                 # Indexing
+    | expr wS? '[' wS? expressionList wS? ']'                                       # Indexing
     | expr wS? '..' wS? expr                                                        # Interval
     | <assoc=right> op=('+' | '-' | 'not') wS? expr                                 # UnaryOp
     | <assoc=right> expr wS? op='^' wS? expr                                        # BinaryOp

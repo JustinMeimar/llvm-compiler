@@ -243,6 +243,15 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(runtimeTypeTy->getPointerTo(), { runtimeVariableTy->getPointerTo() }, false),
         "variableGetType"
     );
+
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
+        "variableInitFromVectorIndexing"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
+        "variableInitFromMatrixIndexing"
+    );
 }
 
 llvm::Function *LLVMIRFunction::declareFunction(llvm::FunctionType *fTy, const std::string &name) {
