@@ -102,8 +102,11 @@ int64_t arrayTypeGetTotalLength(ArrayType *this) {
 // Type
 
 void typeInitFromVectorSizeSpecificationFromLiteral(Type *this, int64_t size, Type *baseType) {
+    if (size < 0 && size != SIZE_UNKNOWN && size != SIZE_UNSPECIFIED) {
+        errorAndExit("Invalid size in vector size specification!");
+    }
     ArrayType *baseTypeCTI = (ArrayType *) baseType->m_compoundTypeInfo;
-    this->m_typeId = baseType->m_typeId;  // whether baseType is scalar ndarray or string, the result of specification has the same type as baseType
+    this->m_typeId = baseType->m_typeId;
     if (typeIsScalarBasic(baseType)) {  // do nothing
     } else if (baseTypeCTI->m_isString) {
         if (baseTypeCTI->m_dims[0] != SIZE_UNSPECIFIED)
@@ -117,6 +120,12 @@ void typeInitFromVectorSizeSpecificationFromLiteral(Type *this, int64_t size, Ty
 }
 
 void typeInitFromMatrixSizeSpecificationFromLiteral(Type *this, int64_t nRow, int64_t nCol, Type *baseType) {
+    if (nRow < 0 && nRow != SIZE_UNKNOWN) {  // matrix can't have unspecified size
+        errorAndExit("Invalid nRow size in matrix size specification!");
+    }
+    if (nCol < 0 && nCol != SIZE_UNKNOWN) {  // matrix can't have unspecified size
+        errorAndExit("Invalid nCol size in matrix size specification!");
+    }
     ArrayType *baseTypeCTI = (ArrayType *) baseType->m_compoundTypeInfo;
     this->m_typeId = baseType->m_typeId;
     if (typeIsScalarBasic(baseType)) {  // do nothing

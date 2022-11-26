@@ -28,8 +28,12 @@ void typeInitFromVectorSizeSpecification(Type *this, Variable *size, Type *baseT
         singleTypeError(baseType, "Attempt to use type as base type: ");
     }
     if (size == NULL) {
-        typeInitFromVectorSizeSpecificationFromLiteral(this, -1, baseType);
+        typeInitFromVectorSizeSpecificationFromLiteral(this, SIZE_UNKNOWN, baseType);
     } else {
+        int64_t intSize = variableGetIntegerValue(size);
+        if (intSize < 0) {
+            errorAndExit("Invalid vector size calculated from variable!");
+        }
         typeInitFromVectorSizeSpecificationFromLiteral(this, variableGetIntegerValue(size), baseType);
     }
 }
@@ -38,10 +42,21 @@ void typeInitFromMatrixSizeSpecification(Type *this, Variable *nRow, Variable *n
     if (!typeIsSpecifiable(baseType)) {
         singleTypeError(baseType, "Attempt to use type as base type: ");
     }
-    typeInitFromMatrixSizeSpecificationFromLiteral(this,
-            nRow ? variableGetIntegerValue(nRow) : -1,
-            nCol ? variableGetIntegerValue(nCol) : -1,
-            baseType);
+    int64_t intNRow = SIZE_UNKNOWN;
+    int64_t intNCol = SIZE_UNKNOWN;
+    if (nRow) {
+        intNRow = variableGetIntegerValue(nRow);
+        if (intNRow < 0) {
+            errorAndExit("Invalid matrix row size calculated from variable!");
+        }
+    }
+    if (nCol) {
+        intNCol = variableGetIntegerValue(nCol);
+        if (intNCol < 0) {
+            errorAndExit("Invalid matrix row size calculated from variable!");
+        }
+    }
+    typeInitFromMatrixSizeSpecificationFromLiteral(this,intNRow, intNCol, baseType);
 }
 
 void typeInitFromUnspecifiedString(Type *this) {

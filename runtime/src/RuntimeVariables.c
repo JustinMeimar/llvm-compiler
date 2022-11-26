@@ -305,7 +305,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         }
         variableAttrInitHelper(this, -1, this->m_data, config->m_resultIsBlockScoped);
 #ifdef DEBUG_PRINT
-        variableInitDebugPrint(this, "array/string -> array/string");
+        variableInitDebugPrint(this, "array -> array");
 #endif
         return;
     }
