@@ -20,6 +20,8 @@ set(
   "${CMAKE_CURRENT_SOURCE_DIR}/Bool.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/NDArrayVariable.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/NDArrayVariable.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/BuiltInFunctions.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/BuiltInFunctions.h"
 )
 
 # Build our executable from the source files.

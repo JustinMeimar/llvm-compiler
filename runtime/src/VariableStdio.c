@@ -225,7 +225,7 @@ void variableReadFromStdin(Variable *this) {
 
 ///------------------------------HELPERS---------------------------------------------------------------
 
-int32_t stream_state = 0;  // 0, 1, 2 = success, error, eof
+int32_t global_stream_state = 0;  // 0, 1, 2 = success, error, eof
 #define BUFFER_SIZE 1024
 
 /**
@@ -240,7 +240,7 @@ int cur_pos = 0;  // the next character will start reading from here
 int valid_until = 0;
 
 
-int32_t getStdinState() { return stream_state; }
+int32_t getStdinState() { return global_stream_state; }
 int getNextPos(int pos) { return (pos + 1) % BUFFER_SIZE; }
 int getPrevPos(int pos) { return (pos + BUFFER_SIZE - 1) % BUFFER_SIZE; }
 void rewindInputBuffer() { cur_pos = last_successful_read; }
@@ -318,7 +318,7 @@ int32_t readIntegerFromStdin() {
     int result = readNextToken();
     if (result == 2 && result_token_length == 0) {  // eof
         rewindInputBuffer();
-        stream_state = 2;
+        global_stream_state = 2;
         return false;
     } else if (result == 1) {  // buffer overflow
         errorAndExit("Error: Attempt to read an input longer than the input buffer length 1024!");
@@ -331,12 +331,12 @@ int32_t readIntegerFromStdin() {
             integer = 0;
             if (result_token_length == 1) {  // fail, a single sign is not an integer
                 rewindInputBuffer();
-                stream_state = 1;
+                global_stream_state = 1;
                 return 0;
             }
         } else if (!isdigit(ch)) {
             rewindInputBuffer();
-            stream_state = 1;
+            global_stream_state = 1;
             return 0;
         } else {
             sign = 1;
@@ -353,14 +353,14 @@ int32_t readIntegerFromStdin() {
             }
             if (!isdigit(ch) || sign * integer < INT32_MIN || sign * integer > INT32_MAX) {  // is failure
                 rewindInputBuffer();
-                stream_state = 1;
+                global_stream_state = 1;
                 return 0;
             }
         }
         // success
         updateRewindPoint(result == 2 ? cur_pos : getPrevPos(cur_pos));
         rewindInputBuffer();
-        stream_state = 0;
+        global_stream_state = 0;
         return (int32_t)(sign * integer);
     }
     errorAndExit("This should not happen!");
@@ -370,7 +370,7 @@ float readRealFromStdin() {
     int result = readNextToken();
     if (result == 2 && result_token_length == 0) {  // eof
         rewindInputBuffer();
-        stream_state = 2;
+        global_stream_state = 2;
         return false;
     } else if (result == 1) {  // buffer overflow
         errorAndExit("Error: Attempt to read an input longer than the input buffer length 1024!");
@@ -406,7 +406,7 @@ float readRealFromStdin() {
             see_e_or_dot = true;
         } else {
             rewindInputBuffer();
-            stream_state = 1;
+            global_stream_state = 1;
             return 0.0f;
         }
 
@@ -432,7 +432,7 @@ float readRealFromStdin() {
                         see_e_or_dot = true;
                     } else {
                         rewindInputBuffer();
-                        stream_state = 1;
+                        global_stream_state = 1;
                         return 0.0f;
                     }
                 } break;
@@ -447,7 +447,7 @@ float readRealFromStdin() {
                         see_e_or_dot = true;
                     } else {
                         rewindInputBuffer();
-                        stream_state = 1;
+                        global_stream_state = 1;
                         return 0.0f;
                     }
                 } break;
@@ -459,7 +459,7 @@ float readRealFromStdin() {
                         see_digit_after_exp = true;
                     } else {
                         rewindInputBuffer();
-                        stream_state = 1;
+                        global_stream_state = 1;
                         return 0.0f;
                     }
                     state = 3;
@@ -470,7 +470,7 @@ float readRealFromStdin() {
                         see_digit_after_exp = true;
                     } else {
                         rewindInputBuffer();
-                        stream_state = 1;
+                        global_stream_state = 1;
                         return 0.0f;
                     }
                 } break;
@@ -480,12 +480,12 @@ float readRealFromStdin() {
         }
         if (!see_digit_before_exp || !see_digit_after_exp || !see_e_or_dot) {
             rewindInputBuffer();
-            stream_state = 1;
+            global_stream_state = 1;
             return 0.0f;
         } else {  // success
             updateRewindPoint(result == 2 ? cur_pos : getPrevPos(cur_pos));
             rewindInputBuffer();
-            stream_state = 0;
+            global_stream_state = 0;
             return sign * value * powf(10.0f, (float)(exp * expsign));
         }
     }
@@ -496,7 +496,7 @@ bool readBooleanFromStdin() {
     int result = readNextToken();
     if (result == 2 && result_token_length == 0) {  // eof
         rewindInputBuffer();
-        stream_state = 2;
+        global_stream_state = 2;
         return false;
     } else if (result == 1) {  // buffer overflow
         errorAndExit("Error: Attempt to read an input longer than the input buffer length 1024!");
@@ -505,11 +505,11 @@ bool readBooleanFromStdin() {
         if (result_token_length == 1 && (ch == 'T' || ch == 'F')) {  // success
             updateRewindPoint(result == 2 ? cur_pos : getPrevPos(cur_pos));  // not EOF then there is a whitespace
             rewindInputBuffer();
-            stream_state = 0;
+            global_stream_state = 0;
             return ch == 'T';
         } else {
             rewindInputBuffer();
-            stream_state = 1;
+            global_stream_state = 1;
             return false;
         }
     }
@@ -518,7 +518,7 @@ bool readBooleanFromStdin() {
 int8_t readCharacterFromStdin() {
     int ch = readNextChar();
     updateRewindPoint(cur_pos);  // read character should always success
-    stream_state = 0;
+    global_stream_state = 0;
 
     if (ch == EOF) {
         return -1;

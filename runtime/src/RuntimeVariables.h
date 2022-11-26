@@ -75,6 +75,7 @@ bool variableIsDomainExprCompatible(Variable *this);
 int64_t variableGetLength(Variable *this);
 int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx);  // works for both vectors and integer intervals, index start at 1
 
+Variable *variableConvertLiteralAndRefToConcreteArray(Variable *arr);  // return NULL if need not convert (not literal or ref); will not convert empty array
 int8_t variableGetNDim(Variable *this);  // returns SIZE_UNKNOWN for types other than array, string or interval
 void variableEmptyInitFromTypeID(Variable *this, TypeID id);  // a helper function for other inits
 void variableAttrInitHelper(Variable *this, int64_t fieldPos, void *m_parent, bool m_isBlockScoped);

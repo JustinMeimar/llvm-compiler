@@ -761,23 +761,15 @@ void variableInitFromBinaryOp(Variable *this, Variable *op1, Variable *op2, BinO
     Variable *pop2 = op2;
     // mixed array and index refs
     FreeList *freeList = NULL;
-    if (typeIsMixedArray(op1Type)) {
-        pop1 = variableMalloc();
-        variableInitFromMixedArrayPromoteToSameType(pop1, op1);
-        freeList = freeListAppend(freeList, pop1);
-    } else if (variableGetIndexRefTypeID(op1) != NDARRAY_INDEX_REF_NOT_A_REF) {
-        pop1 = variableMalloc();
-        variableInitFromNDArrayIndexRefToValue(pop1, op1);
-        freeList = freeListAppend(freeList, pop1);
+    Variable *temp = variableConvertLiteralAndRefToConcreteArray(op1);
+    if (temp) {
+        pop1 = temp;
+        freeList = freeListAppend(freeList, temp);
     }
-    if (typeIsMixedArray(op2Type)) {
-        pop2 = variableMalloc();
-        variableInitFromMixedArrayPromoteToSameType(pop2, op2);
-        freeList = freeListAppend(freeList, pop2);
-    } else if (variableGetIndexRefTypeID(op2) != NDARRAY_INDEX_REF_NOT_A_REF) {
-        pop2 = variableMalloc();
-        variableInitFromNDArrayIndexRefToValue(pop2, op2);
-        freeList = freeListAppend(freeList, pop2);
+    temp = variableConvertLiteralAndRefToConcreteArray(op2);
+    if (temp) {
+        pop2 = temp;
+        freeList = freeListAppend(freeList, temp);
     }
     // null/identity array
     // note special case: cocat op "||" promotes to one element array instead of two
@@ -1005,6 +997,21 @@ int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx) {
             singleTypeError(this->m_type, "Invalid type for variableGetIntegerElementAtIndex!");
         } break;
     }
+}
+
+Variable *variableConvertLiteralAndRefToConcreteArray(Variable *arr) {
+    if (typeIsEmptyArray(arr->m_type))
+        return NULL;
+
+    Variable *result = NULL;
+    if (typeIsMixedArray(arr->m_type)) {
+        result = variableMalloc();
+        variableInitFromMixedArrayPromoteToSameType(result, arr);
+    } else if (variableGetIndexRefTypeID(arr) != NDARRAY_INDEX_REF_NOT_A_REF) {
+        result = variableMalloc();
+        variableInitFromNDArrayIndexRefToValue(result, arr);
+    }
+    return result;
 }
 
 int32_t variableGetIntegerValue(Variable *this) {
