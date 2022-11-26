@@ -266,6 +266,9 @@ namespace gazprea {
             case Type::REAL_2:
                 t->evalType = symtab->getType(Type::REAL_1);
                 break;
+            case Type::STRING:
+                t->evalType = symtab->getType(Type::CHARACTER);
+                break;
             default:
                 break;
         }

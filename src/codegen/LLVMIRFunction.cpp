@@ -126,6 +126,10 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
         "typeInitFromCharacterScalar"
     );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
+        "typeInitFromUnspecifiedString"
+    );
     
     declareFunction(
         llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
