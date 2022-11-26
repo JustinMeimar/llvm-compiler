@@ -1,0 +1,22 @@
+procedure main() returns integer {
+    boolean[2] testBool = [null, identity];
+    string testString = "ef";
+    character[2] testChar = testString;
+    integer[0] empty = [];
+
+    empty -> std_output;  // []
+    '\n' -> std_output;
+    testString -> std_output;  // ef
+    '\n' -> std_output;
+    [][[]] -> std_output;  // []
+    [][empty] -> std_output;  // []
+    testBool[empty] -> std_output;  // []
+    testBool[[]] -> std_output;  // []
+    testString[empty] -> std_output;  // no output
+    testString[[]] -> std_output;  // no output
+    '\n' -> std_output;
+    testChar[empty] -> std_output;  // []
+    testChar[[]] -> std_output;  // []
+
+    return 0;
+}

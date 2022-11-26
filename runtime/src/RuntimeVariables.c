@@ -1007,12 +1007,10 @@ int64_t variableGetLength(Variable *this) {
 
 int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx) {
     switch(this->m_type->m_typeId) {
-        case TYPEID_NDARRAY: {
-            return arrayGetIntegerValue(this->m_data, idx - 1);
-        } break;
-        case TYPEID_INTERVAL: {
+        case TYPEID_NDARRAY:
+            return arrayGetIntegerValue(this->m_data, idx);
+        case TYPEID_INTERVAL:
             return intervalTypeGetElementAtIndex(this->m_data, idx);
-        } break;
         default: {
             singleTypeError(this->m_type, "Invalid type for variableGetIntegerElementAtIndex!");
         } break;

@@ -73,7 +73,7 @@ bool variableIsIntegerInterval(Variable *this);
 bool variableIsIntegerArray(Variable *this);
 bool variableIsDomainExprCompatible(Variable *this);
 int64_t variableGetLength(Variable *this);
-int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx);  // works for both vectors and integer intervals, index start at 1
+int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx);  // works for both vectors and integer intervals
 
 void variableSetIsBlockScoped(Variable *this, bool isBlockScoped);
 Variable *variableConvertLiteralAndRefToConcreteArray(Variable *arr);  // return NULL if need not convert (not literal or ref); will not convert empty array

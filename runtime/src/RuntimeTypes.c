@@ -203,7 +203,7 @@ bool intervalTypeIsUnspecified(IntervalType *this) {
 }
 
 int32_t intervalTypeGetElementAtIndex(const int32_t *ivl, int64_t idx) {
-    int32_t offset = (int32_t)(idx - 1);
+    int32_t offset = (int32_t)idx;
     if (offset < 0 || offset > ivl[1] - ivl[0])
         errorAndExit("Index out of range for integer interval!");
     return ivl[0] + offset;

@@ -588,6 +588,7 @@ void variableNDArrayDestructor(Variable *this) {
             for (int i = 1; i < nVar; i++) {
                 variableDestructThenFree(vars[i]);
             }
+            free(vars);
         } break;
         case NDARRAY_INDEX_REF_NOT_A_REF:
             arrayFree(CTI->m_elementTypeID, this->m_data, arrayTypeGetTotalLength(CTI)); break;
@@ -664,12 +665,12 @@ void *ndarrayRefElementPtrGetter(Variable *this, int64_t pos) {
     Variable **vars = this->m_data;
     Variable *self = vars[0];
     if (CTI->m_isSelfRef) {
-        int32_t selfIndex = variableGetIntegerElementAtIndex(self, pos);
-        return variableNDArrayGet(self, selfIndex - 1);
+        int32_t selfIndex = variableGetIntegerElementAtIndex(self, pos) - 1;
+        return variableNDArrayGet(self, selfIndex);
     } else {  // can be a vector or a matrix
         int8_t selfDim = variableGetNDim(self);
         if (selfDim == 1) {
-            int32_t selfIndex = variableGetIntegerElementAtIndex(vars[1], pos);
+            int32_t selfIndex = variableGetIntegerElementAtIndex(vars[1], pos) - 1;
             return variableNDArrayGet(self, selfIndex);
         } else if (selfDim == 2) {
             ArrayType *selfCTI = self->m_type->m_compoundTypeInfo;
