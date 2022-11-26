@@ -46,7 +46,7 @@ void typeInitFromMatrixSizeSpecification(Type *this, Variable *nRow, Variable *n
 
 void typeInitFromUnspecifiedString(Type *this) {
     int64_t dims[1] = {SIZE_UNSPECIFIED };
-    typeInitFromArrayType(this, false, ELEMENT_CHARACTER, 1, dims);
+    typeInitFromArrayType(this, true, ELEMENT_CHARACTER, 1, dims);
 }
 
 
