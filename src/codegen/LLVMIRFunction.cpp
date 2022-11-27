@@ -257,6 +257,16 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
         "variableInitFromDomainExpression"
     );
+
+    declareFunction(
+        llvm::FunctionType::get(int64Ty, {runtimeVariableTy->getPointerTo()}, false),
+        "variableGetLength"
+    );    
+
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int64Ty}, false),
+        "variableInitFromIntegerArrayElementAtIndex"
+    );
 }
 
 llvm::Function *LLVMIRFunction::declareFunction(llvm::FunctionType *fTy, const std::string &name) {
