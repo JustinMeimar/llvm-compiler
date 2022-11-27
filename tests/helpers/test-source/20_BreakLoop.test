@@ -1,0 +1,58 @@
+// Nested loops and breaks
+
+typedef integer int;
+typedef boolean bool;
+typedef character char;
+typedef real float;
+
+const int INT_MAX = 2147483647;
+//const int INT_MIN = -2147483648;
+const float INT_MAX_IN_FLOAT = 2.14748e+09;
+const float FLOAT_MAX = 3.40282347e+38;
+
+procedure matrixloop
+() 
+{
+    int[5, 4] mtrx = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    int i = 0;
+    loop i < 5 {
+        int j = 1;
+        int[*, 4] meh = [[4,3,2,1], [100, 2, 0, 0]] // Not used, just for testing leaks
+        loop j <= 5 {
+            if (j == 3) break;
+            loop break;
+            mtrx[i,j]=i;
+            j++;
+        }
+        if (j == 3) { // Should prevent from out of range
+            break;
+        }
+        i++;
+    }
+
+    i = i - i; // Should make i = 0;
+
+    // Print matrix
+
+    loop i < rows(mtrx) {
+        int j = 0;
+        loop j < columns(mtrx) {
+            mtrx[i, j] -> std_out;
+            ' ' -> std_out;
+        }
+        '\n' -> std_out;
+    }
+    /*
+    
+    */
+}
+
+procedure iterloop () {
+    
+}
+
+procedure main() returns int {
+    call matrixloop();
+
+    return 0;
+}
