@@ -839,6 +839,10 @@ namespace gazprea
         llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
         llvm::BasicBlock *preHeader = llvm::BasicBlock::Create(globalCtx, "IteratorLoopPreHeader", parentFunc);
         llvm::BasicBlock *header = llvm::BasicBlock::Create(globalCtx, "IteratorLoopHeader", parentFunc);
+        llvm::BasicBlock* body = llvm::BasicBlock::Create(globalCtx, "IteratorLoopBody");
+        llvm::BasicBlock* merge = llvm::BasicBlock::Create(globalCtx, "IteratorLoopMerge");
+        llvmBranch.blockStack.push_back(body);
+        llvmBranch.blockStack.push_back(merge);
         ir.CreateBr(preHeader);
         ir.SetInsertPoint(preHeader);
 
@@ -871,19 +875,22 @@ namespace gazprea
         llvm::Value *branchCond = ir.CreateICmpNE(boolCond, ir.getInt32(0));
 
         // create body and merge
-        llvm::BasicBlock* body = llvm::BasicBlock::Create(globalCtx, "IteratorLoopBody", parentFunc);
-        llvm::BasicBlock* merge = llvm::BasicBlock::Create(globalCtx, "IteratorLoopMerge", parentFunc);
+        parentFunc->getBasicBlockList().push_back(body);
         ir.CreateCondBr(branchCond, body, merge);
         ir.SetInsertPoint(body);
 
-        //initialize domain variable from domain array
+        //get runtime domain var from index in domain array 
         auto runtimeDomainVar = llvmFunction.call("variableMalloc", {});
         llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {indexVariable});
         llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), true);
         llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {runtimeDomainVar, runtimeDomainArray, index_i64});
-        llvm::Value* llvmDomainVar = llvmFunction.call("variableGetIntegerValue", {runtimeDomainVar});
-        t->children[0]->children[0]->llvmValue = llvmDomainVar; //allow us to use domain variable as identifier in loop body 
-
+        
+        //initialize variable symbol to from domain array
+        auto variableAST = t->children[0]->children[0];
+        auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(variableAST->symbol);
+        variableAST->llvmValue = indexVariable;
+        variableSymbol->llvmPointerToVariableObject = indexVariable;
+        
         //create new variable index + 1
         visit(t->children[1]);
         auto constOne = llvmFunction.call("variableMalloc", {});
@@ -894,64 +901,10 @@ namespace gazprea
 
         //fill in merge block 
         ir.CreateBr(header);
+        parentFunc->getBasicBlockList().push_back(merge);
         ir.SetInsertPoint(merge);
-
-        // llvmFunction.call("variableInitFromBinaryOp", {comparissonVariable});
-
-        // llvm::Value* condition = ir.CreateICmpNE(indexVariable, lengthVariable);
-        /*
-        auto ctx = dynamic_cast<GazpreaParser::IteratorLoopStatementContext*>(t->parseTree);
-        llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
-        std::vector<llvm::BasicBlock*> blockStack;
-
-        for (size_t i = 0; i < (t->children.size()-1); i++) {
-            //put the domain expressions in the pre header only compute once
-            llvm::BasicBlock* preHeader = llvm::BasicBlock::Create(globalCtx, "IteratorLoopPreHeader", parentFunc);
-            llvm::BasicBlock* header = llvm::BasicBlock::Create(globalCtx, "IteratorLoopHeader", parentFunc);
-
-            ir.CreateBr(preHeader);
-            ir.SetInsertPoint(preHeader);
-            //fill in preheader
-            visit(t->children[i]);
-            auto domainExpr = t->children[i]->children[1];
-            auto runtimeDomainArray = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromDomainExpression", {runtimeDomainArray, domainExpr->llvmValue});
-            llvm::Value* length = llvmFunction.call("variableGetLength", {runtimeDomainArray});
-            //setup header
-            ir.CreateBr(header);
-            ir.SetInsertPoint(header);
-
-
-            llvm::BasicBlock* body = llvm::BasicBlock::Create(globalCtx, "IteratorLoopBody", parentFunc);
-            llvm::BasicBlock* merge = llvm::BasicBlock::Create(globalCtx, "IteratorLoopMerge", parentFunc);
-            unsigned long long idx = 0;
-            llvm::Value* index = ir.getInt64(idx);
-
-            auto runtimeIndex = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {runtimeIndex, index});
-            llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, , ir.getInt32(1), ir.getInt32(7)});
-            llvmFunction.call("variableAssignment", {});
-
-            llvm::Value* condition = ir.CreateICmpNE(index, length);
-            auto runtimeDomainVar = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {runtimeDomainVar, runtimeDomainArray, index});
-
-            ir.CreateCondBr(condition, body, merge);
-            ir.SetInsertPoint(body);
-
-            visit(t->children[t->children.size()-1]);
-            llvmFunction.call();
-
-            ir.CreateBr(header);
-            ir.SetInsertPoint(merge);
-
-            //blockStack.push_back(merge);
-            std::cout << "size of domain expression" << length << std::endl;
-            std::cout << domainExpr->getText() << domainExpr->llvmValue << std::endl;
-        }
-        */
-
-
+        llvmBranch.blockStack.pop_back();
+        llvmBranch.blockStack.pop_back();
     }
 
     void LLVMGen::visitBooleanAtom(std::shared_ptr<AST> t) {
