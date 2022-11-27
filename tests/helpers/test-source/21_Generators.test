@@ -6,17 +6,22 @@ typedef character char;
 typedef real float;
 
 const int INT_MAX = 2147483647;
-//const int INT_MIN = -2147483648;
+const int INT_MIN = -2147483648;
 const float INT_MAX_IN_FLOAT = 2.14748e+09;
 const float FLOAT_MAX = 3.40282347e+38;
 
-procedure gen1() {
+procedure vecGen() {
     int[*] vec = [x in -2147483648..2147483647 | x];
+    vec[-2147483648] -> std_out; // Should print -2147483648
+    vec[2147483647] -> std_out; // Should print 2147483647
+}
+
+procedure mtrxGen() {
     
 }
 
 procedure main() returns int {
-    call matrixloop();
+    call vecGen();
 
     return 0;
 }

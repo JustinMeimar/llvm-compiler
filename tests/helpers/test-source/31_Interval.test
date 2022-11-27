@@ -1,0 +1,19 @@
+// Testing interval
+
+procedure main() returns integer {
+    vector[*] by2 = 1..10 by 2;
+    integer i = 1;
+    tuple(integer, integer, real) tple;
+    tple.3 = 10.523;
+
+    loop {
+        by2[i] -> std_out; // Should print 13579
+        i = i + 1;
+    } while i <= 5;
+    by2 -> std_out; // Should print [1 3 5 7 9]
+
+    vector[3] test = (0-10)..(as<integer>(tple.3)) by 10;
+    test -> std_out;
+    // Should print [-10 0 10]
+
+}

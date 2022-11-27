@@ -1,0 +1,26 @@
+// Testing built in functions
+
+const int INT_MAX = 2147483647;
+const int INT_MIN = -2147483648;
+
+procedure testUB() returns boolean {
+    integer[10] vec = (2147483647-10)..INT_MAX;
+    vec -> std_out;
+    reverse(vec) -> std_out;
+    return true;
+}
+
+procedure testLB() returns real {
+    // Try again with lower bound
+    integer lb = as<real>(-2147483648.10);
+    integer ub = as<real>(-2147483648.25+10.12);
+    integer[10] lowvec = lb..ub;
+    lowvec -> std_out;
+    real[*] revlow = reverse(lowvec);
+    return 192.5;
+}
+
+procedure main() returns integer {
+    call testUB();
+    int result = as<integer>(testLB());
+    result -> std_out; // Prints 192
