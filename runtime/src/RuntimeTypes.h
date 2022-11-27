@@ -52,7 +52,7 @@ void *intervalTypeMallocDataFromCopy(void *otherIntervalData);
 void intervalTypeFreeData(void *data);
 
 bool intervalTypeIsUnspecified(IntervalType *this);  // if the base type is unspecified, otherwise the base type is integer
-int32_t intervalTypeGetElementAtIndex(const int32_t *ivl, int64_t idx);  // index start at 1
+int32_t intervalTypeGetElementAtIndex(const int32_t *ivl, int64_t idx);
 // should support self assignment
 void intervalTypeUnaryPlus(int32_t *result, const int32_t *op);
 void intervalTypeUnaryMinus(int32_t *result, const int32_t *op);

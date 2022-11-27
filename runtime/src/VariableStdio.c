@@ -114,7 +114,10 @@ void variablePrintToFile(FILE *fd, Variable *this) {
     Variable *temp = variableConvertLiteralAndRefToConcreteArray(this);
     if (temp) {
         variablePrintToFile(fd, temp);
-        variableDestructThenFree(temp);
+#ifdef DEBUG_PRINT
+        fprintf(stderr, "daf#25\n");
+#endif
+        variableDestructThenFreeImpl(temp);
         return;
     }
 
@@ -172,16 +175,37 @@ void variablePrintToFile(FILE *fd, Variable *this) {
 }
 
 void variablePrintToStdout(Variable *this) {
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "(var print %p)\n", this);
+#endif
     variablePrintToFile(stdout, this);
 }
 
+#ifdef DEBUG_PRINT
+bool reentry = false;
+#endif
+
 void variableDebugPrint(Variable *this) {
+#ifdef DEBUG_PRINT
+    if (reentry)
+        return;
+    reentry = true;
+
     fprintf(stderr, "(Var(blockScoped=%d)", this->m_isBlockScoped);
     typeDebugPrint(this->m_type);
     switch(this->m_type->m_typeId) {
         case TYPEID_NDARRAY: {
-            // use the spec print method
-            variablePrintToFile(stderr, this);
+            if (typeIsMixedArray(this->m_type)) {
+                fprintf(stderr, "eids:");
+                int64_t len = variableGetLength(this);
+                for (int64_t i = 0; i < len; i++) {
+                    MixedTypeElement *element = variableNDArrayGet(this, i);
+                    fprintf(stderr, "%d", element->m_elementTypeID);
+                }
+            } else {
+                // use the spec print method
+                variablePrintToFile(stderr, this);
+            }
         } break;
         case TYPEID_INTERVAL: {
             int32_t *interval = this->m_data;
@@ -198,15 +222,22 @@ void variableDebugPrint(Variable *this) {
         default: break;
     }
     fprintf(stderr, ")");
+
+    reentry = false;
+#endif
 }
 
 void variableInitDebugPrint(Variable *this, char *msg) {
+#ifdef DEBUG_PRINT
+    if (reentry) return;
+
     FILE *fd = stderr;
     fprintf(fd, "(init var %p '", (void *)this);
     fprintf(fd, "%s", msg);
     fprintf(fd, "')");
     variableDebugPrint(this);
     fprintf(fd, "\n");
+#endif
 }
 
 ///------------------------------STREAM_STD_INPUT---------------------------------------------------------------
@@ -231,7 +262,10 @@ void variableReadFromStdin(Variable *this) {
             singleTypeError(this->m_type, "Attempt to read from stdin into a variable of type:"); break;
     }
     variableAssignment(this, rhs);
-    variableDestructThenFree(rhs);
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "daf#26\n");
+#endif
+    variableDestructThenFreeImpl(rhs);
 }
 
 ///------------------------------HELPERS---------------------------------------------------------------

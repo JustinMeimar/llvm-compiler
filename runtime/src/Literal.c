@@ -28,8 +28,12 @@ void typeInitFromVectorSizeSpecification(Type *this, Variable *size, Type *baseT
         singleTypeError(baseType, "Attempt to use type as base type: ");
     }
     if (size == NULL) {
-        typeInitFromVectorSizeSpecificationFromLiteral(this, -1, baseType);
+        typeInitFromVectorSizeSpecificationFromLiteral(this, SIZE_UNKNOWN, baseType);
     } else {
+        int64_t intSize = variableGetIntegerValue(size);
+        if (intSize < 0) {
+            errorAndExit("Invalid vector size calculated from variable!");
+        }
         typeInitFromVectorSizeSpecificationFromLiteral(this, variableGetIntegerValue(size), baseType);
     }
 }
@@ -38,15 +42,26 @@ void typeInitFromMatrixSizeSpecification(Type *this, Variable *nRow, Variable *n
     if (!typeIsSpecifiable(baseType)) {
         singleTypeError(baseType, "Attempt to use type as base type: ");
     }
-    typeInitFromMatrixSizeSpecificationFromLiteral(this,
-            nRow ? variableGetIntegerValue(nRow) : -1,
-            nCol ? variableGetIntegerValue(nCol) : -1,
-            baseType);
+    int64_t intNRow = SIZE_UNKNOWN;
+    int64_t intNCol = SIZE_UNKNOWN;
+    if (nRow) {
+        intNRow = variableGetIntegerValue(nRow);
+        if (intNRow < 0) {
+            errorAndExit("Invalid matrix row size calculated from variable!");
+        }
+    }
+    if (nCol) {
+        intNCol = variableGetIntegerValue(nCol);
+        if (intNCol < 0) {
+            errorAndExit("Invalid matrix row size calculated from variable!");
+        }
+    }
+    typeInitFromMatrixSizeSpecificationFromLiteral(this,intNRow, intNCol, baseType);
 }
 
 void typeInitFromUnspecifiedString(Type *this) {
     int64_t dims[1] = {SIZE_UNSPECIFIED };
-    typeInitFromArrayType(this, false, ELEMENT_CHARACTER, 1, dims);
+    typeInitFromArrayType(this, true, ELEMENT_CHARACTER, 1, dims);
 }
 
 
@@ -154,6 +169,9 @@ void variableInitFromMatrixLiteralHelper(Variable *this, int64_t nVars, Variable
 
     this->m_data = arr;
     variableAttrInitHelper(this, -1, this->m_data, false);
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "from matrix literal");
+#endif
 }
 
 void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **vars) {
@@ -184,6 +202,9 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
             int64_t dims[1] = {longestLen};
             variableInitFromScalarToConcreteArray(modifiedVars[i], vars[i], 1, dims, false);
         } else if (variableGetIndexRefTypeID(vars[i]) != NDARRAY_INDEX_REF_NOT_A_REF) {
+#ifdef DEBUG_PRINT
+            fprintf(stderr, "calling refToValue from vector literal\n");
+#endif
             variableInitFromNDArrayIndexRefToValue(modifiedVars[i], vars[i]);
         } else {  // do not modify
             modifiedVars[i] = vars[i];
@@ -191,10 +212,7 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
     }
 
     if (nVars == 0) {  // empty array
-        this->m_type = typeMalloc();
-        MixedTypeElement mixedTemplate = {ELEMENT_NULL, NULL };
-        typeInitFromArrayType(this->m_type, false, ELEMENT_MIXED, DIM_UNSPECIFIED, NULL);
-        this->m_data = arrayMallocFromElementValue(ELEMENT_MIXED, 0, &mixedTemplate);;
+        variableInitFromEmptyArray(this);
     } else if (isMatrix) {
         // matrix literal
         variableInitFromMatrixLiteralHelper(this, nVars, modifiedVars, longestLen);
@@ -224,16 +242,20 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
 
         this->m_data = arr;
         variableAttrInitHelper(this, -1, this->m_data, false);
+#ifdef DEBUG_PRINT
+        variableInitDebugPrint(this, "from vector literal");
+#endif
     }
 
     for (int64_t i = 0; i < nVars; i++) {
-        if (modifiedVars[i] != vars[i])
-            variableDestructThenFree(modifiedVars[i]);
+        if (modifiedVars[i] != vars[i]) {
+#ifdef DEBUG_PRINT
+            fprintf(stderr, "daf#2\n");
+#endif
+            variableDestructThenFreeImpl(modifiedVars[i]);
+        }
     }
     free(modifiedVars);
-#ifdef DEBUG_PRINT
-    variableInitDebugPrint(this, "from vector literal");
-#endif
 }
 
 void variableInitFromString(Variable *this, int64_t strLength, int8_t *str) {
@@ -273,7 +295,11 @@ void variableInitFromStdOutput(Variable *this) {
 }
 
 void variableInitFromEmptyArray(Variable *this) {
-    variableInitFromVectorLiteral(this, 0, NULL);
+    this->m_type = typeMalloc();
+    MixedTypeElement mixedTemplate = {ELEMENT_NULL, NULL };
+    typeInitFromArrayType(this->m_type, false, ELEMENT_MIXED, DIM_UNSPECIFIED, NULL);
+    this->m_data = arrayMallocFromElementValue(ELEMENT_MIXED, 0, &mixedTemplate);;
+    variableAttrInitHelper(this, -1, this->m_data, false);
 #ifdef DEBUG_PRINT
     variableInitDebugPrint(this, "an empty array");
 #endif

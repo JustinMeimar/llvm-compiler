@@ -36,6 +36,9 @@ namespace gazprea {
                 return Type::REAL_2;
             }
             break;
+            case Type::STRING:
+                return Type::STRING;
+            break;
         }
         return -1;
     }

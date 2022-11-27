@@ -126,6 +126,10 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
         "typeInitFromCharacterScalar"
     );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
+        "typeInitFromUnspecifiedString"
+    );
     
     declareFunction(
         llvm::FunctionType::get(voidTy, { runtimeTypeTy->getPointerTo() }, false),
@@ -238,6 +242,15 @@ void LLVMIRFunction::declareAllFunctions() {
     declareFunction(
         llvm::FunctionType::get(runtimeTypeTy->getPointerTo(), { runtimeVariableTy->getPointerTo() }, false),
         "variableGetType"
+    );
+
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
+        "variableInitFromVectorIndexing"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
+        "variableInitFromMatrixIndexing"
     );
 }
 

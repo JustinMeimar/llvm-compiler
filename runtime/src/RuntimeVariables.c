@@ -71,26 +71,35 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
     // in every possible case, we need to do one of the below two things
     // 1. throw an error when input types do not make sense
     // 2. initialize every field of this fully, including this->m_type and this->m_data
-//    if (config == &pcadpParameterConfig) {
-//        fprintf(stderr, "Param\n");
-//    } else if (config == &pcadpAssignmentConfig) {
-//        fprintf(stderr, "Assign\n");
-//    } else if (config == &pcadpCastConfig) {
-//        fprintf(stderr, "Cast\n");
-//    } else if (config == &pcadpDeclarationConfig) {
-//        fprintf(stderr, "Decl\n");
-//    } else if (config == &pcadpPromotionConfig) {
-//        fprintf(stderr, "Promote\n");
-//    }
 
     // modify rhs and re-entry if rhs is array ref type
     if (variableGetIndexRefTypeID(rhs) != NDARRAY_INDEX_REF_NOT_A_REF) {
         Variable *rhsModified = variableMalloc();
+#ifdef DEBUG_PRINT
+        fprintf(stderr, "calling refToValue from PCADP\n");
+#endif
         variableInitFromNDArrayIndexRefToValue(rhsModified, rhs);
         variableInitFromPCADP(this, targetType, rhsModified, config);
-        variableDestructThenFree(rhsModified);
+#ifdef DEBUG_PRINT
+        fprintf(stderr, "daf#14\n");
+#endif
+        variableDestructThenFreeImpl(rhsModified);
         return;
     }
+
+#ifdef DEBUG_PRINT
+    if (config == &pcadpParameterConfig) {
+        fprintf(stderr, "Param\n");
+    } else if (config == &pcadpAssignmentConfig) {
+        fprintf(stderr, "Assign\n");
+    } else if (config == &pcadpCastConfig) {
+        fprintf(stderr, "Cast\n");
+    } else if (config == &pcadpDeclarationConfig) {
+        fprintf(stderr, "Decl\n");
+    } else if (config == &pcadpPromotionConfig) {
+        fprintf(stderr, "Promote\n");
+    }
+#endif
 
     /// common local variables
     Type *rhsType = rhs->m_type;
@@ -305,7 +314,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         }
         variableAttrInitHelper(this, -1, this->m_data, config->m_resultIsBlockScoped);
 #ifdef DEBUG_PRINT
-        variableInitDebugPrint(this, "array/string -> array/string");
+        variableInitDebugPrint(this, "array -> array");
 #endif
         return;
     }
@@ -314,14 +323,15 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
 Variable *variableMalloc() {
     Variable *var = malloc(sizeof(Variable));
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(malloc var %p)\n", (void *)var);
+    if (!reentry)
+        fprintf(stderr, "(malloc var %p)\n", (void *)var);
 #endif
     return var;
 }
 
 void variableInitFromMemcpy(Variable *this, Variable *other) {
     if (other->m_type->m_typeId == TYPEID_NDARRAY) {
-        variableNDArrayCopy(this, other);
+        variableInitFromNDArrayCopy(this, other);
         return;
     }
     this->m_type = typeMalloc();
@@ -432,9 +442,15 @@ void variableInitFromUnaryOp(Variable *this, Variable *operand, UnaryOpCode opco
     // modify rhs and re-entry if rhs is array ref type
     if (variableGetIndexRefTypeID(operand) != NDARRAY_INDEX_REF_NOT_A_REF) {
         Variable *rhsModified = variableMalloc();
+#ifdef DEBUG_PRINT
+        fprintf(stderr, "calling refToValue from unary op\n");
+#endif
         variableInitFromNDArrayIndexRefToValue(rhsModified, operand);
         variableInitFromUnaryOp(this, rhsModified, opcode);
-        variableDestructThenFree(rhsModified);
+#ifdef DEBUG_PRINT
+        fprintf(stderr, "daf#15\n");
+#endif
+        variableDestructThenFreeImpl(rhsModified);
         return;
     }
 
@@ -536,8 +552,11 @@ void binopPromoteComputationAndDispose(Variable *this, Variable *op1, Variable *
 
     compute(this, op1Promoted, op2Promoted, opcode);
 
-    variableDestructThenFree(op1Promoted);
-    variableDestructThenFree(op2Promoted);
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "daf#16&17\n");
+#endif
+    variableDestructThenFreeImpl(op1Promoted);
+    variableDestructThenFreeImpl(op2Promoted);
 
     variableAttrInitHelper(this, -1, this->m_data, false);
 #ifdef DEBUG_PRINT
@@ -645,8 +664,11 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
                                                         &this->m_data);
                     variableAttrInitHelper(this, -1, this->m_data, false);
 
-                    variableDestructThenFree(target1);
-                    variableDestructThenFree(target2);
+#ifdef DEBUG_PRINT
+                    fprintf(stderr, "daf#18&19\n");
+#endif
+                    variableDestructThenFreeImpl(target1);
+                    variableDestructThenFreeImpl(target2);
                 } else {
                     Type *targetType = typeMalloc();
                     typeInitFromCopy(targetType, op1Type);
@@ -672,7 +694,10 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
                     variableInitFromBinaryOp(temp, op1Vars[i], op2Vars[i], BINARY_EQ);
                     bool *resultBool = temp->m_data;
                     result = result && *resultBool;
-                    variableDestructThenFree(temp);
+#ifdef DEBUG_PRINT
+                    fprintf(stderr, "daf#20\n");
+#endif
+                    variableDestructThenFreeImpl(temp);
                 }
                 if (opcode == BINARY_NE)
                     result = !result;
@@ -812,7 +837,10 @@ void variableInitFromBinaryOp(Variable *this, Variable *op1, Variable *op2, BinO
         variableInitFromBinaryOpWithSpecTypes(this, pop1, pop2, opcode);
     }
 
-    freeListFreeAll(freeList, (void (*)(void *)) variableDestructThenFree);
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "daf#21\n");
+#endif
+    freeListFreeAll(freeList, (void (*)(void *)) variableDestructThenFreeImpl);
 }
 
 void variableInitFromParameter(Variable *this, Type *lhsType, Variable *rhs) {
@@ -947,9 +975,11 @@ Variable *variableGetTupleFieldFromID(Variable *tuple, int64_t id) {
 
 void variableDestructor(Variable *this) {
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(destruct var %p)", (void *)this);
-    variableDebugPrint(this);
-    fprintf(stderr, "\n");
+    if (!reentry) {
+        fprintf(stderr, "(destruct var %p)", (void *) this);
+        variableDebugPrint(this);
+        fprintf(stderr, "\n");
+    }
 #endif
     TypeID id = this->m_type->m_typeId;
 
@@ -982,7 +1012,17 @@ void variableDestructor(Variable *this) {
 void variableDestructThenFree(Variable *this) {
     variableDestructor(this);
 #ifdef DEBUG_PRINT
-    fprintf(stderr, "(free var %p)\n", (void *)this);
+    if (!reentry)
+        fprintf(stderr, "(llvm side free var %p)\n", (void *)this);
+#endif
+    free(this);
+}
+
+void variableDestructThenFreeImpl(Variable *this) {
+    variableDestructor(this);
+#ifdef DEBUG_PRINT
+    if (!reentry)
+        fprintf(stderr, "(free var %p)\n", (void *)this);
 #endif
     free(this);
 }
@@ -1005,14 +1045,17 @@ int64_t variableGetLength(Variable *this) {
     }
 }
 
+void variableInitFromIntegerArrayElementAtIndex(Variable *this, Variable *arr, int64_t idx) {
+    int32_t value = variableGetIntegerElementAtIndex(arr, idx);
+    variableInitFromIntegerScalar(this, value);
+}
+
 int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx) {
     switch(this->m_type->m_typeId) {
-        case TYPEID_NDARRAY: {
-            return arrayGetIntegerValue(this->m_data, idx - 1);
-        } break;
-        case TYPEID_INTERVAL: {
+        case TYPEID_NDARRAY:
+            return arrayGetIntegerValue(this->m_data, idx);
+        case TYPEID_INTERVAL:
             return intervalTypeGetElementAtIndex(this->m_data, idx);
-        } break;
         default: {
             singleTypeError(this->m_type, "Invalid type for variableGetIntegerElementAtIndex!");
         } break;
@@ -1041,6 +1084,9 @@ Variable *variableConvertLiteralAndRefToConcreteArray(Variable *arr) {
         variableInitFromMixedArrayPromoteToSameType(result, arr);
     } else if (variableGetIndexRefTypeID(arr) != NDARRAY_INDEX_REF_NOT_A_REF) {
         result = variableMalloc();
+#ifdef DEBUG_PRINT
+        fprintf(stderr, "calling refToValue from convertToConcreteArray\n");
+#endif
         variableInitFromNDArrayIndexRefToValue(result, arr);
     }
     return result;
@@ -1050,7 +1096,10 @@ int32_t variableGetIntegerValue(Variable *this) {
     Variable *intVar = variableMalloc();
     variableInitFromPCADPToIntegerScalar(intVar, this, &pcadpPromotionConfig);
     int32_t result = *(int32_t *)intVar->m_data;
-    variableDestructThenFree(intVar);
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "daf#22\n");
+#endif
+    variableDestructThenFreeImpl(intVar);
     return result;
 }
 
@@ -1060,7 +1109,10 @@ bool variableGetBooleanValue(Variable *this) {
     Variable *intVar = variableMalloc();
     variableInitFromPromotion(intVar, boolTy, this);
     bool result = *(bool *)intVar->m_data;
-    variableDestructThenFree(intVar);
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "daf#23\n");
+#endif
+    variableDestructThenFreeImpl(intVar);
     typeDestructThenFree(boolTy);
     return result;
 }
@@ -1135,5 +1187,8 @@ void variableAssignment(Variable *this, Variable *rhs) {
         }
     }
 
-    variableDestructThenFree(result);
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "daf#24\n");
+#endif
+    variableDestructThenFreeImpl(result);
 }
