@@ -5,19 +5,28 @@
 #include "VariableStdio.h"
 
 void mixedTypeElementInitFromValue(MixedTypeElement *this, ElementTypeID eid, void *value) {
-    this->m_elementTypeID = eid;
     switch (eid) {
         case ELEMENT_INTEGER:
         case ELEMENT_REAL:
         case ELEMENT_BOOLEAN:
         case ELEMENT_CHARACTER: {
+            this->m_elementTypeID = eid;
             int64_t elementSize = elementGetSize(eid);
             this->m_element = malloc(elementSize);
             elementAssign(eid, this->m_element, value);
         } break;
         case ELEMENT_NULL:
         case ELEMENT_IDENTITY:
+            this->m_elementTypeID = eid;
             this->m_element = NULL; break;
+        case ELEMENT_MIXED: {
+            MixedTypeElement *other = value;
+            this->m_elementTypeID = other->m_elementTypeID;
+            int64_t elementSize = elementGetSize(other->m_elementTypeID);
+            void *otherValue = other->m_element;
+            this->m_element = malloc(elementSize);
+            elementAssign(other->m_elementTypeID, this->m_element, otherValue);
+        }
         default:
             errorAndExit("Invalid eid for element of mixed array!");
     }

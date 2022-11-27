@@ -375,8 +375,8 @@ namespace gazprea {
 
     std::any ASTBuilder::visitIndexing(GazpreaParser::IndexingContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::INDEXING_TOKEN, ctx);
-        t->addChild(visit(ctx->expr(0)));
-        t->addChild(visit(ctx->expr(1)));
+        t->addChild(visit(ctx->expr()));
+        t->addChild(visit(ctx->expressionList()));
         return t;
     }
 

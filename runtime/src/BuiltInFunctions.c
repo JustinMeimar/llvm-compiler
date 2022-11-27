@@ -47,7 +47,10 @@ Variable *BuiltInReverse(Variable *vec) {
                 }
 
                 if (pop != vec) {
-                    variableDestructThenFree(pop);
+#ifdef DEBUG_PRINT
+                    fprintf(stderr, "daf#1\n");
+#endif
+                    variableDestructThenFreeImpl(pop);
                 }
             }
                 break;

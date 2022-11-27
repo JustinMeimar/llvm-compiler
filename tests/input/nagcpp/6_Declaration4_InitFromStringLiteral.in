@@ -1,0 +1,16 @@
+procedure main() returns integer {
+    string str1 = "abcde";
+    string[*] str2 = "abcde";
+    string[10] str3 = "abcde";
+    var str4 = "abcde";
+
+    str1 -> std_output;
+    '\n' -> std_output;
+    str2 -> std_output;
+    '\n' -> std_output;
+    str3 -> std_output;
+    '\n' -> std_output;
+    str4 -> std_output;
+
+    return 0;
+}
