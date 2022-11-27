@@ -300,12 +300,6 @@ NDArrayTypeID typeGetNDArrayTypeID(Type *this) {
 ///------------------------------Variable---------------------------------------------------------------
 
 void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable *rowIndex, Variable *colIndex, int64_t nIndex) {
-    fprintf(stderr, "indexing: %p %p", arr, rowIndex);
-    variableDebugPrint(arr);
-    variableDebugPrint(rowIndex);
-    fprintf(stderr, "\n\n");
-
-
     Type *arrType = arr->m_type;
     Type *rowIndexType = rowIndex->m_type;
     Type *colIndexType = NULL;
