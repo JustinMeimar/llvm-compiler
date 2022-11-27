@@ -1096,7 +1096,7 @@ namespace gazprea
                     t->children[1]->children[0]->llvmValue 
                 }
             );
-            freeExprAtomIfNecessary(t->children[1]->children[0]);
+            freeExpressionIfNecessary(t->children[1]->children[0]);
         } else {
             llvmFunction.call(
                 "variableInitFromMatrixIndexing", 
@@ -1107,8 +1107,8 @@ namespace gazprea
                     t->children[1]->children[1]->llvmValue 
                 }
             );
-            freeExprAtomIfNecessary(t->children[1]->children[0]);
-            freeExprAtomIfNecessary(t->children[1]->children[1]);
+            freeExpressionIfNecessary(t->children[1]->children[0]);
+            freeExpressionIfNecessary(t->children[1]->children[1]);
         }
         t->llvmValue = runtimeVariableObject;
         freeExprAtomIfNecessary(t->children[0]);
