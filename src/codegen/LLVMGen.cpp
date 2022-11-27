@@ -833,10 +833,24 @@ namespace gazprea
 
         llvmFunction.call("variableDestructThenFree", { runtimeVarConstZero });
     }
+ 
+    void LLVMGen::visitIteratorLoop(std::shared_ptr<AST> t) { 
+        auto ctx = dynamic_cast<GazpreaParser::IteratorLoopStatementContext*>(t->parseTree);
+        llvm::Function *parentFunc = ir.GetInsertBlock()->getParent(); 
+        std::vector<llvm::BasicBlock*> blockStack;
+    
+        for (size_t i = 0; i < (t->children.size()-1); i++) {
+            llvm::BasicBlock* header = llvm::BasicBlock::Create(globalCtx, "IteratorLoopHeader"); 
+            llvm::BasicBlock* body = llvm::BasicBlock::Create(globalCtx, "IteratorLoopBody");
+            llvm::BasicBlock* merge = llvm::BasicBlock::Create(globalCtx, "IteratorLoopMerge");
+            blockStack.push_back(merge);
 
-    void LLVMGen::visitIteratorLoop(std::shared_ptr<AST> t) {
-        visitChildren(t);
-        // TODOBasicBlock 
+            visit(t->children[i]);
+            auto domainExpr = t->children[i]->children[1];
+            auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromDomainExpression", {runtimeVariableObject, domainExpr->llvmValue}); 
+            std::cout << domainExpr->getText() << domainExpr->llvmValue << std::endl;
+        }
     }
 
     void LLVMGen::visitBooleanAtom(std::shared_ptr<AST> t) {

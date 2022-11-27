@@ -53,6 +53,9 @@ namespace gazprea {
                 case GazpreaParser::TUPLE_ACCESS_TOKEN:
                     visitTupleAccess(t);
                     break;
+                case GazpreaParser::DOMAIN_EXPRESSION_TOKEN:
+                    visitDomainExpression(t);
+                    break; 
                 default: visitChildren(t);
             };
         }
@@ -194,4 +197,14 @@ namespace gazprea {
             }
         }
     }
+
+    void DefWalk::visitDomainExpression(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        std::shared_ptr<AST> identifierAST = t->children[0];
+        auto vs = std::make_shared<VariableSymbol>(identifierAST->parseTree->getText(), nullptr);
+        vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
+        t->symbol = vs;   // track in AST
+        currentScope->define(vs);
+    }
+
 } // namespace gazprea 
