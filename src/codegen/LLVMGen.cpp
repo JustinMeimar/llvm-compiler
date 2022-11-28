@@ -845,10 +845,13 @@ namespace gazprea
         std::vector<llvm::Value*> domainExprs;
         std::vector<llvm::Value*> domainExprSizes;
 
+        auto indexVariableType = llvmFunction.call("typeMalloc", {});
+        auto constOne = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)});
+        
         // Create Preheader and necessary vectors
         for (size_t i = 0; i < t->children.size()-1; i++) {
             // create index variable & set to 0
-            auto indexVariableType = llvmFunction.call("typeMalloc", {});
             auto indexInitialization = llvmFunction.call("variableMalloc", {});
             auto indexVariable = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
@@ -885,14 +888,13 @@ namespace gazprea
 
         // Create Header Blocks
         for (size_t i = 0; i < t->children.size()-1; i++) {
-            // Headers will cascade from { header_0, header_1 .. header_i } until the final header: header_n 
+            // Headers will cascade from { header_0, header_1 .. header_i } until the final header: header_n  
+            llvm::BasicBlock* branchTrue;
+            size_t bsSize = llvmBranch.blockStack.size();
+            llvm::BasicBlock* branchFalse;
             if (i == 0) {
-                size_t blockStackSize = llvmBranch.blockStack.size();
                 ir.CreateBr(llvmBranch.blockStack[0]);
             }
-            size_t bsSize = llvmBranch.blockStack.size();
-            llvm::BasicBlock* branchTrue;
-            llvm::BasicBlock* branchFalse;
             if (i == (t->children.size() -2)) {
                 //header cond br has true: body n (visit t->children[-1] here or false: merge n)
                 auto header_n = llvmBranch.blockStack[bsSize - 3];
@@ -900,20 +902,21 @@ namespace gazprea
                 auto merge_n  = llvmBranch.blockStack[bsSize - 1];
 
                 ir.SetInsertPoint(header_n);
-
                 branchTrue = body_n;
                 branchFalse = merge_n;
 
             } else {
                 //header cond br has true: next header (i + 1) or merge i
-                int offset = (3*(t->children.size()-1-i));
-                auto header_i = llvmBranch.blockStack[bsSize - offset + 0];
-                auto body_i   = llvmBranch.blockStack[bsSize - offset + 1];
-                auto merge_i  = llvmBranch.blockStack[bsSize - offset + 2];
-                auto next_header = llvmBranch.blockStack[bsSize -offset + 3];
+                auto header_i    = llvmBranch.blockStack[3*i];
+                auto body_i      = llvmBranch.blockStack[3*i + 1];
+                auto merge_i     = llvmBranch.blockStack[3*i + 2];
+                auto next_header = llvmBranch.blockStack[3*i + 3];
 
                 ir.SetInsertPoint(header_i);
-
+                //reset the next header array index and domain variable to initial values 
+                auto next_loop_index = domainIndexVars[i+1];
+                llvmFunction.call("variableAssignment", {next_loop_index, constOne}); 
+                
                 branchTrue = next_header;
                 branchFalse = merge_i;
             }
@@ -934,7 +937,7 @@ namespace gazprea
 
             auto comparissonVariable = llvmFunction.call("variableMalloc", {});
             auto lengthVariable = domainExprSizes[i];
-            llvmFunction.call("variableInitFromBinaryOp", {comparissonVariable, indexVariable, lengthVariable, ir.getInt32(10)});
+            llvmFunction.call("variableInitFromBinaryOp", {comparissonVariable, indexVariable, lengthVariable, ir.getInt32(12)});
             llvm::Value *boolCond = llvmFunction.call("variableGetBooleanValue", {comparissonVariable});
             llvm::Value *branchCond = ir.CreateICmpNE(boolCond, ir.getInt32(0));
             ir.CreateCondBr(branchCond, branchTrue, branchFalse);
@@ -942,13 +945,14 @@ namespace gazprea
 
         // Create Body and Merge Blocks
         for (int i = t->children.size()-2; i >=0; i--) { 
-        // for (int i = 0; i < t->children.size()-1; i++) { 
             size_t bsSize = llvmBranch.blockStack.size();
-            int offset = (3*(t->children.size()-1-i));
-            auto header_i = llvmBranch.blockStack[3*i+0];
-            auto body_i   = llvmBranch.blockStack[3*i+1];
-            auto merge_i  = llvmBranch.blockStack[3*i+2];
-            auto next_body = llvmBranch.blockStack[3*i+4];
+            auto header_i   = llvmBranch.blockStack[3*i];
+            auto body_i     = llvmBranch.blockStack[3*i + 1];
+            auto merge_i    = llvmBranch.blockStack[3*i + 2];
+            llvm::BasicBlock* next_body; 
+            if (i != 0 ) {
+                next_body  = llvmBranch.blockStack[3*i - 2];
+            }
             parentFunc->getBasicBlockList().push_back(body_i);
             parentFunc->getBasicBlockList().push_back(merge_i);
             ir.SetInsertPoint(body_i);
@@ -959,17 +963,13 @@ namespace gazprea
 
             //increment the index variable
             auto indexVariable = domainIndexVars[i];
-            auto constOne = llvmFunction.call("variableMalloc", {});
             auto newIndex = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)});
             llvmFunction.call("variableInitFromBinaryOp", {newIndex, indexVariable, constOne, ir.getInt32(7)});
             llvmFunction.call("variableAssignment", {indexVariable, newIndex}); 
 
             ir.CreateBr(header_i);
             ir.SetInsertPoint(merge_i);
-            //create fall through
-            std::cout << next_body << std::endl;
-            if (next_body != nullptr) {
+            if (i != 0) {
                 ir.CreateBr(next_body);
             }
         }
@@ -1867,7 +1867,7 @@ namespace gazprea
 
         llvm::raw_os_ostream llOut(std::cout);
         llvm::raw_os_ostream llErr(std::cerr);
-        // llvm::verifyModule(mod, &llErr);
+        llvm::verifyModule(mod, &llErr);
 
         mod.print(out, nullptr);
         out.flush();
