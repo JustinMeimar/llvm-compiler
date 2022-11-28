@@ -855,7 +855,7 @@ namespace gazprea
             auto indexInitialization = llvmFunction.call("variableMalloc", {});
             auto indexVariable = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
-            llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(0)});
+            llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(1)});
             llvmFunction.call("variableInitFromDeclaration", {indexVariable, indexVariableType, indexInitialization});
             domainIndexVars.push_back(indexVariable);
 
