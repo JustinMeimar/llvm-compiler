@@ -838,7 +838,8 @@ namespace gazprea
     void LLVMGen::visitIteratorLoop(std::shared_ptr<AST> t) { 
         // do with one domain first then generalize
         llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
-        llvm::BasicBlock *preHeader = llvm::BasicBlock::Create(globalCtx, "IteratorLoopPreHeader", parentFunc); 
+        llvm::BasicBlock *preHeader = llvm::BasicBlock::Create(globalCtx, "IteratorLoopPreHeader", parentFunc);
+        llvm::Value* test = ir.CreateAdd(ir.getInt32(9), ir.getInt32(0));
         ir.CreateBr(preHeader);
         ir.SetInsertPoint(preHeader);
 
@@ -861,7 +862,7 @@ namespace gazprea
             auto indexVariable = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
             llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(0)});
-            llvmFunction.call("variableInitFromDeclaration", {indexVariable, indexVariableType, indexInitialization});
+            llvmFunction.call("variableInitFromDeclaration", {indexVariable, indexVariableType, indexInitialization}); 
             domainIndexVars.push_back(indexVariable);
 
             // Initialize domain expressions & push to vector
@@ -899,8 +900,9 @@ namespace gazprea
             size_t bsSize = llvmBranch.blockStack.size();
             llvm::BasicBlock* branchTrue;
             llvm::BasicBlock* branchFalse;
+            int offset = (3*(t->children.size()-1-i));
             if (i == 0) {
-                ir.CreateBr(llvmBranch.blockStack[0]);
+                ir.CreateBr(llvmBranch.blockStack[bsSize - offset]);
             }
             if (i == (t->children.size() -2)) {
                 //header cond br has true: body n (visit t->children[-1] here or false: merge n)
@@ -912,9 +914,9 @@ namespace gazprea
                 branchFalse = merge_n;
             } else {
                 //header cond br has true: next header (i + 1) or merge i
-                auto header_i    = llvmBranch.blockStack[3*i];
-                auto merge_i     = llvmBranch.blockStack[3*i + 2];
-                auto next_header = llvmBranch.blockStack[3*i + 3];
+                auto header_i    = llvmBranch.blockStack[bsSize - offset];
+                auto merge_i     = llvmBranch.blockStack[bsSize - offset + 2];
+                auto next_header = llvmBranch.blockStack[bsSize - offset + 3];
 
                 ir.SetInsertPoint(header_i);
                 //reset the next header array index and domain variable to initial values 
@@ -948,15 +950,16 @@ namespace gazprea
         }
         // Create Body and Merge Blocks
         for (int i = t->children.size()-2; i >=0; i--) { 
-            auto header_i   = llvmBranch.blockStack[3*i];
-            auto body_i     = llvmBranch.blockStack[3*i + 1];
-            auto merge_i    = llvmBranch.blockStack[3*i + 2];
+            size_t bsSize = llvmBranch.blockStack.size();
+            int offset = (3*(t->children.size()-1-i));
+            auto header_i   = llvmBranch.blockStack[bsSize - offset];
+            auto body_i     = llvmBranch.blockStack[bsSize - offset + 1];
+            auto merge_i    = llvmBranch.blockStack[bsSize - offset + 2];
             llvm::BasicBlock* next_body; 
             if (i != 0 ) {
-                next_body  = llvmBranch.blockStack[3*i - 2];
+                next_body  = llvmBranch.blockStack[bsSize - offset - 2];
             }
             parentFunc->getBasicBlockList().push_back(body_i);
-            parentFunc->getBasicBlockList().push_back(merge_i);
             ir.SetInsertPoint(body_i);
 
             // Only fill the body on the inner most 
@@ -972,15 +975,15 @@ namespace gazprea
             llvmFunction.call("variableAssignment", {indexVariable, newIndex}); 
 
             ir.CreateBr(header_i);
+            parentFunc->getBasicBlockList().push_back(merge_i);
             ir.SetInsertPoint(merge_i);
-            //satisfy runtimeDomainVar domainator constraint:
-            
+            //satisfy runtimeDomainVar domainator constraint: 
             if (i != 0) {
                 ir.CreateBr(next_body);
             }
         }
         // clear the block stack
-        for (size_t i = 0; i < (3*(t->children.size()-1)); i++) {  
+        for (size_t i = 0; i < 3; i++) {  
             llvmBranch.blockStack.pop_back(); 
         }   
     }
@@ -1083,8 +1086,7 @@ namespace gazprea
     }
 
     void LLVMGen::visitGenerator(std::shared_ptr<AST> t) {
-        visitChildren(t);
-        // TODO
+        
     }
 
     void LLVMGen::visitFilter(std::shared_ptr<AST> t) {
