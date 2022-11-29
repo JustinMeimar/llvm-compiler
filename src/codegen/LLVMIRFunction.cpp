@@ -252,6 +252,28 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
         "variableInitFromMatrixIndexing"
     );
+
+    // Built-in functions
+    declareFunction(
+        llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), {}, false),
+        "BuiltInStreamState"
+    );
+    declareFunction(
+        llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), { runtimeVariableTy->getPointerTo() }, false),
+        "BuiltInLength"
+    );
+    declareFunction(
+        llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), { runtimeVariableTy->getPointerTo() }, false),
+        "BuiltInReverse"
+    );
+    declareFunction(
+        llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), { runtimeVariableTy->getPointerTo() }, false),
+        "BuiltInRows"
+    );
+    declareFunction(
+        llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), { runtimeVariableTy->getPointerTo() }, false),
+        "BuiltInColumns"
+    );
 }
 
 llvm::Function *LLVMIRFunction::declareFunction(llvm::FunctionType *fTy, const std::string &name) {
