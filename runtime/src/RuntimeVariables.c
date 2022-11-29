@@ -253,7 +253,9 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         int64_t *rhsDims = rhsCTI->m_dims;
 
         this->m_type = typeMalloc();
-        typeInitFromCopy(this->m_type, targetType);
+        ArrayType *targetCTI = targetType->m_compoundTypeInfo;
+        typeInitFromNDArray(this->m_type, targetCTI->m_elementTypeID, targetCTI->m_nDim, targetCTI->m_dims,
+                            targetCTI->m_isString, true, false, false);
         ArrayType *CTI = this->m_type->m_compoundTypeInfo;
 
         if (rhsNDim == DIM_UNSPECIFIED) {  // empty array -> array
@@ -1163,8 +1165,10 @@ bool variableAliasWith(Variable *this, Variable *other) {
 }
 
 void variableAssignment(Variable *this, Variable *rhs) {
-    if (!this->m_isBlockScoped)
-        errorAndExit("Attempting to assign to a non-block-scoped variable!");
+//  TODO: check the case of assignment to temp reference point to block scoped variable
+
+//    if (!this->m_isBlockScoped)
+//        errorAndExit("Attempting to assign to a non-block-scoped variable!");
 
     Variable *result = variableMalloc();
     variableInitFromAssign(result, this->m_type, rhs);

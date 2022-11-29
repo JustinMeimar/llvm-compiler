@@ -86,6 +86,6 @@ void variableInitFromGeneratorArray(Variable *this, int64_t nVars, Variable **va
  * @param this The variable to initialize as tuple
  * @param nFilter the number of filter expressions in the filter
  * @param domainExpr the single domain expression that this filter loops on
- * @param accept a matrix, an element accept[i][j] gives whether the result of evaluating the jth expression on ith domain variable is true
+ * @param accept a (flattened) matrix, an element accept[i][j] gives whether the result of evaluating the jth expression on ith domain variable is true
  */
-void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *domainExpr, bool **accept);
+void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *domainExpr, const bool *accept);

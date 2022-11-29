@@ -555,6 +555,7 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
                 bool isOwned = variableNDArrayCopyIfIsTemporary(pop1, &newSelf);
                 typeInitFromNDArray(this->m_type, pop1CTI->m_elementTypeID, resultNDim, resultDims,
                                     false, isOwned, true, false);
+                vars = malloc(sizeof(Variable *) * 3);
                 vars[0] = newSelf;
                 vars[1] = pop2;
                 vars[2] = pop3;
@@ -566,9 +567,6 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
     }
 #ifdef DEBUG_PRINT
     variableInitDebugPrint(this, "array index");
-#endif
-
-#ifdef DEBUG_PRINT
     fprintf(stderr, "daf#10\n");
 #endif
     freeListFreeAll(freeList, (void (*)(void *)) variableDestructThenFreeImpl);

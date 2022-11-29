@@ -377,3 +377,9 @@ void typeArrayFree(Type **arr) { free(arr); }
 void *stridArrayMalloc(int64_t size) { return malloc(size * sizeof(int64_t)); }
 void stridArraySet(int64_t *arr, int64_t idx, int64_t val) { arr[idx] = val; }
 void stridArrayFree(int64_t *arr) { free(arr); }
+
+void *acceptMatrixMalloc(int64_t nFilter, int64_t domainSize) { return malloc(nFilter * domainSize * sizeof(bool)); }
+void acceptArraySet(bool *accept, int64_t domainSize, int64_t filterIdx, int64_t domainIdx, bool val) {
+    accept[domainSize * filterIdx + domainIdx] = val;
+}
+void acceptMatrixFree(bool *accept) { free(accept); }
