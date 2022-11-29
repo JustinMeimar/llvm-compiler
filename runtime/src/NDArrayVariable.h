@@ -6,20 +6,17 @@
  *
  * An array type is used for three types of variables
  * 1. A mixed type vector/matrix (but not a scalar) will be represented as a mixed array with the features
- * - isOwned = true
  * - isRef = false
  * - isSelfRef = false
  * - elementTypeID = ELEMENT_MIXED
  * An empty array is a mixed type array with 0 size and nDim=DIM_UNSPECIFIED
  *
  * 2. A concrete array is an array that is not a reference nor a literal
- * - isOwned = true
  * - isRef = false
  * - isSelfRef = false
  * - elementTypeID != ELEMENT_MIXED
  *
  * 3. A reference array to one (self-indexed), two(vector) or three(matrix) other array variables
- * - isOwned can be true or false, specifying whether to destroy the first variable in destructor, note the later variables no.2 and no.3 are always destroyed
  * - isRef = true
  * - isSelfRef can be true or false
  * - elementTypeID != ELEMENT_MIXED  // a reference can't be a literal or reference to a literal
@@ -52,6 +49,7 @@ ArrayType *arrayTypeMalloc();
 void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength, bool isString);
 void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2);  // dim1 is #rows
 void arrayTypeInitFromCopy(ArrayType *this, ArrayType *other);
+void arrayTypeInitFromCopyByRef(ArrayType *this, ArrayType *other);
 void arrayTypeInitFromDims(ArrayType *this, ElementTypeID elementTypeID, int8_t nDim, int64_t *dims,
                            bool isString, int32_t *refCount, bool isRef, bool isSelfRef);
 /// destructor
@@ -102,7 +100,7 @@ void variableInitFromMatrixIndexing(Variable *this, Variable *arr, Variable *row
 void variableNDArrayDestructor(Variable *this);  // called in variableFree()
 
 void variableInitFromNDArrayCopy(Variable *this, Variable *other);
-bool variableNDArrayCopyIfIsTemporary(Variable *other, Variable **result);  // return true if is temporary and a copy is performed
+void variableInitFromNDArrayCopyByRef(Variable *this, Variable *other);
 Variable *variableNDArrayIndexRefGetRootVariable(Variable *indexRef);
 
 void *variableNDArrayGet(Variable *this, int64_t pos);

@@ -255,7 +255,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         this->m_type = typeMalloc();
         ArrayType *targetCTI = targetType->m_compoundTypeInfo;
         typeInitFromNDArray(this->m_type, targetCTI->m_elementTypeID, targetCTI->m_nDim, targetCTI->m_dims,
-                            targetCTI->m_isString, true, false, false);
+                            targetCTI->m_isString, NULL, false, false);
         ArrayType *CTI = this->m_type->m_compoundTypeInfo;
 
         if (rhsNDim == DIM_UNSPECIFIED) {  // empty array -> array
@@ -659,7 +659,7 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
                     Type *resultType = typeMalloc();
                     int64_t dims[2] = {op1CTI->m_dims[0], op2CTI->m_dims[1]};
                     typeInitFromNDArray(resultType, resultEID, 2, dims,
-                                        false, true, false, false);
+                                        false, NULL, false, false);
                     this->m_type = resultType;
                     arrayMallocFromMatrixMultiplication(resultEID, target1->m_data, target2->m_data,
                                                         op1CTI->m_dims[0], op1CTI->m_dims[1], op2CTI->m_dims[1],
