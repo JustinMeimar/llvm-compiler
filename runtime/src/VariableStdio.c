@@ -119,6 +119,11 @@ void variablePrintToFile(FILE *fd, Variable *this) {
 #endif
         variableDestructThenFreeImpl(temp);
         return;
+    } else if (typeIsIntegerInterval(this->m_type)) {
+        Variable *vec = variableMalloc();
+        variableInitFromPCADPToIntegerVector(vec, this, &pcadpPromotionConfig);
+        variableDestructThenFreeImpl(vec);
+        return;
     }
 
     if (typeIsEmptyArray(this->m_type)) {

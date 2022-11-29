@@ -304,3 +304,11 @@ void variableInitFromEmptyArray(Variable *this) {
     variableInitDebugPrint(this, "an empty array");
 #endif
 }
+
+void variableInitFromGeneratorArray(Variable *this, int64_t nVars, Variable **vars) {
+
+}
+
+void variableInitFromFilterArray(Variable *this, int64_t nField, Variable *domainExpr, bool **accept) {
+
+}
