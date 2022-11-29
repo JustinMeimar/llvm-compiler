@@ -40,7 +40,7 @@ typedef struct struct_gazprea_array_type {
     ElementTypeID m_elementTypeID;  // type of the element
     int8_t m_nDim;                  // # of dimensions
     int64_t *m_dims;                // each int64_t specify the length of array in one dimension
-    bool m_isOwned;                   // default to true; ownership determines if we are able to free it in destructor
+    int32_t *m_refCount;              // the number of times m_data is pointed to; determines if we are able to free m_data in destructor
     bool m_isString;
     bool m_isRef;                     // if the array is index reference, default to false
     bool m_isSelfRef;                 // if the array is indexed by itself E.g. a[a], default to false
@@ -49,15 +49,18 @@ typedef struct struct_gazprea_array_type {
 /// allocate
 ArrayType *arrayTypeMalloc();
 /// constructor
-void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength, bool isString, bool isOwned);
-void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2, bool isOwned);  // dim1 is #rows
+void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength, bool isString);
+void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2);  // dim1 is #rows
 void arrayTypeInitFromCopy(ArrayType *this, ArrayType *other);
 void arrayTypeInitFromDims(ArrayType *this, ElementTypeID elementTypeID, int8_t nDim, int64_t *dims,
-                           bool isString, bool isOwned, bool isRef, bool isSelfRef);
+                           bool isString, int32_t *refCount, bool isRef, bool isSelfRef);
 /// destructor
 void arrayTypeDestructor(ArrayType *this);
 
 /// methods
+int32_t arrayTypeGetReferenceCount(ArrayType *this);
+void arrayTypeDecReferenceCount(ArrayType *this);
+void arrayTypeIncReferenceCount(ArrayType *this);
 VecToVecRHSSizeRestriction arrayTypeMinimumCompatibleRestriction(ArrayType *this, ArrayType *target);
 bool arrayTypeHasUnknownSize(ArrayType *this);
 int64_t arrayTypeElementSize(ArrayType *this);
@@ -70,7 +73,7 @@ void typeInitFromVectorSizeSpecificationFromLiteral(Type *this, int64_t size, Ty
 void typeInitFromMatrixSizeSpecificationFromLiteral(Type *this, int64_t nRow, int64_t nCol, Type *baseType);
 void typeInitFromArrayType(Type *this, bool isString, ElementTypeID eid, int8_t nDim, int64_t *dims);
 void typeInitFromNDArray(Type *this, ElementTypeID eid, int8_t nDim, int64_t *dims,
-                         bool isString, bool isOwned, bool isRef, bool isSelfRef);
+                         bool isString, int32_t *refCount, bool isRef, bool isSelfRef);
 
 bool typeIsSpecifiable(Type *this);  // basic types and string
 bool typeIsScalar(Type *this);
@@ -100,6 +103,7 @@ void variableNDArrayDestructor(Variable *this);  // called in variableFree()
 
 void variableInitFromNDArrayCopy(Variable *this, Variable *other);
 bool variableNDArrayCopyIfIsTemporary(Variable *other, Variable **result);  // return true if is temporary and a copy is performed
+Variable *variableNDArrayIndexRefGetRootVariable(Variable *indexRef);
 
 void *variableNDArrayGet(Variable *this, int64_t pos);
 void *variableNDArrayCopyGet(Variable *this, int64_t pos);

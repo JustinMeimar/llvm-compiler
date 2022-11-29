@@ -10,23 +10,23 @@ ArrayType *arrayTypeMalloc() {
     return malloc(sizeof(ArrayType));
 }
 
-void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength, bool isString, bool isOwned) {
+void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength, bool isString) {
     int64_t dims[1] = {vecLength};
-    arrayTypeInitFromDims(this, elementTypeID, 1, dims, isString, isOwned, false, false);
+    arrayTypeInitFromDims(this, elementTypeID, 1, dims, isString, NULL, false, false);
 }
 
-void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2, bool isOwned) {
+void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2) {
     int64_t dims[2] = {dim1, dim2};
-    arrayTypeInitFromDims(this, elementTypeID, 2, dims, false, isOwned, false, false);
+    arrayTypeInitFromDims(this, elementTypeID, 2, dims, false, NULL, false, false);
 }
 
 void arrayTypeInitFromCopy(ArrayType *this, ArrayType *other) {
     arrayTypeInitFromDims(this, other->m_elementTypeID, other->m_nDim, other->m_dims,
-                          other->m_isString, other->m_isOwned, other->m_isRef, other->m_isSelfRef);
+                          other->m_isString, other->m_refCount, other->m_isRef, other->m_isSelfRef);
 }
 
 void arrayTypeInitFromDims(ArrayType *this, ElementTypeID elementTypeID, int8_t nDim, int64_t *dims,
-                           bool isString, bool isOwned, bool isRef, bool isSelfRef) {
+                           bool isString, int32_t *refCount, bool isRef, bool isSelfRef) {
     if (nDim == DIM_INVALID) {
         errorAndExit("Attempt to initialize an ndarray to nDim=DIM_INVALID!");
     }
@@ -38,7 +38,8 @@ void arrayTypeInitFromDims(ArrayType *this, ElementTypeID elementTypeID, int8_t 
         memcpy(this->m_dims, dims, nDim * sizeof(int64_t));
     } else
         this->m_dims = NULL;
-    this->m_isOwned = isOwned;
+    this->m_refCount = refCount;
+    if (refCount) arrayTypeIncReferenceCount(this);
     this->m_isRef = isRef;
     this->m_isSelfRef = isSelfRef;
 }
@@ -48,6 +49,18 @@ void arrayTypeDestructor(ArrayType *this) {
 }
 
 // Array type methods
+
+int32_t arrayTypeGetReferenceCount(ArrayType *this) {
+    return *this->m_refCount;
+}
+
+void arrayTypeDecReferenceCount(ArrayType *this) {
+    (*this->m_refCount)--;
+}
+
+void arrayTypeIncReferenceCount(ArrayType *this) {
+    (*this->m_refCount)++;
+}
 
 VecToVecRHSSizeRestriction arrayTypeMinimumCompatibleRestriction(ArrayType *this, ArrayType *target) {
     VecToVecRHSSizeRestriction compatibleRestriction = vectovec_rhs_must_be_same_size;
@@ -115,7 +128,7 @@ void typeInitFromVectorSizeSpecificationFromLiteral(Type *this, int64_t size, Ty
         singleTypeError(baseType, "Invalid base type: ");
     }
     ArrayType *CTI = arrayTypeMalloc();
-    arrayTypeInitFromVectorSize(CTI, baseTypeCTI->m_elementTypeID, size, baseTypeCTI->m_isString, true);
+    arrayTypeInitFromVectorSize(CTI, baseTypeCTI->m_elementTypeID, size, baseTypeCTI->m_isString);
     this->m_compoundTypeInfo = (void *) CTI;
 }
 
@@ -133,7 +146,7 @@ void typeInitFromMatrixSizeSpecificationFromLiteral(Type *this, int64_t nRow, in
         singleTypeError(baseType, "Invalid base type: ");
     }
     ArrayType *CTI = arrayTypeMalloc();
-    arrayTypeInitFromMatrixSize(CTI, baseTypeCTI->m_elementTypeID, nRow, nCol, true);
+    arrayTypeInitFromMatrixSize(CTI, baseTypeCTI->m_elementTypeID, nRow, nCol);
     this->m_compoundTypeInfo = (void *) CTI;
 }
 
@@ -145,11 +158,11 @@ void typeInitFromArrayType(Type *this, bool isString, ElementTypeID eid, int8_t 
 }
 
 void typeInitFromNDArray(Type *this, ElementTypeID eid, int8_t nDim, int64_t *dims,
-                         bool isString, bool isOwned, bool isRef, bool isSelfRef) {
+                         bool isString, int32_t *refCount, bool isRef, bool isSelfRef) {
     this->m_typeId = TYPEID_NDARRAY;
     this->m_compoundTypeInfo = arrayTypeMalloc();
     arrayTypeInitFromDims(this->m_compoundTypeInfo, eid, nDim, dims,
-                          isString, isOwned, isRef, isSelfRef);
+                          isString, refCount, isRef, isSelfRef);
 }
 
 // Methods
@@ -624,22 +637,30 @@ void variableNDArrayDestructor(Variable *this) {
             if (id == NDARRAY_INDEX_REF_1D) nVar = 2;
             if (id == NDARRAY_INDEX_REF_2D) nVar = 3;
 
-            if (CTI->m_isOwned) {
+            if (arrayTypeGetReferenceCount(CTI) == 1) {
 #ifdef DEBUG_PRINT
                 fprintf(stderr, "daf#11\n");
 #endif
                 variableDestructThenFreeImpl(vars[0]);
-            }
-            for (int i = 1; i < nVar; i++) {
+                for (int i = 1; i < nVar; i++) {
 #ifdef DEBUG_PRINT
-                fprintf(stderr, "daf#12\n");
+                    fprintf(stderr, "daf#12\n");
 #endif
-                variableDestructThenFreeImpl(vars[i]);
+                    variableDestructThenFreeImpl(vars[i]);
+                }
+                free(vars);
+                free(CTI->m_refCount);
+            } else {
+                arrayTypeDecReferenceCount(CTI);
             }
-            free(vars);
         } break;
-        case NDARRAY_INDEX_REF_NOT_A_REF:
-            arrayFree(CTI->m_elementTypeID, this->m_data, arrayTypeGetTotalLength(CTI)); break;
+        case NDARRAY_INDEX_REF_NOT_A_REF: {
+            if (arrayTypeGetReferenceCount(CTI) == 1) {
+                arrayFree(CTI->m_elementTypeID, this->m_data, arrayTypeGetTotalLength(CTI));
+                free(CTI->m_refCount);
+            } else
+                arrayTypeDecReferenceCount(CTI);
+        } break;
         default:
             errorAndExit("Unexpected typeid!");
     }
@@ -702,6 +723,14 @@ bool variableNDArrayCopyIfIsTemporary(Variable *other, Variable **result) {
     }
     *result = newSelf;
     return isTemporary;
+}
+
+Variable *variableNDArrayIndexRefGetRootVariable(Variable *indexRef) {
+    while (variableGetIndexRefTypeID(indexRef) != NDARRAY_INDEX_REF_NOT_A_REF) {
+        Variable **vars = indexRef->m_data;
+        indexRef = vars[0];
+    }
+    return indexRef;
 }
 
 void *ndarrayNonRefElementPtrGetter(Variable *this, int64_t pos) {
