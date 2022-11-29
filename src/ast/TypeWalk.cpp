@@ -242,55 +242,113 @@ namespace gazprea {
     void TypeWalk::visitIndex(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto numRHSExpressions = t->children[1]->children.size();
+        t->promoteToType = nullptr;
+        if (t->children[0]->evalType == nullptr) {
+            // Handling empty literal vector
+            t->evalType = nullptr;
+            return;
+        }
         switch (t->children[0]->evalType->getTypeId()) {
             case Type::BOOLEAN_1:
-                t->evalType = symtab->getType(Type::BOOLEAN);
+                if (t->children[1]->children[0]->evalType != nullptr 
+                && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL 
+                || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                    t->evalType = symtab->getType(Type::BOOLEAN_1);
+                } else {
+                    t->evalType = symtab->getType(Type::BOOLEAN);
+                }
                 break;
             case Type::CHARACTER_1:
-                t->evalType = symtab->getType(Type::CHARACTER);
+                if (t->children[1]->children[0]->evalType != nullptr 
+                && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL 
+                || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                    t->evalType = symtab->getType(Type::CHARACTER_1);
+                } else {
+                    t->evalType = symtab->getType(Type::CHARACTER);
+                }
                 break;
             case Type::INTEGER_1:
-                t->evalType = symtab->getType(Type::INTEGER);
+                if (t->children[1]->children[0]->evalType != nullptr 
+                && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL 
+                || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                    t->evalType = symtab->getType(Type::INTEGER_1);
+                } else {
+                    t->evalType = symtab->getType(Type::INTEGER);
+                }
                 break;
             case Type::REAL_1:
-                t->evalType = symtab->getType(Type::REAL);
+                if (t->children[1]->children[0]->evalType != nullptr 
+                && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL 
+                || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                    t->evalType = symtab->getType(Type::REAL_1);
+                } else {
+                    t->evalType = symtab->getType(Type::REAL);
+                }
                 break;
             case Type::BOOLEAN_2:
                 if (numRHSExpressions == 1) {
-                    t->evalType = symtab->getType(Type::BOOLEAN_1);
+                    if (t->children[1]->children[0]->evalType != nullptr 
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL 
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::BOOLEAN_2);
+                    } else {
+                        t->evalType = symtab->getType(Type::BOOLEAN_1);
+                    }
                 } else {
                     t->evalType = symtab->getType(Type::BOOLEAN);
                 }
                 break;
             case Type::CHARACTER_2:
                 if (numRHSExpressions == 1) {
-                    t->evalType = symtab->getType(Type::CHARACTER_1);
+                    if (t->children[1]->children[0]->evalType != nullptr 
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL 
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::CHARACTER_2);
+                    } else {
+                        t->evalType = symtab->getType(Type::CHARACTER_1);
+                    }
                 } else {
                     t->evalType = symtab->getType(Type::CHARACTER);
                 }
                 break;
             case Type::INTEGER_2:
                 if (numRHSExpressions == 1) {
-                    t->evalType = symtab->getType(Type::INTEGER_1);
+                    if (t->children[1]->children[0]->evalType != nullptr 
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL 
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::INTEGER_2);
+                    } else {
+                        t->evalType = symtab->getType(Type::INTEGER_1);
+                    }
                 } else {
                     t->evalType = symtab->getType(Type::INTEGER);
                 }
                 break;
             case Type::REAL_2:
                 if (numRHSExpressions == 1) {
-                    t->evalType = symtab->getType(Type::REAL_1);
+                    if (t->children[1]->children[0]->evalType != nullptr 
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL 
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::REAL_2);
+                    } else {
+                        t->evalType = symtab->getType(Type::REAL_1);
+                    }
                 } else {
                     t->evalType = symtab->getType(Type::REAL);
                 }
                 break;
             case Type::STRING:
-                t->evalType = symtab->getType(Type::CHARACTER);
+                if (t->children[1]->children[0]->evalType != nullptr 
+                && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL 
+                || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                    t->evalType = symtab->getType(Type::STRING);
+                } else {
+                    t->evalType = symtab->getType(Type::CHARACTER);
+                }
                 break;
             default:
                 break;
         }
-        t->promoteToType = nullptr;
-
     }
 
     void TypeWalk::visitFilter(std::shared_ptr<AST> t) {

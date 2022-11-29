@@ -384,7 +384,7 @@ namespace gazprea
                             dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo());
                         }
                         baseType = llvmFunction.call("typeMalloc", {});
-                        llvmFunction.call("typeInitFromCharacterScalar", {baseType});
+                        llvmFunction.call("typeInitFromUnspecifiedString", {baseType});
                         llvmFunction.call("typeInitFromVectorSizeSpecification", { runtimeTypeObject, dimension1Expression, baseType });
                         llvmFunction.call("typeDestructThenFree", baseType);
                         if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
@@ -403,7 +403,7 @@ namespace gazprea
                             dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo());
                         }
                         baseType = llvmFunction.call("typeMalloc", {});
-                        llvmFunction.call("typeInitFromCharacterScalar", {baseType});
+                        llvmFunction.call("typeInitFromUnspecifiedString", {baseType});
                         llvmFunction.call("typeInitFromVectorSizeSpecification", { runtimeTypeObject, dimension1Expression, baseType });
                         llvmFunction.call("typeDestructThenFree", baseType);
                         if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
@@ -1096,7 +1096,7 @@ namespace gazprea
                     t->children[1]->children[0]->llvmValue 
                 }
             );
-            freeExprAtomIfNecessary(t->children[1]->children[0]);
+            freeExpressionIfNecessary(t->children[1]->children[0]);
         } else {
             llvmFunction.call(
                 "variableInitFromMatrixIndexing", 
@@ -1107,8 +1107,8 @@ namespace gazprea
                     t->children[1]->children[1]->llvmValue 
                 }
             );
-            freeExprAtomIfNecessary(t->children[1]->children[0]);
-            freeExprAtomIfNecessary(t->children[1]->children[1]);
+            freeExpressionIfNecessary(t->children[1]->children[0]);
+            freeExpressionIfNecessary(t->children[1]->children[1]);
         }
         t->llvmValue = runtimeVariableObject;
         freeExprAtomIfNecessary(t->children[0]);
@@ -1233,7 +1233,7 @@ namespace gazprea
                             dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
                         }
                         baseType = llvmFunction.call("typeMalloc", {});
-                        llvmFunction.call("typeInitFromCharacterScalar", {baseType});
+                        llvmFunction.call("typeInitFromUnspecifiedString", {baseType});
                         llvmFunction.call("typeInitFromVectorSizeSpecification", {runtimeTypeObject, dimension1Expression, baseType});
                         llvmFunction.call("typeDestructThenFree", baseType);
                         if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
@@ -1252,7 +1252,7 @@ namespace gazprea
                             dimension1Expression = llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()); //vector size unknown at compile time
                         }
                         baseType = llvmFunction.call("typeMalloc", {});
-                        llvmFunction.call("typeInitFromCharacterScalar", {baseType});
+                        llvmFunction.call("typeInitFromUnspecifiedString", {baseType});
                         llvmFunction.call("typeInitFromVectorSizeSpecification", {runtimeTypeObject, dimension1Expression, baseType});
                         llvmFunction.call("typeDestructThenFree", baseType);
                         if (matrixType->def->children[1]->children[0]->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) {
