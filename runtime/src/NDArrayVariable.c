@@ -356,7 +356,7 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
         }
 
         Variable *newSelf = NULL;
-        bool isOwned = variableNDArrayCopyIfIsTemporary(pop1, &newSelf);
+        bool isOwned = !variableNDArrayCopyIfIsTemporary(pop1, &newSelf);
         typeInitFromNDArray(this->m_type, ELEMENT_INTEGER, 1, pop1CTI->m_dims,
                             pop1CTI->m_isString, isOwned, true, true);
         Variable **vars = malloc(sizeof(Variable *));
@@ -407,7 +407,7 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
 
                 // the ownership is determined whether the self array is blocked scoped or a temporary vector
                 Variable *newSelf = NULL;
-                bool isOwned = variableNDArrayCopyIfIsTemporary(pop1Vars[0], &newSelf);
+                bool isOwned = !variableNDArrayCopyIfIsTemporary(pop1Vars[0], &newSelf);
                 typeInitFromNDArray(this->m_type, selfCTI->m_elementTypeID, resultNDim, resultDims,
                                     selfCTI->m_isString && resultNDim == 1, isOwned, true, false);
 
@@ -481,7 +481,7 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
 
                 // the ownership is determined whether the self array is blocked scoped or a temporary vector
                 Variable *newSelf = NULL;
-                bool isOwned = variableNDArrayCopyIfIsTemporary(pop1Vars[0], &newSelf);
+                bool isOwned = !variableNDArrayCopyIfIsTemporary(pop1Vars[0], &newSelf);
                 typeInitFromNDArray(this->m_type, selfCTI->m_elementTypeID, resultNDim, resultDims,
                                     false, isOwned, true, false);
 
@@ -525,7 +525,7 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
 
                 // the ownership is determined by whether the self array is blocked scoped or a temporary vector
                 Variable *newSelf = NULL;
-                bool isOwned = variableNDArrayCopyIfIsTemporary(pop1, &newSelf);
+                bool isOwned = !variableNDArrayCopyIfIsTemporary(pop1, &newSelf);
                 typeInitFromNDArray(this->m_type, pop1CTI->m_elementTypeID, resultNDim, resultDims,
                                     pop1CTI->m_isString && resultNDim == 1, isOwned, true, false);
                 vars = malloc(sizeof(Variable *) * 2);
@@ -552,7 +552,7 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
                 }
 
                 Variable *newSelf = NULL;
-                bool isOwned = variableNDArrayCopyIfIsTemporary(pop1, &newSelf);
+                bool isOwned = !variableNDArrayCopyIfIsTemporary(pop1, &newSelf);
                 typeInitFromNDArray(this->m_type, pop1CTI->m_elementTypeID, resultNDim, resultDims,
                                     false, isOwned, true, false);
                 vars = malloc(sizeof(Variable *) * 3);

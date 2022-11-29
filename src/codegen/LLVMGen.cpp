@@ -336,12 +336,14 @@ namespace gazprea
         if (numLHSExpressions == 1) {
             llvmFunction.call("variableAssignment", {t->children[0]->children[0]->llvmValue, t->children[1]->llvmValue});
             freeExpressionIfNecessary(t->children[1]);
+            freeExpressionIfNecessary(t->children[0]->children[0]);
             return;
         }
         for (size_t i = 0; i < numLHSExpressions; i++) {
             auto LHSExpressionAtomAST = t->children[0]->children[i];
             auto tupleFieldValue = llvmFunction.call("variableGetTupleField", { t->children[1]->llvmValue, ir.getInt64(i + 1) });
             llvmFunction.call("variableAssignment", { LHSExpressionAtomAST->llvmValue, tupleFieldValue });
+            freeExpressionIfNecessary(LHSExpressionAtomAST);
         }
         freeExpressionIfNecessary(t->children[1]);
     }
