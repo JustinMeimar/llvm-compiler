@@ -53,6 +53,9 @@ namespace gazprea {
                 case GazpreaParser::TUPLE_ACCESS_TOKEN:
                     visitTupleAccess(t);
                     break;
+                case GazpreaParser::ITERATOR_LOOP_TOKEN:
+                    visitIteratorLoop(t);
+                    break;
                 case GazpreaParser::DOMAIN_EXPRESSION_TOKEN:
                     visitDomainExpression(t);
                     break; 
@@ -198,6 +201,22 @@ namespace gazprea {
         }
     }
 
+    //Change the order of visit children so that domain expressions are defined in the block scope
+    void DefWalk::visitIteratorLoop(std::shared_ptr<AST> t) {
+        //create scope for domain expr and loop body
+        auto blockScope = std::make_shared<LocalScope>(currentScope);
+        t->children[t->children.size()-1]->scope = blockScope;
+        currentScope = blockScope; // push scope 
+        blockScope->parentIsSubroutineSymbol = false;
+        //then visit domain expressions after scope defined
+        for (int i = 0; i < t->children.size()-1; i++) {
+            visit(t->children[i]);
+        }  
+        visit(t->children[t->children.size()-1]); //visit the block statements
+        currentScope = currentScope->getEnclosingScope(); // pop scope 
+        return;
+    }
+
     void DefWalk::visitDomainExpression(std::shared_ptr<AST> t) {
         visitChildren(t);
         std::shared_ptr<AST> identifierAST = t->children[0];
@@ -206,5 +225,4 @@ namespace gazprea {
         t->symbol = vs;   // track in AST
         currentScope->define(vs);
     }
-
 } // namespace gazprea 

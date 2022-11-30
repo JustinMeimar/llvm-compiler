@@ -48,6 +48,8 @@ class DefWalk {
         void visitTupleAccess(std::shared_ptr<AST> t);
 
         void visitDomainExpression(std::shared_ptr<AST> t);
+
+        void visitIteratorLoop(std::shared_ptr<AST> t);
 };
 
 } // namespace gazrepa

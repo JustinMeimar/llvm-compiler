@@ -839,7 +839,6 @@ namespace gazprea
         // do with one domain first then generalize
         llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
         llvm::BasicBlock *preHeader = llvm::BasicBlock::Create(globalCtx, "IteratorLoopPreHeader", parentFunc);
-        llvm::Value* test = ir.CreateAdd(ir.getInt32(9), ir.getInt32(0));
         ir.CreateBr(preHeader);
         ir.SetInsertPoint(preHeader);
 
@@ -863,6 +862,7 @@ namespace gazprea
             llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
             llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(0)});
             llvmFunction.call("variableInitFromDeclaration", {indexVariable, indexVariableType, indexInitialization}); 
+            llvmFunction.call("variableDestructThenFree", {indexInitialization});
             domainIndexVars.push_back(indexVariable);
 
             // Initialize domain expressions & push to vector
@@ -870,6 +870,9 @@ namespace gazprea
             auto domainExpr = t->children[i]->children[1];
             auto runtimeDomainArray = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromDomainExpression", {runtimeDomainArray, domainExpr->llvmValue});
+            if (domainExpr->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { //free is not id
+                llvmFunction.call("variableDestructThenFree", {domainExpr->llvmValue}); 
+            } 
             domainExprs.push_back(runtimeDomainArray);
 
             // Calculate size of each domain array and store in vector 
@@ -945,6 +948,7 @@ namespace gazprea
             auto lengthVariable = domainExprSizes[i];
             llvmFunction.call("variableInitFromBinaryOp", {comparissonVariable, indexVariable, lengthVariable, ir.getInt32(10)});
             llvm::Value *boolCond = llvmFunction.call("variableGetBooleanValue", {comparissonVariable});
+            llvmFunction.call("variableDestructThenFree", {comparissonVariable});
             llvm::Value *branchCond = ir.CreateICmpNE(boolCond, ir.getInt32(0));
             ir.CreateCondBr(branchCond, branchTrue, branchFalse);
         }
@@ -972,12 +976,12 @@ namespace gazprea
             auto indexVariable = domainIndexVars[i];
             auto newIndex = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromBinaryOp", {newIndex, indexVariable, constOne, ir.getInt32(7)});
-            llvmFunction.call("variableAssignment", {indexVariable, newIndex}); 
+            llvmFunction.call("variableAssignment", {indexVariable, newIndex});
+            llvmFunction.call("variableDestructThenFree", {newIndex}); 
 
             ir.CreateBr(header_i);
             parentFunc->getBasicBlockList().push_back(merge_i);
             ir.SetInsertPoint(merge_i);
-            //satisfy runtimeDomainVar domainator constraint: 
             if (i != 0) {
                 ir.CreateBr(next_body);
             }
@@ -985,7 +989,17 @@ namespace gazprea
         // clear the block stack
         for (size_t i = 0; i < 3; i++) {  
             llvmBranch.blockStack.pop_back(); 
-        }   
+        }
+        //free memory
+        llvmFunction.call("typeDestructThenFree", {indexVariableType});
+        llvmFunction.call("variableDestructThenFree", {constZero});
+        llvmFunction.call("variableDestructThenFree", {constOne});
+        for(int i = 0; i < t->children.size()-1; i++) {
+            llvmFunction.call("variableDestructThenFree", {domainVars[i]});
+            llvmFunction.call("variableDestructThenFree", {domainIndexVars[i]});
+            llvmFunction.call("variableDestructThenFree", {domainExprs[i]});
+            llvmFunction.call("variableDestructThenFree", {domainExprSizes[i]});
+        }
     }
 
     void LLVMGen::visitBooleanAtom(std::shared_ptr<AST> t) {
