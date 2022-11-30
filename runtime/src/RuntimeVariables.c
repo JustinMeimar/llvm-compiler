@@ -1048,6 +1048,7 @@ int64_t variableGetLength(Variable *this) {
 void variableInitFromIntegerArrayElementAtIndex(Variable *this, Variable *arr, int64_t idx) {
     int32_t value = variableGetIntegerElementAtIndex(arr, idx);
     variableInitFromIntegerScalar(this, value);
+    variableSetIsBlockScoped(this, true);  //justin propose change
 }
 
 int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx) {

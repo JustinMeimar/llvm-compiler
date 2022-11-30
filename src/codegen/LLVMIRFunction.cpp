@@ -267,6 +267,11 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int64Ty}, false),
         "variableInitFromIntegerArrayElementAtIndex"
     );
+
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), int8Ty}, false),
+        "variableSetIsBlockScoped"
+    );
 }
 
 llvm::Function *LLVMIRFunction::declareFunction(llvm::FunctionType *fTy, const std::string &name) {

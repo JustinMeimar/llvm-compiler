@@ -1,0 +1,117 @@
+procedure main() returns integer {
+    // test decl using domain variable
+    loop i in 1..10 {
+        integer x = i; 
+        loop j in 1..10 {
+            integer y = j;
+            i -> std_output;
+            j -> std_output;
+        }
+    } 
+    '\n' -> std_output;
+    '\n' -> std_output;
+
+    integer i = 7;
+    integer j = 8;
+    integer k = 9;
+    loop i in 1..2, j in 3..4, k in 5..6 {
+        i -> std_output;
+        j -> std_output;
+        k -> std_output; 
+    }
+    i -> std_output;
+    j -> std_output;
+    k -> std_output;
+    
+    '\n' -> std_output;
+    '\n' -> std_output;
+    
+    // test loop using vector literal
+    loop i in [4,5,6,7], j in [1,2,3,5,8,13] {
+        i -> std_output;
+        j -> std_output;
+    }
+
+    '\n' -> std_output;
+    '\n' -> std_output;
+
+       
+    // test loop using variables
+    integer[6] v1 = [1,2,3,4,5,6];
+    integer[6] v2 = [1,2,3,4,5,6];
+
+    loop i in v1, j in v2 {
+        i -> std_output;
+        j -> std_output;
+    }
+    v1 -> std_output;
+    v2 -> std_output;
+
+    
+    // challenge scoping
+    '\n' -> std_output; 
+    '\n' -> std_output; 
+    integer[*] v = [1,2,3];
+    loop i in [1,2,3]{
+        v = 0;
+        i -> std_output; 
+    }
+    v -> std_output;
+
+    // more scoping
+    '\n' -> std_output; 
+    '\n' -> std_output; 
+    integer x1 = 8;
+    loop x1 in [1,2,3] {
+        x1 -> std_output;
+    }
+    x1 -> std_output;
+
+    // more scoping 
+    '\n' -> std_output; 
+    '\n' -> std_output; 
+    integer[3] vec = [1,2,3];
+    integer[3] vec2 = vec;
+    loop r in vec2 {
+        vec = 7; //promotion
+        r -> std_output;
+    }
+    vec -> std_output;  
+
+    '\n' -> std_output; 
+    '\n' -> std_output; 
+    integer[3] myVec = [1,2,3];
+    loop i in myVec {
+        myVec = 0;
+        i -> std_output;
+    }
+    myVec -> std_output;
+
+    // prove block stack properly cleared
+    '\n' -> std_output;  
+    loop x in 1..10, y in 5..7 {
+        x = y;
+        x -> std_output;
+    }    
+    integer z = 0;
+    loop while(z < 3) {
+        z = z + 1;
+    } loop while(z < 1) {
+
+    } 
+    
+    '\n' -> std_output; 
+    '\n' -> std_output;
+    
+    //use domain variable for promotion
+    loop i in 1..10 {
+        integer[5] v = i;
+        v -> std_output; 
+        loop k in v {
+            k -> std_output;
+        }
+    } 
+
+    return 0;
+}
+

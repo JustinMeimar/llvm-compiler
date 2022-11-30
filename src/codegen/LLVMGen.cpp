@@ -871,7 +871,7 @@ namespace gazprea
             auto runtimeDomainArray = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromDomainExpression", {runtimeDomainArray, domainExpr->llvmValue});
             if (domainExpr->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { //free is not id
-                llvmFunction.call("variableDestructThenFree", {domainExpr->llvmValue}); 
+                freeExpressionIfNecessary(domainExpr); 
             } 
             domainExprs.push_back(runtimeDomainArray);
 
@@ -966,7 +966,7 @@ namespace gazprea
             parentFunc->getBasicBlockList().push_back(body_i);
             ir.SetInsertPoint(body_i);
 
-            // Only fill the body on the inner most 
+            // Only fill the body on the inner most loop 
             int numChildren = t->children.size();
             if (i == numChildren-2) {
                 visit(t->children[numChildren-1]);
@@ -994,11 +994,11 @@ namespace gazprea
         llvmFunction.call("typeDestructThenFree", {indexVariableType});
         llvmFunction.call("variableDestructThenFree", {constZero});
         llvmFunction.call("variableDestructThenFree", {constOne});
-        for(int i = 0; i < t->children.size()-1; i++) {
+        for(size_t i = 0; i < t->children.size()-1; i++) {
+            llvmFunction.call("variableDestructThenFree", {domainExprSizes[i]});
             llvmFunction.call("variableDestructThenFree", {domainVars[i]});
             llvmFunction.call("variableDestructThenFree", {domainIndexVars[i]});
             llvmFunction.call("variableDestructThenFree", {domainExprs[i]});
-            llvmFunction.call("variableDestructThenFree", {domainExprSizes[i]});
         }
     }
 
