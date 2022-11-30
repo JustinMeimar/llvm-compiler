@@ -1,0 +1,10 @@
+procedure main() returns integer {
+    integer[2, 2] matrix = null;
+    matrix[1, 1] = 1;
+    matrix -> std_output;
+
+    return 0;
+}
+#split_token
+#split_token
+[[1 0] [0 0]]

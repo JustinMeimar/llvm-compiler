@@ -1,0 +1,16 @@
+procedure setToOne(var v) { v = 1; }
+procedure setToTwo(var integer v) { v = 2; }
+procedure setToThree(var v) { v = 3; }
+procedure setSecondElementToThree(var v) { 
+    call setToThree(v[2]);
+}
+
+procedure main() returns integer {
+    integer[2, 2] matrix = null;
+    call setToOne(matrix[2, 1]);
+    call setToTwo(matrix[1, 2]);
+    call setSecondElementToThree(matrix[2, 1..2]);
+    matrix -> std_output;
+
+    return 0;
+}
