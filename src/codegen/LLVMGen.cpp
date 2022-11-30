@@ -1135,6 +1135,40 @@ namespace gazprea
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
         auto *ctx = dynamic_cast<GazpreaParser::CallProcedureFunctionInExpressionContext*>(t->parseTree);
+
+        if (subroutineSymbol->isBuiltIn) {
+            // Built-in function
+            int numArgsRecieved = t->children[1]->children.size(); 
+            if (numArgsRecieved != 1) {
+                throw InvalidArgumentError(subroutineSymbol->name, t->getText(),
+                    ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+                );
+            }  
+            std::vector<llvm::Value *> arguments = std::vector<llvm::Value *>();
+            if (!t->children[1]->isNil()) {
+                for (auto expressionAST : t->children[1]->children){
+                    arguments.push_back(expressionAST->llvmValue);
+                }
+            }
+            if (subroutineSymbol->name == "stream_state") {
+                t->llvmValue = llvmFunction.call("BuiltInStreamState", {});
+            } else if (subroutineSymbol->name == "length") {
+                t->llvmValue = llvmFunction.call("BuiltInLength", arguments);
+            } else if (subroutineSymbol->name == "reverse") {
+                t->llvmValue = llvmFunction.call("BuiltInReverse", arguments);
+            } else if (subroutineSymbol->name == "rows") {
+                t->llvmValue = llvmFunction.call("BuiltInRows", arguments);
+            } else if (subroutineSymbol->name == "columns") {
+                t->llvmValue = llvmFunction.call("BuiltInColumns", arguments);
+            }
+            if (!t->children[1]->isNil()) {
+                for (auto expressionAST : t->children[1]->children) {
+                    freeExpressionIfNecessary(expressionAST);
+                }
+            }
+            return;
+        }
+        
         //Exception for misaligned argument pass  
         int numArgsExpected = subroutineSymbol->declaration->children[1]->children.size(); 
         int numArgsRecieved = t->children[1]->children.size(); 
@@ -1161,6 +1195,46 @@ namespace gazprea
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
         auto *ctx = dynamic_cast<GazpreaParser::CallProcedureContext*>(t->parseTree);
+        
+        if (subroutineSymbol->isBuiltIn) {
+            // Built-in function
+            int numArgsRecieved = t->children[1]->children.size(); 
+            if (numArgsRecieved != 1) {
+                throw InvalidArgumentError(subroutineSymbol->name, t->getText(),
+                    ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+                );
+            }  
+            std::vector<llvm::Value *> arguments = std::vector<llvm::Value *>();
+            if (!t->children[1]->isNil()) {
+                for (auto expressionAST : t->children[1]->children){
+                    arguments.push_back(expressionAST->llvmValue);
+                }
+            }
+            llvm::Value *returnValue = nullptr;
+            if (subroutineSymbol->name == "stream_state") {
+                returnValue = llvmFunction.call("BuiltInStreamState", {});
+            } else if (subroutineSymbol->name == "length") {
+                returnValue = llvmFunction.call("BuiltInLength", arguments);
+            } else if (subroutineSymbol->name == "reverse") {
+                returnValue = llvmFunction.call("BuiltInReverse", arguments);
+            } else if (subroutineSymbol->name == "rows") {
+                returnValue = llvmFunction.call("BuiltInRows", arguments);
+            } else if (subroutineSymbol->name == "columns") {
+                returnValue = llvmFunction.call("BuiltInColumns", arguments);
+            }
+            
+            if (returnValue != nullptr) {
+                llvmFunction.call("variableDestructThenFree", returnValue);
+            }
+
+            if (!t->children[1]->isNil()) {
+                for (auto expressionAST : t->children[1]->children) {
+                    freeExpressionIfNecessary(expressionAST);
+                }
+            }
+            return;
+        }
+        
         //Throw exception for invalid arguments 
         int numArgsExpected = subroutineSymbol->declaration->children[1]->children.size(); 
         int numArgsRecieved = t->children[1]->children.size(); 
