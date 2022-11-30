@@ -1828,7 +1828,7 @@ namespace gazprea
 
         llvm::raw_os_ostream llOut(std::cout);
         llvm::raw_os_ostream llErr(std::cerr);
-        // llvm::verifyModule(mod, &llErr);
+        llvm::verifyModule(mod, &llErr);
 
         mod.print(out, nullptr);
         out.flush();
