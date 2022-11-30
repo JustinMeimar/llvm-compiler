@@ -10,14 +10,12 @@ const int INT_MIN = -2147483648;
 const float INT_MAX_IN_FLOAT = 2.14748e+09;
 const float FLOAT_MAX = 3.40282347e+38;
 
-procedure matrixloop
-() 
-{
+procedure matrixloop () {
     int[5, 4] mtrx = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
     int i = 1;
     loop while i < 5 {
         int j = 2;
-        int[*, 4] meh = [[4,3,2,1], [100, 2, 0, 0]] // Not used, just for testing leaks
+        int[*, 4] meh = [[4,3,2,1], [100, 2, 0, 0]]; // Not used, just for testing leaks
         loop while j <= 5 {
             if (j == 5) break;
             loop break;
@@ -30,12 +28,12 @@ procedure matrixloop
         i = i + 1;
     }
 
-    i = i - i + 1; // Should make i = 0;
+    i = i - i + 1; // Should make i = 1;
 
     // Print matrix
 
     loop while i < rows(mtrx) {
-        int j = 0;
+        int j = 1;
         loop while j < columns(mtrx) {
             mtrx[i, j] -> std_out;
             ' ' -> std_out;
@@ -105,8 +103,8 @@ procedure contloop() {
 }
 
 procedure main() returns int {
-    call matrixloop();
-    call nestedloop();
-    call contloop();
+    //call matrixloop();
+    //call nestedloop();
+    //call contloop();
     return 0;
 }
