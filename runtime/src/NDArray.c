@@ -806,11 +806,12 @@ void arrayMallocFromMatrixResize(ElementTypeID id, void *old, int64_t oldNRow, i
     int64_t elementSize = elementGetSize(id);
     char *oldArr = old;
     char *resultArr = arrayMallocFromNull(id, newNRow * newNCol);
-    for (int64_t i = 0; i < oldNRow && i < newNRow; i++) {
-        for (int64_t j = 0; j < oldNCol && j < newNCol; j++) {
-            int64_t offset = i * newNCol + j;
-            memcpy(resultArr + offset * elementSize, oldArr + offset * elementSize, elementSize);
-        }
+    int64_t nCopy = oldNCol > newNCol ? newNCol : oldNCol;
+    int64_t nCol = oldNRow > newNRow ? newNRow : oldNRow;
+    for (int64_t i = 0; i < nCol; i++) {
+        void *oldRowStart = oldArr + i * oldNCol * elementSize;
+        void *newRowStart = resultArr + i * newNCol * elementSize;
+        memcpy(newRowStart, oldRowStart, nCopy * elementSize);
     }
     *result = resultArr;
 }
