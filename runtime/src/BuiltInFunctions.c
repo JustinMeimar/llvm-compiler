@@ -42,7 +42,7 @@ Variable *BuiltInReverse(Variable *vec) {
                 int64_t len = variableGetLength(pop);
                 for (int64_t i = 0; i < len; i++) {
                     void *src = variableNDArrayGet(pop, i);
-                    void *target = variableNDArrayGet(result, len - i);
+                    void *target = variableNDArrayGet(result, len - i - 1);
                     elementAssign(eid, target, src);
                 }
 
@@ -59,7 +59,7 @@ Variable *BuiltInReverse(Variable *vec) {
                 int64_t len = variableGetLength(vec);
                 for (int64_t i = 0; i < len; i++) {
                     int32_t *arr = result->m_data;
-                    arr[len - i] = intervalTypeGetElementAtIndex(vec->m_data, i);
+                    arr[len - i - 1] = intervalTypeGetElementAtIndex(vec->m_data, i);
                 }
             }
                 break;
