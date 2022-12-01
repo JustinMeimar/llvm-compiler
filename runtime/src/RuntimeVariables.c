@@ -1054,6 +1054,11 @@ void variableInitFromIntegerArrayElementAtIndex(Variable *this, Variable *arr, i
 }
 
 int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx) {
+    int64_t len = variableGetLength(this);
+    if (idx < 0 || idx >= len) {
+        fprintf(stderr, "Variable integer array/interval index %ld out of range [%d, %ld]!", idx, 0, len);
+        errorAndExit("Index out of range!");
+    }
     switch(this->m_type->m_typeId) {
         case TYPEID_NDARRAY:
             return arrayGetIntegerValue(this->m_data, idx);
