@@ -10,23 +10,28 @@ ArrayType *arrayTypeMalloc() {
     return malloc(sizeof(ArrayType));
 }
 
-void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength, bool isString, bool isOwned) {
+void arrayTypeInitFromVectorSize(ArrayType *this, ElementTypeID elementTypeID, int64_t vecLength, bool isString) {
     int64_t dims[1] = {vecLength};
-    arrayTypeInitFromDims(this, elementTypeID, 1, dims, isString, isOwned, false, false);
+    arrayTypeInitFromDims(this, elementTypeID, 1, dims, isString, NULL, false, false);
 }
 
-void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2, bool isOwned) {
+void arrayTypeInitFromMatrixSize(ArrayType *this, ElementTypeID elementTypeID, int64_t dim1, int64_t dim2) {
     int64_t dims[2] = {dim1, dim2};
-    arrayTypeInitFromDims(this, elementTypeID, 2, dims, false, isOwned, false, false);
+    arrayTypeInitFromDims(this, elementTypeID, 2, dims, false, NULL, false, false);
 }
 
 void arrayTypeInitFromCopy(ArrayType *this, ArrayType *other) {
     arrayTypeInitFromDims(this, other->m_elementTypeID, other->m_nDim, other->m_dims,
-                          other->m_isString, other->m_isOwned, other->m_isRef, other->m_isSelfRef);
+                          other->m_isString, NULL, other->m_isRef, other->m_isSelfRef);
+}
+
+void arrayTypeInitFromCopyByRef(ArrayType *this, ArrayType *other) {
+    arrayTypeInitFromDims(this, other->m_elementTypeID, other->m_nDim, other->m_dims,
+                          other->m_isString, other->m_refCount, other->m_isRef, other->m_isSelfRef);
 }
 
 void arrayTypeInitFromDims(ArrayType *this, ElementTypeID elementTypeID, int8_t nDim, int64_t *dims,
-                           bool isString, bool isOwned, bool isRef, bool isSelfRef) {
+                           bool isString, int32_t *refCount, bool isRef, bool isSelfRef) {
     if (nDim == DIM_INVALID) {
         errorAndExit("Attempt to initialize an ndarray to nDim=DIM_INVALID!");
     }
@@ -38,16 +43,44 @@ void arrayTypeInitFromDims(ArrayType *this, ElementTypeID elementTypeID, int8_t 
         memcpy(this->m_dims, dims, nDim * sizeof(int64_t));
     } else
         this->m_dims = NULL;
-    this->m_isOwned = isOwned;
+
+    if (refCount != NULL)  {
+        this->m_refCount = refCount;
+        arrayTypeIncReferenceCount(this);
+    } else {
+        this->m_refCount = malloc(sizeof(int32_t));
+        *this->m_refCount = 1;
+    }
+#ifdef DEBUG_PRINT
+    fprintf(stderr, "rc:%p->%d\n", this->m_refCount, *this->m_refCount);
+#endif
+
     this->m_isRef = isRef;
     this->m_isSelfRef = isSelfRef;
 }
 
 void arrayTypeDestructor(ArrayType *this) {
+    if (arrayTypeGetReferenceCount(this) <= 1) {
+        free(this->m_refCount);
+    } else {
+        arrayTypeDecReferenceCount(this);
+    }
     free(this->m_dims);
 }
 
 // Array type methods
+
+int32_t arrayTypeGetReferenceCount(ArrayType *this) {
+    return *this->m_refCount;
+}
+
+void arrayTypeDecReferenceCount(ArrayType *this) {
+    (*this->m_refCount)--;
+}
+
+void arrayTypeIncReferenceCount(ArrayType *this) {
+    (*this->m_refCount)++;
+}
 
 VecToVecRHSSizeRestriction arrayTypeMinimumCompatibleRestriction(ArrayType *this, ArrayType *target) {
     VecToVecRHSSizeRestriction compatibleRestriction = vectovec_rhs_must_be_same_size;
@@ -115,7 +148,7 @@ void typeInitFromVectorSizeSpecificationFromLiteral(Type *this, int64_t size, Ty
         singleTypeError(baseType, "Invalid base type: ");
     }
     ArrayType *CTI = arrayTypeMalloc();
-    arrayTypeInitFromVectorSize(CTI, baseTypeCTI->m_elementTypeID, size, baseTypeCTI->m_isString, true);
+    arrayTypeInitFromVectorSize(CTI, baseTypeCTI->m_elementTypeID, size, baseTypeCTI->m_isString);
     this->m_compoundTypeInfo = (void *) CTI;
 }
 
@@ -133,7 +166,7 @@ void typeInitFromMatrixSizeSpecificationFromLiteral(Type *this, int64_t nRow, in
         singleTypeError(baseType, "Invalid base type: ");
     }
     ArrayType *CTI = arrayTypeMalloc();
-    arrayTypeInitFromMatrixSize(CTI, baseTypeCTI->m_elementTypeID, nRow, nCol, true);
+    arrayTypeInitFromMatrixSize(CTI, baseTypeCTI->m_elementTypeID, nRow, nCol);
     this->m_compoundTypeInfo = (void *) CTI;
 }
 
@@ -141,15 +174,15 @@ void typeInitFromArrayType(Type *this, bool isString, ElementTypeID eid, int8_t 
     this->m_typeId = TYPEID_NDARRAY;
     this->m_compoundTypeInfo = arrayTypeMalloc();
     arrayTypeInitFromDims(this->m_compoundTypeInfo, eid, nDim, dims,
-                          isString, true, false, false);
+                          isString, NULL, false, false);
 }
 
 void typeInitFromNDArray(Type *this, ElementTypeID eid, int8_t nDim, int64_t *dims,
-                         bool isString, bool isOwned, bool isRef, bool isSelfRef) {
+                         bool isString, int32_t *refCount, bool isRef, bool isSelfRef) {
     this->m_typeId = TYPEID_NDARRAY;
     this->m_compoundTypeInfo = arrayTypeMalloc();
     arrayTypeInitFromDims(this->m_compoundTypeInfo, eid, nDim, dims,
-                          isString, isOwned, isRef, isSelfRef);
+                          isString, refCount, isRef, isSelfRef);
 }
 
 // Methods
@@ -356,11 +389,11 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
         }
 
         Variable *newSelf = NULL;
-        bool isOwned = variableNDArrayCopyIfIsTemporary(pop1, &newSelf);
         typeInitFromNDArray(this->m_type, ELEMENT_INTEGER, 1, pop1CTI->m_dims,
-                            pop1CTI->m_isString, isOwned, true, true);
+                            pop1CTI->m_isString, NULL, true, true);
         Variable **vars = malloc(sizeof(Variable *));
-        vars[0] = newSelf;
+        vars[0] = variableMalloc();
+        variableInitFromNDArrayCopyByRef(vars[0], pop1);
         this->m_data = vars;
         variableAttrInitHelper(this, pop1->m_fieldPos, pop1->m_parent, false);
     } else {
@@ -406,15 +439,16 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
                 }
 
                 // the ownership is determined whether the self array is blocked scoped or a temporary vector
-                Variable *newSelf = NULL;
-                bool isOwned = variableNDArrayCopyIfIsTemporary(pop1Vars[0], &newSelf);
+                Variable *newSelf = variableMalloc();
+                variableInitFromNDArrayCopyByRef(newSelf, pop1Vars[0]);
                 typeInitFromNDArray(this->m_type, selfCTI->m_elementTypeID, resultNDim, resultDims,
-                                    selfCTI->m_isString && resultNDim == 1, isOwned, true, false);
+                                    selfCTI->m_isString && resultNDim == 1, NULL, true, false);
 
                 switch (variableGetIndexRefTypeID(pop1)) {
                     case NDARRAY_INDEX_REF_SELF: {
                         vars = malloc(sizeof(Variable *) * 2);
                         vars[0] = newSelf;
+                        vars[1] = variableMalloc();
 
                         Variable *temp1 = variableMalloc();
                         variableInitFromArrayIndexingHelper(temp1, pop1Vars[0], pop2, NULL, 1);
@@ -427,6 +461,7 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
                     case NDARRAY_INDEX_REF_1D: {
                         vars = malloc(sizeof(Variable *) * 2);
                         vars[0] = newSelf;
+                        vars[1] = variableMalloc();
 
                         Variable *temp1 = variableMalloc();
                         variableInitFromArrayIndexingHelper(temp1, pop1Vars[1], pop2, NULL, 1);
@@ -439,6 +474,8 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
                     case NDARRAY_INDEX_REF_2D: {
                         vars = malloc(sizeof(Variable *) * 3);
                         vars[0] = newSelf;
+                        vars[1] = variableMalloc();
+                        vars[2] = variableMalloc();
                         int8_t pop1SelfRowIndexNDim = typeGetNDArrayNDims(pop1Vars[1]->m_type);
 
                         Variable *temp1 = variableMalloc();
@@ -480,13 +517,15 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
                 }
 
                 // the ownership is determined whether the self array is blocked scoped or a temporary vector
-                Variable *newSelf = NULL;
-                bool isOwned = variableNDArrayCopyIfIsTemporary(pop1Vars[0], &newSelf);
+                Variable *newSelf = variableMalloc();
+                variableInitFromNDArrayCopyByRef(newSelf, pop1Vars[0]);
                 typeInitFromNDArray(this->m_type, selfCTI->m_elementTypeID, resultNDim, resultDims,
-                                    false, isOwned, true, false);
+                                    false, NULL, true, false);
 
                 vars = malloc(sizeof(Variable *) * 3);
                 vars[0] = newSelf;
+                vars[1] = variableMalloc();
+                vars[2] = variableMalloc();
                 Variable *temp1 = variableMalloc();
                 Variable *temp2 = variableMalloc();
                 variableInitFromArrayIndexingHelper(temp1, pop1Vars[1], pop2, NULL, 1);
@@ -524,10 +563,10 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
                 }
 
                 // the ownership is determined by whether the self array is blocked scoped or a temporary vector
-                Variable *newSelf = NULL;
-                bool isOwned = variableNDArrayCopyIfIsTemporary(pop1, &newSelf);
+                Variable *newSelf = variableMalloc();
+                variableInitFromNDArrayCopyByRef(newSelf, pop1);
                 typeInitFromNDArray(this->m_type, pop1CTI->m_elementTypeID, resultNDim, resultDims,
-                                    pop1CTI->m_isString && resultNDim == 1, isOwned, true, false);
+                                    pop1CTI->m_isString && resultNDim == 1, NULL, true, false);
                 vars = malloc(sizeof(Variable *) * 2);
                 vars[0] = newSelf;
                 vars[1] = pop2;
@@ -551,10 +590,11 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
                     }
                 }
 
-                Variable *newSelf = NULL;
-                bool isOwned = variableNDArrayCopyIfIsTemporary(pop1, &newSelf);
+                Variable *newSelf = variableMalloc();
+                variableInitFromNDArrayCopyByRef(newSelf, pop1);
                 typeInitFromNDArray(this->m_type, pop1CTI->m_elementTypeID, resultNDim, resultDims,
-                                    false, isOwned, true, false);
+                                    false, NULL, true, false);
+                vars = malloc(sizeof(Variable *) * 3);
                 vars[0] = newSelf;
                 vars[1] = pop2;
                 vars[2] = pop3;
@@ -566,9 +606,6 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
     }
 #ifdef DEBUG_PRINT
     variableInitDebugPrint(this, "array index");
-#endif
-
-#ifdef DEBUG_PRINT
     fprintf(stderr, "daf#10\n");
 #endif
     freeListFreeAll(freeList, (void (*)(void *)) variableDestructThenFreeImpl);
@@ -586,7 +623,7 @@ void variableInitFromNDArrayIndexRefToValue(Variable *this, Variable *ref) {
     int64_t len = arrayTypeGetTotalLength(CTI);
     this->m_type = typeMalloc();
     typeInitFromNDArray(this->m_type, eid, CTI->m_nDim, CTI->m_dims,
-                        CTI->m_isString && CTI->m_nDim == 1, true, false, false);
+                        CTI->m_isString && CTI->m_nDim == 1, NULL, false, false);
     this->m_data = arrayMallocFromNull(eid, len);
     variableAttrInitHelper(this, -1, this->m_data, false);
 
@@ -626,22 +663,25 @@ void variableNDArrayDestructor(Variable *this) {
             if (id == NDARRAY_INDEX_REF_1D) nVar = 2;
             if (id == NDARRAY_INDEX_REF_2D) nVar = 3;
 
-            if (CTI->m_isOwned) {
+            if (arrayTypeGetReferenceCount(CTI) <= 1) {
 #ifdef DEBUG_PRINT
                 fprintf(stderr, "daf#11\n");
 #endif
                 variableDestructThenFreeImpl(vars[0]);
-            }
-            for (int i = 1; i < nVar; i++) {
+                for (int i = 1; i < nVar; i++) {
 #ifdef DEBUG_PRINT
-                fprintf(stderr, "daf#12\n");
+                    fprintf(stderr, "daf#12\n");
 #endif
-                variableDestructThenFreeImpl(vars[i]);
+                    variableDestructThenFreeImpl(vars[i]);
+                }
+                free(vars);
             }
-            free(vars);
         } break;
-        case NDARRAY_INDEX_REF_NOT_A_REF:
-            arrayFree(CTI->m_elementTypeID, this->m_data, arrayTypeGetTotalLength(CTI)); break;
+        case NDARRAY_INDEX_REF_NOT_A_REF: {
+            if (arrayTypeGetReferenceCount(CTI) <= 1) {
+                arrayFree(CTI->m_elementTypeID, this->m_data, arrayTypeGetTotalLength(CTI));
+            }
+        } break;
         default:
             errorAndExit("Unexpected typeid!");
     }
@@ -649,61 +689,41 @@ void variableNDArrayDestructor(Variable *this) {
 }
 
 void variableInitFromNDArrayCopy(Variable *this, Variable *other) {
-    ArrayType *otherCTI = other->m_type->m_compoundTypeInfo;
-    this->m_type = typeMalloc();
-    typeInitFromCopy(this->m_type, other->m_type);
     NDArrayIndexRefTypeID id = variableGetIndexRefTypeID(other);
-    switch(id) {
-        case NDARRAY_INDEX_REF_SELF:
-        case NDARRAY_INDEX_REF_1D:
-        case NDARRAY_INDEX_REF_2D: {
-            int nVars = 1;
-            if (id == NDARRAY_INDEX_REF_1D) nVars = 2;
-            if (id == NDARRAY_INDEX_REF_2D) nVars = 3;
-            Variable **vars = malloc(sizeof(Variable *) * nVars);
-            Variable **otherVars = other->m_data;
-            bool keepAttrs = false;  // only keep alias info if we keep the reference to the original variable
-            if (otherCTI->m_isOwned) {
-                vars[0] = otherVars[0];
-                keepAttrs = true;
-            } else {
-                vars[0] = variableMalloc();
-                variableInitFromMemcpy(vars[0], otherVars[0]);
-            }
-            for (int i = 1; i < nVars; i++) {
-                variableInitFromMemcpy(vars[i], otherVars[i]);
-            }
-            this->m_data = vars;
-            if (keepAttrs)
-                variableAttrInitHelper(this, other->m_fieldPos, other->m_parent, false);
-            else
-                variableAttrInitHelper(this, -1, this->m_data, false);
-        } break;
-        case NDARRAY_INDEX_REF_NOT_A_REF: {
-            this->m_data = arrayMallocFromMemcpy(otherCTI->m_elementTypeID, arrayTypeGetTotalLength(otherCTI), other->m_data);
-            variableAttrInitHelper(this, -1, this->m_data, false);
-        } break;
-        default:
-            errorAndExit("This should not happen!");
+    if(id == NDARRAY_INDEX_REF_NOT_A_REF) {
+        ArrayType *otherCTI = other->m_type->m_compoundTypeInfo;
+        this->m_type = typeMalloc();
+        typeInitFromCopy(this->m_type, other->m_type);
+        this->m_data = arrayMallocFromMemcpy(otherCTI->m_elementTypeID, arrayTypeGetTotalLength(otherCTI),
+                                             other->m_data);
+        variableAttrInitHelper(this, -1, this->m_data, false);
+    } else {
+        variableInitFromNDArrayIndexRefToValue(this, other);
     }
 #ifdef DEBUG_PRINT
     variableInitDebugPrint(this, "NDArray copy");
 #endif
 }
 
-bool variableNDArrayCopyIfIsTemporary(Variable *other, Variable **result) {
-    Variable *newSelf = NULL;
-    bool isTemporary = false;
-    if (other->m_isBlockScoped) {
-        newSelf = other;
-        isTemporary = false;
-    } else {
-        newSelf = variableMalloc();
-        variableInitFromNDArrayCopy(newSelf, other);
-        isTemporary = true;
+void variableInitFromNDArrayCopyByRef(Variable *this, Variable *other) {
+    ArrayType *otherCTI = other->m_type->m_compoundTypeInfo;
+    this->m_type = typeMalloc();
+    this->m_type->m_typeId = other->m_type->m_typeId;
+    this->m_type->m_compoundTypeInfo = arrayTypeMalloc();
+    arrayTypeInitFromCopyByRef(this->m_type->m_compoundTypeInfo, otherCTI);
+    this->m_data = other->m_data;
+    variableAttrInitHelper(this, other->m_fieldPos, other->m_parent, false);
+#ifdef DEBUG_PRINT
+    variableInitDebugPrint(this, "NDArray copy by ref");
+#endif
+}
+
+Variable *variableNDArrayIndexRefGetRootVariable(Variable *indexRef) {
+    while (variableGetIndexRefTypeID(indexRef) != NDARRAY_INDEX_REF_NOT_A_REF) {
+        Variable **vars = indexRef->m_data;
+        indexRef = vars[0];
     }
-    *result = newSelf;
-    return isTemporary;
+    return indexRef;
 }
 
 void *ndarrayNonRefElementPtrGetter(Variable *this, int64_t pos) {
