@@ -452,14 +452,49 @@ namespace gazprea {
     //Compound Types
     void TypeWalk::visitVectorLiteral(std::shared_ptr<AST> t) {
         visitChildren(t);
-        if (t->children[0]->children.size() == 0) { return; } //null vector 
+        if (t->children[0]->children.size() == 0) { return; } //null vector
         if (t->children[0]->children[0]->children[0]->getNodeType() == GazpreaParser::VECTOR_LITERAL_TOKEN) {
             //literal matrix
-            auto baseType =  t->children[0]->children[0]->children[0]->children[0]->children[0]->evalType;
+            int matrixBaseTypeId = -1;
+            for (auto expressionAST : t->children[0]->children) {
+                if (expressionAST->evalType == nullptr) {
+                    continue;
+                }
+                if (matrixBaseTypeId == -1) {
+                    matrixBaseTypeId = expressionAST->evalType->getTypeId();
+                } else {
+                    auto promoteIdResult = tp->promotionFromTo[matrixBaseTypeId][expressionAST->evalType->getTypeId()];
+                    if (promoteIdResult != 0) {
+                        matrixBaseTypeId = promoteIdResult;
+                    }
+                }
+            }
+
+            if (matrixBaseTypeId == -1) {
+                return;
+            }
+            std::shared_ptr<Type> baseType = symtab->getType(matrixBaseTypeId);
             t->evalType = std::make_shared<MatrixType>(MatrixType(baseType, 2, t));
         } else {
             //literal vector
-            auto baseType = t->children[0]->children[0]->children[0]->evalType;
+            int vectorBaseTypeId = -1;
+            for (auto expressionAST : t->children[0]->children) {
+                if (expressionAST->evalType == nullptr) {
+                    continue;
+                }
+                if (vectorBaseTypeId == -1) {
+                    vectorBaseTypeId = expressionAST->evalType->getTypeId();
+                } else {
+                    auto promoteIdResult = tp->promotionFromTo[vectorBaseTypeId][expressionAST->evalType->getTypeId()];
+                    if (promoteIdResult != 0) {
+                        vectorBaseTypeId = promoteIdResult;
+                    }
+                }
+            }
+            if (vectorBaseTypeId == -1) {
+                return;
+            }
+            std::shared_ptr<Type> baseType = symtab->getType(vectorBaseTypeId);
             t->evalType = std::make_shared<MatrixType>(MatrixType(baseType, 1, t));
         }
         t->promoteToType = nullptr;

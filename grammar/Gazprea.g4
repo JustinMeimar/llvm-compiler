@@ -113,7 +113,7 @@ subroutineBody : ';'                    # SubroutineEmptyBody
 subroutineDeclDef: (PROCEDURE | FUNCTION) wS? identifier wS?
         '(' (wS? parameterList)? wS? ')' (wS? RETURNS wS? unqualifiedType)? wS? subroutineBody;
 
-returnStatement: RETURN wS? expression wS? ';';
+returnStatement: RETURN wS? expression? wS? ';';
 
 callProcedure: CALL wS? identifier wS? '(' (wS? expressionList)? wS? ')' wS? ';';
 // Conditional

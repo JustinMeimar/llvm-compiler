@@ -240,25 +240,37 @@ namespace gazprea
             } else {
                 ir.CreateRet(runtimeVariableObject);
             }
-        } else {
-            // subroutine declaration and definition;
-            if (t->children[2]->isNil()) {
-                // Free all variables in a block if no return statement in a subroutine
-                freeSubroutineParameters(subroutineSymbol);
-                ir.CreateRetVoid();
-            }
         }
     }
 
     void LLVMGen::visitReturn(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->subroutineSymbol);
+        auto *ctx = dynamic_cast<GazpreaParser::ReturnStatementContext*>(t->parseTree);
+        llvmBranch.hitReturnStat = true;
+        
+        if (t->children[0]->isNil()) {
+            // return; statement (without expression)
+            if (subroutineSymbol->type != nullptr) {
+                throw BadReturnTypeError("void", ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+            }
+            
+            // Recursively free the current scope of return Statement and all of its enclosing scope (traverse up until subroutineSymbol)
+            std::shared_ptr<Scope> temp = t->scope;
+            freeSubroutineParameters(subroutineSymbol);
+            while (temp->getEnclosingScope()->getScopeName() != "gazprea.scope.global") {
+                // The enclosing scope of the subroutine symbol is global variable
+                freeAllVariablesDeclaredInBlockScope(std::dynamic_pointer_cast<LocalScope>(temp));
+                temp = temp->getEnclosingScope();
+            }
+            ir.CreateRetVoid();
+            return;
+        }
+
+        // return expression; statement
         //throw incompatible return type exception
         if(t->children[0]->evalType != nullptr && subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
-            std::cout << "Subroutine does not return ";
-            auto *ctx = dynamic_cast<GazpreaParser::ReturnStatementContext*>(t->parseTree); 
-            throw BadReturnTypeError(subroutineSymbol->type->getName(),ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
-            );
+            throw BadReturnTypeError(subroutineSymbol->type->getName(),ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
         }
         
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
@@ -266,7 +278,6 @@ namespace gazprea
         
         freeExpressionIfNecessary(t->children[0]);
         freeSubroutineParameters(subroutineSymbol);
-        llvmBranch.hitReturnStat = true;
         
         if (subroutineSymbol->name == "main") {
             auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { runtimeVariableObject });
@@ -1343,8 +1354,20 @@ namespace gazprea
         }       
         std::vector<llvm::Value *> arguments = std::vector<llvm::Value *>();
         if (!t->children[1]->isNil()) {
-            for (auto expressionAST : t->children[1]->children){
+            int i = 0;
+            for (auto expressionAST : t->children[1]->children) {
+                if (expressionAST->children[0]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
+                    auto variableArgumentSymbol = std::dynamic_pointer_cast<VariableSymbol>(expressionAST->children[0]->symbol);
+                    auto variableParameterSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+
+                    if (variableArgumentSymbol->typeQualifier == "const" && variableParameterSymbol->typeQualifier == "var") {
+                        throw InvalidArgumentError(subroutineSymbol->declaration->children[0]->getText(), t->getText(),
+                            ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+                        );
+                    }
+                }
                 arguments.push_back(expressionAST->llvmValue);
+                i++;
             }
         }
         t->llvmValue = ir.CreateCall(subroutineSymbol->llvmFunction, arguments);
@@ -1409,8 +1432,20 @@ namespace gazprea
         }  
         std::vector<llvm::Value *> arguments = std::vector<llvm::Value *>();
         if (!t->children[1]->isNil()) {
+            int i = 0;
             for (auto expressionAST : t->children[1]->children) {
+                if (expressionAST->children[0]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
+                    auto variableArgumentSymbol = std::dynamic_pointer_cast<VariableSymbol>(expressionAST->children[0]->symbol);
+                    auto variableParameterSymbol = std::dynamic_pointer_cast<VariableSymbol>(subroutineSymbol->orderedArgs[i]);
+
+                    if (variableArgumentSymbol->typeQualifier == "const" && variableParameterSymbol->typeQualifier == "var") {
+                        throw InvalidArgumentError(subroutineSymbol->declaration->children[0]->getText(), t->getText(),
+                            ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+                        );
+                    }
+                }
                 arguments.push_back(expressionAST->llvmValue);
+                i++;
             }
         }
         if (subroutineSymbol->type == nullptr) {
@@ -1802,6 +1837,15 @@ namespace gazprea
         auto localScope = std::dynamic_pointer_cast<LocalScope>(t->scope);
         if (!localScope->containReturn) {
             freeAllVariablesDeclaredInBlockScope(localScope);
+            if (localScope->parentIsSubroutineSymbol) {
+                auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->scope->getEnclosingScope());
+                freeSubroutineParameters(subroutineSymbol);
+                if (subroutineSymbol->type == nullptr) {
+                    ir.CreateRetVoid();
+                } else {
+                    ir.CreateRet(llvm::Constant::getNullValue(runtimeVariableTy->getPointerTo()));
+                }
+            }
         }
     }
 

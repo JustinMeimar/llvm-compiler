@@ -159,7 +159,11 @@ namespace gazprea {
 
     std::any ASTBuilder::visitReturnStatement(GazpreaParser::ReturnStatementContext *ctx){
         auto t = std::make_shared<AST>(GazpreaParser::RETURN, ctx);
-        t->addChild(visit(ctx->expression()));
+        if (ctx->expression()) {
+            t->addChild(visit(ctx->expression()));
+        } else {
+            t->addChild(AST::NewNilNode());
+        }
         return t;
     }
 
