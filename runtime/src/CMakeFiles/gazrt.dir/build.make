@@ -181,6 +181,34 @@ runtime/src/CMakeFiles/gazrt.dir/VariableStdio.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/gazrt.dir/VariableStdio.c.s"
 	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/VariableStdio.c -o CMakeFiles/gazrt.dir/VariableStdio.c.s
 
+runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.o: runtime/src/CMakeFiles/gazrt.dir/flags.make
+runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.o: runtime/src/NDArrayVariable.c
+runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.o: runtime/src/CMakeFiles/gazrt.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/riscyseven/Homework/CMPUT415/gazprea-nagc/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.o"
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.o -MF CMakeFiles/gazrt.dir/NDArrayVariable.c.o.d -o CMakeFiles/gazrt.dir/NDArrayVariable.c.o -c /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/NDArrayVariable.c
+
+runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/gazrt.dir/NDArrayVariable.c.i"
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/NDArrayVariable.c > CMakeFiles/gazrt.dir/NDArrayVariable.c.i
+
+runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/gazrt.dir/NDArrayVariable.c.s"
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/NDArrayVariable.c -o CMakeFiles/gazrt.dir/NDArrayVariable.c.s
+
+runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.o: runtime/src/CMakeFiles/gazrt.dir/flags.make
+runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.o: runtime/src/BuiltInFunctions.c
+runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.o: runtime/src/CMakeFiles/gazrt.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/riscyseven/Homework/CMPUT415/gazprea-nagc/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building C object runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.o"
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.o -MF CMakeFiles/gazrt.dir/BuiltInFunctions.c.o.d -o CMakeFiles/gazrt.dir/BuiltInFunctions.c.o -c /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/BuiltInFunctions.c
+
+runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/gazrt.dir/BuiltInFunctions.c.i"
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/BuiltInFunctions.c > CMakeFiles/gazrt.dir/BuiltInFunctions.c.i
+
+runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/gazrt.dir/BuiltInFunctions.c.s"
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src && /usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/BuiltInFunctions.c -o CMakeFiles/gazrt.dir/BuiltInFunctions.c.s
+
 # Object files for target gazrt
 gazrt_OBJECTS = \
 "CMakeFiles/gazrt.dir/RuntimeTypes.c.o" \
@@ -190,7 +218,9 @@ gazrt_OBJECTS = \
 "CMakeFiles/gazrt.dir/Enums.c.o" \
 "CMakeFiles/gazrt.dir/FreeList.c.o" \
 "CMakeFiles/gazrt.dir/Literal.c.o" \
-"CMakeFiles/gazrt.dir/VariableStdio.c.o"
+"CMakeFiles/gazrt.dir/VariableStdio.c.o" \
+"CMakeFiles/gazrt.dir/NDArrayVariable.c.o" \
+"CMakeFiles/gazrt.dir/BuiltInFunctions.c.o"
 
 # External object files for target gazrt
 gazrt_EXTERNAL_OBJECTS =
@@ -203,9 +233,11 @@ runtime/src/libgazrt.so: runtime/src/CMakeFiles/gazrt.dir/Enums.c.o
 runtime/src/libgazrt.so: runtime/src/CMakeFiles/gazrt.dir/FreeList.c.o
 runtime/src/libgazrt.so: runtime/src/CMakeFiles/gazrt.dir/Literal.c.o
 runtime/src/libgazrt.so: runtime/src/CMakeFiles/gazrt.dir/VariableStdio.c.o
+runtime/src/libgazrt.so: runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.o
+runtime/src/libgazrt.so: runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.o
 runtime/src/libgazrt.so: runtime/src/CMakeFiles/gazrt.dir/build.make
 runtime/src/libgazrt.so: runtime/src/CMakeFiles/gazrt.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/riscyseven/Homework/CMPUT415/gazprea-nagc/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking C shared library libgazrt.so"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/riscyseven/Homework/CMPUT415/gazprea-nagc/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Linking C shared library libgazrt.so"
 	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/gazrt.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

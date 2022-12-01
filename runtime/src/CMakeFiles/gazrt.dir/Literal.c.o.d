@@ -61,4 +61,6 @@ runtime/src/CMakeFiles/gazrt.dir/Literal.c.o: \
  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
- /usr/include/x86_64-linux-gnu/bits/stdio_lim.h
+ /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+ /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/VariableStdio.h \
+ /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/NDArrayVariable.h

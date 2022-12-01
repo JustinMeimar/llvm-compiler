@@ -8,10 +8,12 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/BuiltInFunctions.c" "runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.o" "gcc" "runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.o.d"
   "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/Enums.c" "runtime/src/CMakeFiles/gazrt.dir/Enums.c.o" "gcc" "runtime/src/CMakeFiles/gazrt.dir/Enums.c.o.d"
   "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/FreeList.c" "runtime/src/CMakeFiles/gazrt.dir/FreeList.c.o" "gcc" "runtime/src/CMakeFiles/gazrt.dir/FreeList.c.o.d"
   "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/Literal.c" "runtime/src/CMakeFiles/gazrt.dir/Literal.c.o" "gcc" "runtime/src/CMakeFiles/gazrt.dir/Literal.c.o.d"
   "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/NDArray.c" "runtime/src/CMakeFiles/gazrt.dir/NDArray.c.o" "gcc" "runtime/src/CMakeFiles/gazrt.dir/NDArray.c.o.d"
+  "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/NDArrayVariable.c" "runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.o" "gcc" "runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.o.d"
   "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/RuntimeErrors.c" "runtime/src/CMakeFiles/gazrt.dir/RuntimeErrors.c.o" "gcc" "runtime/src/CMakeFiles/gazrt.dir/RuntimeErrors.c.o.d"
   "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/RuntimeTypes.c" "runtime/src/CMakeFiles/gazrt.dir/RuntimeTypes.c.o" "gcc" "runtime/src/CMakeFiles/gazrt.dir/RuntimeTypes.c.o.d"
   "/home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/RuntimeVariables.c" "runtime/src/CMakeFiles/gazrt.dir/RuntimeVariables.c.o" "gcc" "runtime/src/CMakeFiles/gazrt.dir/RuntimeVariables.c.o.d"

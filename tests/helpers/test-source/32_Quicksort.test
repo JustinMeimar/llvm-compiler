@@ -1,0 +1,23 @@
+// Quicksort algorithm
+// Copied from geeksforgeeks
+typedef integer int;
+
+procedure
+
+procedure quicksort(var int[*] arr, int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+    }
+
+    quickSort(arr, low, pi - 1);
+    quickSort(arr, pi + 1, high);
+}
+
+procedure main
+()
+returns
+int
+{
+
+    return as<int>(0.0);
+}

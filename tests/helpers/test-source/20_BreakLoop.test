@@ -10,7 +10,9 @@ const int INT_MIN = -2147483648;
 const float INT_MAX_IN_FLOAT = 2.14748e+09;
 const float FLOAT_MAX = 3.40282347e+38;
 
-procedure matrixloop () {
+procedure matrixloop
+() 
+{
     int[5, 4] mtrx = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
     int i = 1;
     loop while i < 5 {
@@ -19,7 +21,7 @@ procedure matrixloop () {
         loop while j <= 5 {
             if (j == 5) break;
             loop break;
-            mtrx[i,j]=i;
+            mtrx[i,j]= i ;
             j = j + 1;
         }
         if (i == 3) { // Should prevent from out of range
@@ -28,7 +30,7 @@ procedure matrixloop () {
         i = i + 1;
     }
 
-    i = i - i + 1; // Should make i = 1;
+    /*i = i - i + 1; // Should make i = 0;
 
     // Print matrix
 
@@ -37,7 +39,9 @@ procedure matrixloop () {
         loop while j < columns(mtrx) {
             mtrx[i, j] -> std_out;
             ' ' -> std_out;
+            j = j + 1;
         }
+        i = i + 1;
         '\n' -> std_out;
     }
     /* Should print
@@ -93,7 +97,7 @@ procedure contloop() {
     int y = -205;
     loop {
 
-        y = y - 1;
+        y = y + 1;
         if (y == -203) {continue;}
         if (y == -201) {break;
         }
@@ -103,8 +107,10 @@ procedure contloop() {
 }
 
 procedure main() returns int {
-    //call matrixloop();
-    //call nestedloop();
-    //call contloop();
+    call matrixloop();
+    call nestedloop();
+    call contloop();
     return 0;
 }
+#split_token
+#split_token

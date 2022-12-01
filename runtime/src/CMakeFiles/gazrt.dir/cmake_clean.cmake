@@ -1,4 +1,6 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/gazrt.dir/BuiltInFunctions.c.o"
+  "CMakeFiles/gazrt.dir/BuiltInFunctions.c.o.d"
   "CMakeFiles/gazrt.dir/Enums.c.o"
   "CMakeFiles/gazrt.dir/Enums.c.o.d"
   "CMakeFiles/gazrt.dir/FreeList.c.o"
@@ -7,6 +9,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/gazrt.dir/Literal.c.o.d"
   "CMakeFiles/gazrt.dir/NDArray.c.o"
   "CMakeFiles/gazrt.dir/NDArray.c.o.d"
+  "CMakeFiles/gazrt.dir/NDArrayVariable.c.o"
+  "CMakeFiles/gazrt.dir/NDArrayVariable.c.o.d"
   "CMakeFiles/gazrt.dir/RuntimeErrors.c.o"
   "CMakeFiles/gazrt.dir/RuntimeErrors.c.o.d"
   "CMakeFiles/gazrt.dir/RuntimeTypes.c.o"

@@ -28,6 +28,7 @@ runtime/src/CMakeFiles/gazrt.dir/VariableStdio.c.o: \
  /usr/include/x86_64-linux-gnu/bits/wchar.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-intn.h \
  /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h \
+ /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
  /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/Bool.h \
  /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/NDArray.h \
  /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/Enums.h \
@@ -66,7 +67,6 @@ runtime/src/CMakeFiles/gazrt.dir/VariableStdio.c.o: \
  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
- /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
@@ -79,4 +79,5 @@ runtime/src/CMakeFiles/gazrt.dir/VariableStdio.c.o: \
  /usr/include/x86_64-linux-gnu/bits/pthread_stack_min-dynamic.h \
  /usr/include/x86_64-linux-gnu/bits/posix2_lim.h \
  /usr/include/x86_64-linux-gnu/bits/xopen_lim.h \
- /usr/include/x86_64-linux-gnu/bits/uio_lim.h
+ /usr/include/x86_64-linux-gnu/bits/uio_lim.h \
+ /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/NDArrayVariable.h

@@ -63,4 +63,5 @@ runtime/src/CMakeFiles/gazrt.dir/RuntimeVariables.c.o: \
  /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/FreeList.h \
  /usr/include/string.h /usr/include/strings.h \
  /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/Literal.h \
- /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/VariableStdio.h
+ /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/VariableStdio.h \
+ /home/riscyseven/Homework/CMPUT415/gazprea-nagc/runtime/src/NDArrayVariable.h

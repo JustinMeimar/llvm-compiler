@@ -144,6 +144,30 @@ symlink_gazrt/fast:
 	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc && $(MAKE) $(MAKESILENT) -f runtime/src/CMakeFiles/symlink_gazrt.dir/build.make runtime/src/CMakeFiles/symlink_gazrt.dir/build
 .PHONY : symlink_gazrt/fast
 
+BuiltInFunctions.o: BuiltInFunctions.c.o
+.PHONY : BuiltInFunctions.o
+
+# target to build an object file
+BuiltInFunctions.c.o:
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc && $(MAKE) $(MAKESILENT) -f runtime/src/CMakeFiles/gazrt.dir/build.make runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.o
+.PHONY : BuiltInFunctions.c.o
+
+BuiltInFunctions.i: BuiltInFunctions.c.i
+.PHONY : BuiltInFunctions.i
+
+# target to preprocess a source file
+BuiltInFunctions.c.i:
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc && $(MAKE) $(MAKESILENT) -f runtime/src/CMakeFiles/gazrt.dir/build.make runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.i
+.PHONY : BuiltInFunctions.c.i
+
+BuiltInFunctions.s: BuiltInFunctions.c.s
+.PHONY : BuiltInFunctions.s
+
+# target to generate assembly for a file
+BuiltInFunctions.c.s:
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc && $(MAKE) $(MAKESILENT) -f runtime/src/CMakeFiles/gazrt.dir/build.make runtime/src/CMakeFiles/gazrt.dir/BuiltInFunctions.c.s
+.PHONY : BuiltInFunctions.c.s
+
 Enums.o: Enums.c.o
 .PHONY : Enums.o
 
@@ -239,6 +263,30 @@ NDArray.s: NDArray.c.s
 NDArray.c.s:
 	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc && $(MAKE) $(MAKESILENT) -f runtime/src/CMakeFiles/gazrt.dir/build.make runtime/src/CMakeFiles/gazrt.dir/NDArray.c.s
 .PHONY : NDArray.c.s
+
+NDArrayVariable.o: NDArrayVariable.c.o
+.PHONY : NDArrayVariable.o
+
+# target to build an object file
+NDArrayVariable.c.o:
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc && $(MAKE) $(MAKESILENT) -f runtime/src/CMakeFiles/gazrt.dir/build.make runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.o
+.PHONY : NDArrayVariable.c.o
+
+NDArrayVariable.i: NDArrayVariable.c.i
+.PHONY : NDArrayVariable.i
+
+# target to preprocess a source file
+NDArrayVariable.c.i:
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc && $(MAKE) $(MAKESILENT) -f runtime/src/CMakeFiles/gazrt.dir/build.make runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.i
+.PHONY : NDArrayVariable.c.i
+
+NDArrayVariable.s: NDArrayVariable.c.s
+.PHONY : NDArrayVariable.s
+
+# target to generate assembly for a file
+NDArrayVariable.c.s:
+	cd /home/riscyseven/Homework/CMPUT415/gazprea-nagc && $(MAKE) $(MAKESILENT) -f runtime/src/CMakeFiles/gazrt.dir/build.make runtime/src/CMakeFiles/gazrt.dir/NDArrayVariable.c.s
+.PHONY : NDArrayVariable.c.s
 
 RuntimeErrors.o: RuntimeErrors.c.o
 .PHONY : RuntimeErrors.o
@@ -346,6 +394,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... symlink_gazrt"
 	@echo "... gazrt"
+	@echo "... BuiltInFunctions.o"
+	@echo "... BuiltInFunctions.i"
+	@echo "... BuiltInFunctions.s"
 	@echo "... Enums.o"
 	@echo "... Enums.i"
 	@echo "... Enums.s"
@@ -358,6 +409,9 @@ help:
 	@echo "... NDArray.o"
 	@echo "... NDArray.i"
 	@echo "... NDArray.s"
+	@echo "... NDArrayVariable.o"
+	@echo "... NDArrayVariable.i"
+	@echo "... NDArrayVariable.s"
 	@echo "... RuntimeErrors.o"
 	@echo "... RuntimeErrors.i"
 	@echo "... RuntimeErrors.s"
