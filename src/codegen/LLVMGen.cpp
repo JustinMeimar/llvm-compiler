@@ -1119,8 +1119,120 @@ namespace gazprea
         }
     }
 
+
+    /*
+    auto runtimeVariableArray = llvmFunction.call("variableArrayMalloc", { ir.getInt64(numExpressions) });
+    for (size_t i = 0; i < numExpressions; i++) {
+        llvmFunction.call("variableArraySet", { runtimeVariableArray, ir.getInt64(i), t->children[0]->children[i]->llvmValue });
+    }
+    auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+    llvmFunction.call("variableInitFromVectorLiteral", { runtimeVariableObject, ir.getInt64(numExpressions), runtimeVariableArray });
+    */ 
+
     void LLVMGen::visitGenerator(std::shared_ptr<AST> t) {
-        // TODO
+        //visitChildren(t);
+        std::cout << t->getText() << std::endl;
+        std::cout << t->children[0]->children.size() << std::endl;
+        
+        auto constOne = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)});
+        
+        auto indexVariableType = llvmFunction.call("typeMalloc", {});
+        llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
+        
+        auto indexInitialization = llvmFunction.call("variableMalloc", {});
+        auto indexVariable = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(0)});
+        llvmFunction.call("variableInitFromDeclaration", {indexVariable, indexVariableType, indexInitialization}); 
+        llvmFunction.call("variableDestructThenFree", {indexInitialization});
+        
+        if (t->children[0]->children.size() ==  1) {
+            // create basic blocks            
+            llvm::Function* parentFunc = ir.GetInsertBlock()->getParent();
+            llvm::BasicBlock* preHeader = llvm::BasicBlock::Create(globalCtx, "generatorPreHeader", parentFunc);
+            llvm::BasicBlock* header = llvm::BasicBlock::Create(globalCtx, "generatorHeader", parentFunc);
+            llvm::BasicBlock* body = llvm::BasicBlock::Create(globalCtx, "generatorBody", parentFunc);
+            llvm::BasicBlock* merge = llvm::BasicBlock::Create(globalCtx, "generatorMerge", parentFunc);
+
+            // enter the preheader
+            ir.CreateBr(preHeader);
+            ir.SetInsertPoint(preHeader);
+            // get vector size
+            visit(t->children[0]); 
+            auto domainArray = t->children[0]->children[0]->children[1];
+            auto runtimeDomainArray = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromDomainExpression", {runtimeDomainArray, domainArray->llvmValue});
+            if (domainArray->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { //free is not id
+                freeExpressionIfNecessary(domainArray); 
+            } 
+
+            //init length 
+            llvm::Value *length = llvmFunction.call("variableGetLength", {runtimeDomainArray});
+            llvm::Value *truncLength = ir.CreateIntCast(length, ir.getInt32Ty(), true);
+            auto lengthVariable = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromIntegerScalar", {lengthVariable, truncLength});
+
+            // create the result vector
+            auto generatorArray = llvmFunction.call("variableArrayMalloc", {length}); //result vector i
+            // llvmFunction.call("variableInitFromGeneratorArray", {runtimeGeneratorArray, length, generatorArray});
+
+            // vector generator
+            ir.CreateBr(header);
+            ir.SetInsertPoint(header);
+
+            // compare  
+            auto comparissonVariable = llvmFunction.call("variableMalloc", {}); 
+            llvmFunction.call("variableInitFromBinaryOp", {comparissonVariable, indexVariable, lengthVariable, ir.getInt32(10)});
+            llvm::Value *boolCond = llvmFunction.call("variableGetBooleanValue", {comparissonVariable});
+            llvmFunction.call("variableDestructThenFree", {comparissonVariable});
+            llvm::Value *branchCond = ir.CreateICmpNE(boolCond, ir.getInt32(0));
+            ir.CreateCondBr(branchCond, body, merge); 
+            ir.SetInsertPoint(body);
+
+            //initialize domain variable at start of body
+            auto runtimeDomainVar = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromIntegerScalar", {runtimeDomainVar, ir.getInt32(0)});
+            llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {indexVariable});
+            llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false);
+            auto tempDomainVar = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {tempDomainVar, runtimeDomainArray, index_i64});
+            llvmFunction.call("variableAssignment", {runtimeDomainVar, tempDomainVar});
+            llvmFunction.call("variableDestructThenFree", {tempDomainVar});
+
+            //evaluate RHS expression with current domain variable value
+            std::cout << t->children[1]->getText() << std::endl;
+            visit(t->children[1]); 
+            
+            //store expression in result array at index variable (just store the index variable to start)
+            
+            //store
+            llvmFunction.call("variableArraySet", {generatorArray, index_i64, runtimeDomainVar});
+
+            //increment the index variable
+            auto newIndex = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromBinaryOp", {newIndex, indexVariable, constOne, ir.getInt32(7)});
+            llvmFunction.call("variableAssignment", {indexVariable, newIndex});
+            llvmFunction.call("variableDestructThenFree", {newIndex});
+
+            //give back control to merge block 
+            ir.CreateBr(header);
+            ir.SetInsertPoint(merge);
+
+            auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromVectorLiteral", { runtimeVariableObject, length, generatorArray });
+            // llvmFunction.call("variableInitFromGeneratorArray", { runtimeVariableObject, length, generatorArray }); // NOT Working ? Seg fault ??
+        
+            t->llvmValue = runtimeVariableObject;
+            // t->llvmValue = generatorArray;
+
+        } else if (t->children[0]->children.size() == 2) {
+            //matrix generator
+            auto dummyRT = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromIntegerScalar", {dummyRT, ir.getInt32(999)});
+            t->llvmValue = dummyRT;
+        }
+
+        
     }
 
     void LLVMGen::visitFilter(std::shared_ptr<AST> t) {
