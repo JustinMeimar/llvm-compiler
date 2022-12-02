@@ -41,6 +41,8 @@ class RefWalk {
         void visitUnqualifiedType(std::shared_ptr<AST> t);
 
         void visitParameterAtom(std::shared_ptr<AST> t);
+
+        void visitCall(std::shared_ptr<AST> t);
 };
 
 } // namespace gazprea

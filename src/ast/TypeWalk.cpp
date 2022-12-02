@@ -41,6 +41,9 @@ namespace gazprea {
                 case GazpreaParser::CALL_PROCEDURE_FUNCTION_IN_EXPRESSION:
                     visitCallInExpr(t);
                     break;
+                case GazpreaParser::CALL_PROCEDURE_STATEMENT_TOKEN:
+                    visitCallStatement(t);
+                    break;
             
                 //Operations 
                 case GazpreaParser::UNARY_TOKEN:
@@ -92,6 +95,10 @@ namespace gazprea {
                     break;
                 case GazpreaParser::TYPEDEF:
                     visitTypedefStatement(t);
+                    break;
+                case GazpreaParser::PROCEDURE:
+                case GazpreaParser::FUNCTION:
+                    visitSubroutineDeclDef(t);
                     break;
                 default:
                     visitChildren(t);
@@ -403,8 +410,8 @@ namespace gazprea {
     }
 
     void TypeWalk::visitCallInExpr(std::shared_ptr<AST> t) {
-        visitChildren(t);
-        auto sbrtSymbol = symtab->globals->resolve(t->children[0]->getText()); //get the subroutine symbol
+        visit(t->children[1]);
+        auto sbrtSymbol = t->children[0]->symbol;
         t->evalType = sbrtSymbol->type;  //will be the return type
         t->promoteToType = nullptr;
     }
@@ -569,6 +576,16 @@ namespace gazprea {
 
     void TypeWalk::visitTypedefStatement(std::shared_ptr<AST> t) {
         visit(t->children[0]);
+    }
+
+    void TypeWalk::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
+        for (int i = 1; i <= 3; i++) {
+            visit(t->children[i]);
+        }
+    }
+
+    void TypeWalk::visitCallStatement(std::shared_ptr<AST> t) {
+        visit(t->children[1]);
     }
     
 } // namespace gazprea 

@@ -2,13 +2,13 @@
 
 namespace gazprea {
     void SymbolTable::initTypeSystem() {
-        globals->define(std::make_shared<BuiltInScalarTypeSymbol>("integer"));
-        globals->define(std::make_shared<BuiltInScalarTypeSymbol>("real"));
-        globals->define(std::make_shared<BuiltInScalarTypeSymbol>("character"));
-        globals->define(std::make_shared<BuiltInScalarTypeSymbol>("string"));
-        globals->define(std::make_shared<BuiltInScalarTypeSymbol>("boolean"));
-        globals->define(std::make_shared<BuiltInScalarTypeSymbol>("interval"));
-        globals->define(std::make_shared<BuiltInScalarTypeSymbol>("identityNull"));
+        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("integer"));
+        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("real"));
+        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("character"));
+        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("string"));
+        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("boolean"));
+        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("interval"));
+        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("identityNull"));
     }
 
     SymbolTable::SymbolTable() : globals(std::make_shared<GlobalScope>()), numTupleIdentifierAccess(0) { 
@@ -17,13 +17,13 @@ namespace gazprea {
 
     std::shared_ptr<Type> SymbolTable::getType(size_t typeEnum) {
 
-        auto booleanBaseType    = std::dynamic_pointer_cast<Type>(this->globals->resolve("boolean"));
-        auto integerBaseType    = std::dynamic_pointer_cast<Type>(this->globals->resolve("integer"));
-        auto realBaseType       = std::dynamic_pointer_cast<Type>(this->globals->resolve("real"));
-        auto characterBaseType  = std::dynamic_pointer_cast<Type>(this->globals->resolve("character"));
-        auto stringBaseType     = std::dynamic_pointer_cast<Type>(this->globals->resolve("string"));
-        auto intervalBaseType   = std::dynamic_pointer_cast<Type>(this->globals->resolve("interval"));
-        auto identityNullBaseType   = std::dynamic_pointer_cast<Type>(this->globals->resolve("identityNull"));
+        auto booleanBaseType    = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("boolean"));
+        auto integerBaseType    = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("integer"));
+        auto realBaseType       = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("real"));
+        auto characterBaseType  = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("character"));
+        auto stringBaseType     = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("string"));
+        auto intervalBaseType   = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("interval"));
+        auto identityNullBaseType   = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("identityNull"));
 
         switch(typeEnum) {
             case 0:  return nullptr; break;

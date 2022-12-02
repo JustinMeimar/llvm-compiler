@@ -191,7 +191,7 @@ namespace gazprea
         if (t->children[2]->isNil()) {
             returnType = ir.getVoidTy();
         }
-        else if (subroutineSymbol->name == "main") {
+        else if (subroutineSymbol->name == "gazprea.subroutine.main") {
             returnType = ir.getInt32Ty();
         }
 
@@ -199,9 +199,13 @@ namespace gazprea
             returnType,
             parameterTypes,
             false);
-        std::string prefix = subroutineSymbol->name == "main" ? "" : "gazprea.subroutine.";
+        // std::string prefix = subroutineSymbol->name == "main" ? "" : "gazprea.subroutine.";
+        auto subroutineLLVMName = subroutineSymbol->name;
+        if (subroutineLLVMName == "gazprea.subroutine.main") {
+            subroutineLLVMName = "main";
+        }
 
-        auto subroutine = llvm::cast<llvm::Function>(mod.getOrInsertFunction(prefix + subroutineSymbol->name, subroutineTy).getCallee());
+        auto subroutine = llvm::cast<llvm::Function>(mod.getOrInsertFunction(subroutineLLVMName, subroutineTy).getCallee());
         subroutineSymbol->llvmFunction = subroutine;
 
         if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EMPTY_BODY_TOKEN) {
@@ -211,7 +215,7 @@ namespace gazprea
         currentSubroutine = subroutine;
         llvm::BasicBlock *bb = llvm::BasicBlock::Create(globalCtx, "enterSubroutine", currentSubroutine);
         ir.SetInsertPoint(bb);
-        if (subroutineSymbol->name == "main") {
+        if (subroutineSymbol->name == "gazprea.subroutine.main") {
             initializeGlobalVariables();
         }
         visit(t->children[1]);  // Populate Argument Symbol's llvmValue
@@ -232,7 +236,7 @@ namespace gazprea
             freeExpressionIfNecessary(t->children[3]->children[0]);
             freeSubroutineParameters(subroutineSymbol);
             
-            if (subroutineSymbol->name == "main") {
+            if (subroutineSymbol->name == "gazprea.subroutine.main") {
                 auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", runtimeVariableObject);
                 llvmFunction.call("variableDestructThenFree", runtimeVariableObject);
                 freeGlobalVariables();
@@ -279,7 +283,7 @@ namespace gazprea
         freeExpressionIfNecessary(t->children[0]);
         freeSubroutineParameters(subroutineSymbol);
         
-        if (subroutineSymbol->name == "main") {
+        if (subroutineSymbol->name == "gazprea.subroutine.main") {
             auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", { runtimeVariableObject });
 
             std::shared_ptr<Scope> temp = t->scope;

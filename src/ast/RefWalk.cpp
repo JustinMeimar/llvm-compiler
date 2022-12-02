@@ -31,6 +31,10 @@ namespace gazprea {
                 case GazpreaParser::PARAMETER_ATOM_TOKEN:
                     visitParameterAtom(t);
                     break;
+                case GazpreaParser::CALL_PROCEDURE_FUNCTION_IN_EXPRESSION:
+                case GazpreaParser::CALL_PROCEDURE_STATEMENT_TOKEN:
+                    visitCall(t);
+                    break;
                 default: visitChildren(t);
             };
         }
@@ -133,7 +137,7 @@ namespace gazprea {
                 symtab->numTupleIdentifierAccess++;
             }
         } else if (numSingleTermType == 2) {
-            auto symbol = symtab->globals->resolve(t->children[1]->parseTree->getText());
+            auto symbol = symtab->globals->resolveTypeSymbol(t->children[1]->parseTree->getText());
             if (symbol == nullptr || !symbol->isType()) {
                 variableSymbol->name = t->children[1]->parseTree->getText();
                 variableSymbol->type = t->children[0]->type;
@@ -147,7 +151,7 @@ namespace gazprea {
                 // variableSymbol->name = t->children[1]->parseTree->getText(); 
             }
         } else if (numSingleTermType == 1) {
-            auto symbol = symtab->globals->resolve(t->children[0]->parseTree->getText());
+            auto symbol = symtab->globals->resolveTypeSymbol(t->children[0]->parseTree->getText());
             if (t->children[0]->getNodeType() == GazpreaParser::VECTOR_TYPE_TOKEN || t->children[0]->getNodeType() == GazpreaParser::TUPLE_TYPE_TOKEN) {
                 if(t->children[0]->type->getTypeId() == -1) { //string[n] picked up as VECTOR, assign type as string
                     t->children[0]->type = symtab->getType(Type::STRING); 
@@ -177,7 +181,7 @@ namespace gazprea {
 
     void RefWalk::visitSingleTokenType(std::shared_ptr<AST> t) {
         auto text = t->parseTree->getText();
-        t->type = std::dynamic_pointer_cast<Type>(symtab->globals->resolve(text));
+        t->type = std::dynamic_pointer_cast<Type>(symtab->globals->resolveTypeSymbol(text));
         if (t->type == nullptr) {
             // SingleTokenType can be a Type, or an identifier. If it is an identifier, t->type will be nullptr
             return;
@@ -202,5 +206,10 @@ namespace gazprea {
             // Not an interval type
             t->type = t->children[0]->type;
         }
+    }
+
+    void RefWalk::visitCall(std::shared_ptr<AST> t) {
+        t->children[0]->symbol = symtab->globals->resolveSubroutineSymbol("gazprea.subroutine." + t->children[0]->parseTree->getText());
+        visit(t->children[1]);
     }
 } // namespace gazprea 
