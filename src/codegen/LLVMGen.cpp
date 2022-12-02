@@ -862,6 +862,7 @@ namespace gazprea
 
         // Constants for all loops
         auto indexVariableType = llvmFunction.call("typeMalloc", {});
+        llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
         auto constOne = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)});
         auto constZero = llvmFunction.call("variableMalloc", {});
@@ -872,7 +873,6 @@ namespace gazprea
             // create index variable & set to 0
             auto indexInitialization = llvmFunction.call("variableMalloc", {});
             auto indexVariable = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
             llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(0)});
             llvmFunction.call("variableInitFromDeclaration", {indexVariable, indexVariableType, indexInitialization}); 
             llvmFunction.call("variableDestructThenFree", {indexInitialization});
@@ -897,6 +897,7 @@ namespace gazprea
 
             //speculative domain variable declaration to satisfy LLVM dominator constraint
             auto domainVar = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromIntegerScalar", {domainVar, ir.getInt32(0)});
             domainVars.push_back(domainVar);
         } 
         // Initialize Basic Blocks 
@@ -944,18 +945,7 @@ namespace gazprea
 
             //Initialize domain variable
             auto indexVariable = domainIndexVars[i];
-            auto runtimeDomainArray = domainExprs[i];
-            auto runtimeDomainVar = domainVars[i];
-            llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {indexVariable});
-            llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), true);
-            llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {runtimeDomainVar, runtimeDomainArray, index_i64});
 
-            //initialize variable symbol to from variable at current index in domain array
-            auto variableAST = t->children[i]->children[0];
-            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(variableAST->symbol); 
-            variableAST->llvmValue = runtimeDomainVar;
-            variableSymbol->llvmPointerToVariableObject = runtimeDomainVar;
-            
             //create comparisson between index variable and length of domain vector
             auto comparissonVariable = llvmFunction.call("variableMalloc", {});
             auto lengthVariable = domainExprSizes[i];
@@ -982,6 +972,23 @@ namespace gazprea
             // Only fill the body on the inner most loop 
             int numChildren = t->children.size();
             if (i == numChildren-2) {
+                for (size_t j = 0; j < t->children.size()-1; j++ ) {
+                    auto indexVariable = domainIndexVars[j];
+                    auto runtimeDomainArray = domainExprs[j];
+                    auto runtimeDomainVar = domainVars[j];
+                    llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {indexVariable});
+                    llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false);
+                    auto tempDomainVar = llvmFunction.call("variableMalloc", {});
+                    llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {tempDomainVar, runtimeDomainArray, index_i64});
+                    llvmFunction.call("variableAssignment", {runtimeDomainVar, tempDomainVar});
+                    llvmFunction.call("variableDestructThenFree", {tempDomainVar});
+
+                    //initialize variable symbol to from variable at current index in domain array
+                    auto variableAST = t->children[j]->children[0];
+                    auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(variableAST->symbol); 
+                    variableAST->llvmValue = runtimeDomainVar;
+                    variableSymbol->llvmPointerToVariableObject = runtimeDomainVar; 
+                }
                 visit(t->children[numChildren-1]);
             }
 
@@ -1113,7 +1120,7 @@ namespace gazprea
     }
 
     void LLVMGen::visitGenerator(std::shared_ptr<AST> t) {
-        
+        // TODO
     }
 
     void LLVMGen::visitFilter(std::shared_ptr<AST> t) {
