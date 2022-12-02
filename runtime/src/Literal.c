@@ -327,7 +327,6 @@ void variableInitFromGeneratorArray(Variable *this, int64_t nVars, Variable **va
         int64_t elementLen = variableGetLength(vars[0]);
         for (int64_t i = 0; i < nVars; i++) {
             ArrayType *CTI = vars[i]->m_type->m_compoundTypeInfo;
-            // TODO: check the element type match instead of just the mixed type itself, though this is not strictly required checking
             if (variableGetNDim(vars[i]) != elementNDim || CTI->m_elementTypeID != eid || variableGetLength(vars[0]) != elementLen) {
                 singleTypeError(vars[i]->m_type, "Found a generator element not of the same type with other elements: ");
             }
