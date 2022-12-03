@@ -341,7 +341,14 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
 
     /// if arr is empty array, then only possible cases are [][[]] or [][[],[]]
     if (typeIsEmptyArray(arrType)) {
-        // TODO: check indices are empty as well (note indices can be integer vector with size 0 instead of empty vector)
+        if (!typeIsEmptyArray(rowIndexType) &&
+            !(typeIsIntegerVector(rowIndexType) && variableGetLength(rowIndex) == 0)) {
+            errorAndExit("Array index can only be integer array of size 0 or empty array!");
+        }
+        if (colIndex != NULL && !typeIsEmptyArray(colIndexType) &&
+            !(typeIsIntegerVector(colIndexType) && variableGetLength(colIndex) == 0)) {
+            errorAndExit("Array index can only be integer array of size 0 or empty array!");
+        }
         variableInitFromEmptyArray(this);
         return;
     }

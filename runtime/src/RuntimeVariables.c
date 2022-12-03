@@ -740,10 +740,22 @@ void variableInitFromConcat(Variable *this, Variable *op1, Variable *op2) {
     // [] || A -> A
     // A || [] -> A
     if (op1nDim == DIM_UNSPECIFIED) {
-        variableInitFromMemcpy(this, op2);
+        if (typeIsScalar(op2Type)) {
+            ArrayType *CTI = op2Type->m_compoundTypeInfo;
+            int64_t dims[1] = {1};
+            variableInitFromNDArray(this, false, CTI->m_elementTypeID, 1, dims, op2->m_data, true);
+        } else {
+            variableInitFromMemcpy(this, op2);
+        }
         return;
     } else if (op2nDim == DIM_UNSPECIFIED) {
-        variableInitFromMemcpy(this, op1);
+        if (typeIsScalar(op1Type)) {
+            ArrayType *CTI = op1Type->m_compoundTypeInfo;
+            int64_t dims[1] = {1};
+            variableInitFromNDArray(this, false, CTI->m_elementTypeID, 1, dims, op1->m_data, true);
+        } else {
+            variableInitFromMemcpy(this, op1);
+        }
         return;
     }
 
