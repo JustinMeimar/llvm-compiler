@@ -117,14 +117,11 @@ std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::sha
     int rhsType = rhs->evalType->getTypeId();
 
     if (lhsType == Type::IDENTITYNULL && rhsType == Type::IDENTITYNULL) {
-        std::cout << "Compile-Time-Error! unable to infer type of two identities";
-        return nullptr;
-    } 
-    else if (lhsType == Type::IDENTITYNULL && rhsType != Type::IDENTITYNULL ) {
+        return this->symtab->getType(Type::IDENTITYNULL);
+    } else if (lhsType == Type::IDENTITYNULL && rhsType != Type::IDENTITYNULL ) {
         lhs->promoteToType = rhs->evalType;
         return rhs->evalType;
-    } 
-    else if (lhsType != Type::IDENTITYNULL && rhsType == Type::IDENTITYNULL ) {
+    } else if (lhsType != Type::IDENTITYNULL && rhsType == Type::IDENTITYNULL ) {
         rhs->promoteToType = lhs->evalType;
         return lhs->evalType;
 
