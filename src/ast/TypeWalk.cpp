@@ -113,7 +113,7 @@ namespace gazprea {
         for( auto child : t->children) visit(child);
     }
     
-    void TypeWalk::visitVariableDeclaration(std::shared_ptr<AST> t) { 
+    void TypeWalk::visitVariableDeclaration(std::shared_ptr<AST> t) {
         visitChildren(t);
         if (t->children[2]->isNil()) { return; } // Decl w/ no def 
         if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
@@ -560,7 +560,13 @@ namespace gazprea {
         t->evalType = t->symbol->type;
         t->promoteToType = nullptr;
         if (t->evalType != nullptr && t->evalType->getTypeId() == Type::TUPLE) {
-            auto tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
+            std::shared_ptr<TupleType> tupleType = nullptr;
+            if (t->evalType->isTypedefType()) {
+                auto typedefType = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->evalType);
+                tupleType = std::dynamic_pointer_cast<TupleType>(typedefType->type);
+            } else {
+                tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
+            }
             t->tuplePromoteTypeList = std::vector<std::shared_ptr<Type>>(tupleType->orderedArgs.size());
         }
     }

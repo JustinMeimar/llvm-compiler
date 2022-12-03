@@ -59,7 +59,8 @@ namespace gazprea {
                 case GazpreaParser::DOMAIN_EXPRESSION_TOKEN:
                     visitDomainExpression(t);
                     break; 
-                default: visitChildren(t);
+                default:
+                    visitChildren(t);
             };
         }
         else {
@@ -102,15 +103,23 @@ namespace gazprea {
             isProcedure = false;
         }
         auto identiferAST = t->children[0];
-        if(identiferAST->parseTree->getText() == "main" && isProcedure) { //track if we encounter a procedure named main
+        if (identiferAST->parseTree->getText() == "main" && isProcedure) {
+            //track if we encounter a procedure named main
             this->hasMainProcedure = true;
-        } 
+        }
         std::shared_ptr<SubroutineSymbol> subroutineSymbol;
-        //auto declarationSubroutineSymbol = symtab->globals->resolve(identiferAST->parseTree->getText());
-        auto declarationSubroutineSymbol = symtab->globals->resolveSubroutineSymbol("gazprea.subroutine." + identiferAST->parseTree->getText());
+        auto declarationSubroutineSymbol = symtab->globals->resolveSubroutineSymbol(
+            "gazprea.subroutine." + identiferAST->parseTree->getText()
+        );
         
         if (declarationSubroutineSymbol == nullptr) {
-            subroutineSymbol = std::make_shared<SubroutineSymbol>("gazprea.subroutine." + identiferAST->parseTree->getText(), nullptr, symtab->globals, isProcedure, isBuiltIn);
+            subroutineSymbol = std::make_shared<SubroutineSymbol>(
+                "gazprea.subroutine." + identiferAST->parseTree->getText(), 
+                nullptr, 
+                symtab->globals, 
+                isProcedure, 
+                isBuiltIn
+            );
             subroutineSymbol->declaration = t;
             symtab->globals->define(subroutineSymbol); // def subroutine in globals
             subroutineSymbol->numTimesDeclare++;
@@ -196,7 +205,9 @@ namespace gazprea {
         visitChildren(t);
         if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
             auto identifierName = t->children[1]->parseTree->getText();
-            auto status = symtab->tupleIdentifierAccess.emplace(identifierName, symtab->numTupleIdentifierAccess);
+            auto status = symtab->tupleIdentifierAccess.emplace(
+                identifierName, symtab->numTupleIdentifierAccess
+            );
             if (status.second) {
                 symtab->numTupleIdentifierAccess++;
             }
@@ -227,4 +238,4 @@ namespace gazprea {
         t->symbol = vs;   // track in AST
         currentScope->define(vs);
     }
-} // namespace gazprea 
+} // namespace gazprea
