@@ -419,7 +419,7 @@ namespace gazprea {
     void TypeWalk::visitBinaryOp(std::shared_ptr<AST> t) {
         visitChildren(t); 
         auto node1 = t->children[0];
-        auto node2 = t->children[1]; 
+        auto node2 = t->children[1];
         
         //getResultType automatically populates promotType of children
         switch(t->children[2]->getNodeType()){ 
@@ -433,7 +433,7 @@ namespace gazprea {
             case GazpreaParser::PLUS:
             case GazpreaParser::MINUS:
             case GazpreaParser::DIV:
-            case GazpreaParser::ASTERISK: 
+            case GazpreaParser::ASTERISK:
             case GazpreaParser::CARET:
                 t->evalType = tp->getResultType(tp->arithmeticResultType, node1, node2, t);
                 break;
@@ -447,7 +447,7 @@ namespace gazprea {
             case GazpreaParser::ISNOTEQUAL:
                 t->evalType = tp->getResultType(tp->equalityResultType, node1, node2, t);
                 break; 
-        }     
+        }
     }
 
     void TypeWalk::visitUnaryOp(std::shared_ptr<AST> t) {

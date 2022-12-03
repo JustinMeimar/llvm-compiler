@@ -193,8 +193,6 @@ namespace gazprea {
     }
 
     void DefWalk::visitReturn(std::shared_ptr<AST> t) {
-        // t->scope = currentSubroutineScope;
-        // currentScope->containReturn = true;
         t->scope = currentScope;
         t->scope->containReturn = true;
         t->subroutineSymbol = currentSubroutineScope;

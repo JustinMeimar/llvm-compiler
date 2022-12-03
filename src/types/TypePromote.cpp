@@ -66,7 +66,7 @@ int TypePromote::relationalResultType[16][16] = { // <=, >=, <, >
     /*   REAL_2         */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 };
 
-int TypePromote::equalityResultType[16][16] = { // ===, !=
+int TypePromote::equalityResultType[16][16] = { // ==, !=
     //                       0   1    2   3   4   5   6   7   8   9  10  11  1 2  13  14  15
     /*   TUPLE          */ { 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     /*   INTERVAL       */ {-1,  2, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1},
@@ -109,7 +109,7 @@ int TypePromote::promotionFromTo[17][17] = { // 0 = nullptr
 
 
 std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs, std::shared_ptr<AST> t){
-    if(lhs->evalType == nullptr || rhs->evalType == nullptr) { //occurs when infered type on l/rhs
+    if (lhs->evalType == nullptr || rhs->evalType == nullptr) { //occurs when infered type on lhs/rhs
         return nullptr;
     }
 
@@ -148,7 +148,7 @@ std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::sha
         //rhs promote type
         int rhsPromoteType = this->promotionFromTo[rhsType][resTypeId];
         if (rhsPromoteType != 0) { 
-            rhs->promoteToType = newType; // 
+            rhs->promoteToType = newType;
         }
 
         //return eval type

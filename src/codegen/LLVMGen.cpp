@@ -199,7 +199,6 @@ namespace gazprea
             returnType,
             parameterTypes,
             false);
-        // std::string prefix = subroutineSymbol->name == "main" ? "" : "gazprea.subroutine.";
         auto subroutineLLVMName = subroutineSymbol->name;
         if (subroutineLLVMName == "gazprea.subroutine.main") {
             subroutineLLVMName = "main";
