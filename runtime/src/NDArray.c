@@ -361,7 +361,7 @@ void elementMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, void 
             case BINARY_DIVIDE:
                 *result = arrayMallocFromIntegerValue(1, v1 / v2); break;
             case BINARY_REMAINDER:
-                *result = arrayMallocFromIntegerValue(1, v1 % v2); break;
+                *result = arrayMallocFromIntegerValue(1, (int)((long)v1 % (long)v2)); break;
             case BINARY_PLUS:
                 *result = arrayMallocFromIntegerValue(1, v1 + v2); break;
             case BINARY_MINUS:

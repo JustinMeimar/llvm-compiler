@@ -1,5 +1,5 @@
 procedure main() returns integer {
-    character a = ''';
+    -2147483648 % -1 -> std_output;
 
     return 0;
 }
