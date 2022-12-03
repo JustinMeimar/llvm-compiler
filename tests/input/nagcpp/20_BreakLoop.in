@@ -1,0 +1,118 @@
+// Nested loops and breaks
+
+typedef integer int;
+typedef boolean bool;
+typedef character char;
+typedef real float;
+
+const int INT_MAX = 2147483647;
+const int INT_MIN = -2147483648;
+const float INT_MAX_IN_FLOAT = 2.14748e+09;
+const float FLOAT_MAX = 3.40282347e+38;
+
+procedure matrixloop
+() 
+{
+    int noRow = 0; int noCol = 0;
+    int[5, 4] mtrx = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    int i = 1;
+    loop while i < 5 {
+        int j = 2;
+        int[*, 4] meh = [[4,3,2,1], [100, 2, 0, 0]]; // Not used, just for testing leaks
+        loop while j <= 5 {
+            if (j == 5) break;
+            loop break;
+            mtrx[i,j]= i ;
+            j = j + 1;
+        }
+        if (i == 3) { // Should prevent from out of range
+            break;
+        }
+        i = i + 1;
+    }
+
+    i = i - i + 1; // Should make i = 0;
+
+    // Print matrix
+
+    noRow = rows(mtrx);
+    noCol = columns(mtrx);
+
+    loop while i <= noRow {
+        int j = 1;
+        loop while j <= noCol {
+            mtrx[i, j] -> std_out;
+            ' ' -> std_out;
+            j = j + 1;
+        }
+        i = i + 1;
+        '\n' -> std_out;
+    }
+    /* Should print
+    0 1 1 1 
+    0 2 2 2
+    0 3 3 3
+    0 0 0 0
+    0 0 0 0
+    */
+}
+
+// Nested loop
+procedure nestedloop() {
+    loop {
+        int i = 0;
+        loop {
+            i = i + 1;
+            loop {
+                int x = 5; x = x + 10;
+                loop {
+                    char b = 'u';
+                    loop {
+                        int x = 314;
+                        x -> std_out; // Should print 314
+                        break;
+                    }
+                    b -> std_out; // Should print u
+                    break;
+                }
+                x -> std_out; // Should print 15
+                break;
+            }
+            i -> std_out; // Should print 1
+            break;
+        }
+        i -> std_out; // Should print 1
+        break;
+    }
+
+    // Expected: 314u1511
+
+}
+
+procedure contloop() {
+    int x = 10;
+    loop {
+        int hello = x;
+        hello -> std_out;
+        break;
+    } while x != 0;
+    // Should print 10
+
+    int y = -205;
+    loop {
+
+        y = y + 1;
+        if (y == -203) {continue;}
+        if (y == -201) {break;
+        }
+        y -> std_out;
+    } while x > -200;
+    // Should print -204-202
+}
+
+procedure main() returns int {
+    call matrixloop();
+    call nestedloop();
+    call contloop();
+    return 0;
+}

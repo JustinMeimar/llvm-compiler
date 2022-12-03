@@ -113,7 +113,7 @@ namespace gazprea {
         for( auto child : t->children) visit(child);
     }
     
-    void TypeWalk::visitVariableDeclaration(std::shared_ptr<AST> t) { 
+    void TypeWalk::visitVariableDeclaration(std::shared_ptr<AST> t) {
         visitChildren(t);
         if (t->children[2]->isNil()) { return; } // Decl w/ no def 
         if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
@@ -411,15 +411,19 @@ namespace gazprea {
 
     void TypeWalk::visitCallInExpr(std::shared_ptr<AST> t) {
         visit(t->children[1]);
-        auto sbrtSymbol = t->children[0]->symbol;
-        t->evalType = sbrtSymbol->type;  //will be the return type
+        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
+        if (subroutineSymbol->isBuiltIn && subroutineSymbol->name == "gazprea.subroutine.reverse") {
+            t->evalType = t->children[1]->children[0]->evalType;
+        } else {
+            t->evalType = subroutineSymbol->type;  // will be the return type
+        }
         t->promoteToType = nullptr;
     }
     
     void TypeWalk::visitBinaryOp(std::shared_ptr<AST> t) {
         visitChildren(t); 
         auto node1 = t->children[0];
-        auto node2 = t->children[1]; 
+        auto node2 = t->children[1];
         
         //getResultType automatically populates promotType of children
         switch(t->children[2]->getNodeType()){ 
@@ -433,7 +437,7 @@ namespace gazprea {
             case GazpreaParser::PLUS:
             case GazpreaParser::MINUS:
             case GazpreaParser::DIV:
-            case GazpreaParser::ASTERISK: 
+            case GazpreaParser::ASTERISK:
             case GazpreaParser::CARET:
                 t->evalType = tp->getResultType(tp->arithmeticResultType, node1, node2, t);
                 break;
@@ -447,7 +451,7 @@ namespace gazprea {
             case GazpreaParser::ISNOTEQUAL:
                 t->evalType = tp->getResultType(tp->equalityResultType, node1, node2, t);
                 break; 
-        }     
+        }
     }
 
     void TypeWalk::visitUnaryOp(std::shared_ptr<AST> t) {
@@ -560,7 +564,13 @@ namespace gazprea {
         t->evalType = t->symbol->type;
         t->promoteToType = nullptr;
         if (t->evalType != nullptr && t->evalType->getTypeId() == Type::TUPLE) {
-            auto tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
+            std::shared_ptr<TupleType> tupleType = nullptr;
+            if (t->evalType->isTypedefType()) {
+                auto typedefType = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->evalType);
+                tupleType = std::dynamic_pointer_cast<TupleType>(typedefType->type);
+            } else {
+                tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
+            }
             t->tuplePromoteTypeList = std::vector<std::shared_ptr<Type>>(tupleType->orderedArgs.size());
         }
     }
@@ -588,4 +598,4 @@ namespace gazprea {
         visit(t->children[1]);
     }
     
-} // namespace gazprea 
+} // namespace gazprea

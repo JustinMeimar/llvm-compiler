@@ -8,7 +8,7 @@ namespace gazprea {
         globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("string"));
         globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("boolean"));
         globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("interval"));
-        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("identityNull"));
+        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("gazprea.type.identityNull"));
     }
 
     SymbolTable::SymbolTable() : globals(std::make_shared<GlobalScope>()), numTupleIdentifierAccess(0) { 
@@ -23,7 +23,7 @@ namespace gazprea {
         auto characterBaseType  = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("character"));
         auto stringBaseType     = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("string"));
         auto intervalBaseType   = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("interval"));
-        auto identityNullBaseType   = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("identityNull"));
+        auto identityNullBaseType = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("gazprea.type.identityNull"));
 
         switch(typeEnum) {
             case 0:  return nullptr; break;
@@ -37,7 +37,7 @@ namespace gazprea {
             case 8:  return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(booleanBaseType, 1)); break;
             case 9:  return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(characterBaseType, 1)); break;
             case 10: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(integerBaseType, 1)); break;
-            case 11: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(realBaseType, 1));break;
+            case 11: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(realBaseType, 1)); break;
             case 12: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(booleanBaseType, 2)); break;
             case 13: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(characterBaseType, 2)); break;
             case 14: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(integerBaseType, 2)); break;
