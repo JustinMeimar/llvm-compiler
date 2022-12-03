@@ -5,11 +5,11 @@ namespace gazprea {
     DefWalk::DefWalk(std::shared_ptr<SymbolTable> symtab) : symtab(symtab), currentScope(symtab->globals) {
         // Define built-in subroutine symbols
         bool isBuiltIn = true;
-        symtab->globals->define(std::make_shared<SubroutineSymbol>("length", nullptr, symtab->globals, false, isBuiltIn));
-        symtab->globals->define(std::make_shared<SubroutineSymbol>("rows", nullptr, symtab->globals, false, isBuiltIn));
-        symtab->globals->define(std::make_shared<SubroutineSymbol>("columns", nullptr, symtab->globals, false, isBuiltIn));
-        symtab->globals->define(std::make_shared<SubroutineSymbol>("reverse", nullptr, symtab->globals, false, isBuiltIn));
-        symtab->globals->define(std::make_shared<SubroutineSymbol>("stream_state", nullptr, symtab->globals, true, isBuiltIn));
+        symtab->globals->define(std::make_shared<SubroutineSymbol>("gazprea.subroutine.length", symtab->getType(Type::INTEGER), symtab->globals, false, isBuiltIn));
+        symtab->globals->define(std::make_shared<SubroutineSymbol>("gazprea.subroutine.rows", symtab->getType(Type::INTEGER), symtab->globals, false, isBuiltIn));
+        symtab->globals->define(std::make_shared<SubroutineSymbol>("gazprea.subroutine.columns", symtab->getType(Type::INTEGER), symtab->globals, false, isBuiltIn));
+        symtab->globals->define(std::make_shared<SubroutineSymbol>("gazprea.subroutine.reverse", nullptr, symtab->globals, false, isBuiltIn));
+        symtab->globals->define(std::make_shared<SubroutineSymbol>("gazprea.subroutine.stream_state", symtab->getType(Type::INTEGER), symtab->globals, true, isBuiltIn));
         symtab->globals->define(std::make_shared<VariableSymbol>("std_input", nullptr));
         symtab->globals->define(std::make_shared<VariableSymbol>("std_output", nullptr));
     }
@@ -58,7 +58,7 @@ namespace gazprea {
                     break;
                 case GazpreaParser::DOMAIN_EXPRESSION_TOKEN:
                     visitDomainExpression(t);
-                    break; 
+                    break;
                 default:
                     visitChildren(t);
             };

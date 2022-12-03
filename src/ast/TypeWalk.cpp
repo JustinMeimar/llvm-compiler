@@ -411,8 +411,12 @@ namespace gazprea {
 
     void TypeWalk::visitCallInExpr(std::shared_ptr<AST> t) {
         visit(t->children[1]);
-        auto sbrtSymbol = t->children[0]->symbol;
-        t->evalType = sbrtSymbol->type;  //will be the return type
+        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
+        if (subroutineSymbol->isBuiltIn && subroutineSymbol->name == "gazprea.subroutine.reverse") {
+            t->evalType = t->children[1]->children[0]->evalType;
+        } else {
+            t->evalType = subroutineSymbol->type;  // will be the return type
+        }
         t->promoteToType = nullptr;
     }
     
@@ -594,4 +598,4 @@ namespace gazprea {
         visit(t->children[1]);
     }
     
-} // namespace gazprea 
+} // namespace gazprea

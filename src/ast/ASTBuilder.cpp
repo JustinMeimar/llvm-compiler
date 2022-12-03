@@ -181,7 +181,13 @@ namespace gazprea {
     std::any ASTBuilder::visitConditionalStatement(GazpreaParser::ConditionalStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::CONDITIONAL_STATEMENT_TOKEN, ctx);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->exprPrecededStatement()));
+        if (ctx->exprPrecededStatement()->nonBlockStatement()) {
+            auto blockAST = std::make_shared<AST>(GazpreaParser::BLOCK_TOKEN, ctx);
+            blockAST->addChild(visit(ctx->exprPrecededStatement()));
+            t->addChild(blockAST);
+        } else {
+            t->addChild(visit(ctx->exprPrecededStatement()));
+        }
         for (auto elseIfStatement : ctx->elseIfStatement()) {
             t->addChild(visit(elseIfStatement));
         }
@@ -194,13 +200,25 @@ namespace gazprea {
     std::any ASTBuilder::visitElseIfStatement(GazpreaParser::ElseIfStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::ELSEIF_TOKEN, ctx);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->exprPrecededStatement()));
+        if (ctx->exprPrecededStatement()->nonBlockStatement()) {
+            auto blockAST = std::make_shared<AST>(GazpreaParser::BLOCK_TOKEN, ctx);
+            blockAST->addChild(visit(ctx->exprPrecededStatement()));
+            t->addChild(blockAST);
+        } else {
+            t->addChild(visit(ctx->exprPrecededStatement()));
+        }
         return t;
     }
 
     std::any ASTBuilder::visitElseStatement(GazpreaParser::ElseStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::ELSE_TOKEN, ctx);
-        t->addChild(visit(ctx->statement()));
+        if (ctx->statement()->nonBlockStatement()) {
+            auto blockAST = std::make_shared<AST>(GazpreaParser::BLOCK_TOKEN, ctx);
+            blockAST->addChild(visit(ctx->statement()));
+            t->addChild(blockAST);
+        } else {
+            t->addChild(visit(ctx->statement()));
+        }
         return t;
     }
 
@@ -464,5 +482,4 @@ namespace gazprea {
         }
         return t;
     }
-
 }

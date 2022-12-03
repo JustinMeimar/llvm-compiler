@@ -1335,15 +1335,15 @@ namespace gazprea
                     arguments.push_back(expressionAST->llvmValue);
                 }
             }
-            if (subroutineSymbol->name == "stream_state") {
+            if (subroutineSymbol->name == "gazprea.subroutine.stream_state") {
                 t->llvmValue = llvmFunction.call("BuiltInStreamState", {});
-            } else if (subroutineSymbol->name == "length") {
+            } else if (subroutineSymbol->name == "gazprea.subroutine.length") {
                 t->llvmValue = llvmFunction.call("BuiltInLength", arguments);
-            } else if (subroutineSymbol->name == "reverse") {
+            } else if (subroutineSymbol->name == "gazprea.subroutine.reverse") {
                 t->llvmValue = llvmFunction.call("BuiltInReverse", arguments);
-            } else if (subroutineSymbol->name == "rows") {
+            } else if (subroutineSymbol->name == "gazprea.subroutine.rows") {
                 t->llvmValue = llvmFunction.call("BuiltInRows", arguments);
-            } else if (subroutineSymbol->name == "columns") {
+            } else if (subroutineSymbol->name == "gazprea.subroutine.columns") {
                 t->llvmValue = llvmFunction.call("BuiltInColumns", arguments);
             }
             if (!t->children[1]->isNil()) {
@@ -1408,15 +1408,15 @@ namespace gazprea
                 }
             }
             llvm::Value *returnValue = nullptr;
-            if (subroutineSymbol->name == "stream_state") {
+            if (subroutineSymbol->name == "gazprea.subroutine.stream_state") {
                 returnValue = llvmFunction.call("BuiltInStreamState", {});
-            } else if (subroutineSymbol->name == "length") {
+            } else if (subroutineSymbol->name == "gazprea.subroutine.length") {
                 returnValue = llvmFunction.call("BuiltInLength", arguments);
-            } else if (subroutineSymbol->name == "reverse") {
+            } else if (subroutineSymbol->name == "gazprea.subroutine.reverse") {
                 returnValue = llvmFunction.call("BuiltInReverse", arguments);
-            } else if (subroutineSymbol->name == "rows") {
+            } else if (subroutineSymbol->name == "gazprea.subroutine.rows") {
                 returnValue = llvmFunction.call("BuiltInRows", arguments);
-            } else if (subroutineSymbol->name == "columns") {
+            } else if (subroutineSymbol->name == "gazprea.subroutine.columns") {
                 returnValue = llvmFunction.call("BuiltInColumns", arguments);
             }
             
