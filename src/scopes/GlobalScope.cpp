@@ -26,6 +26,9 @@ namespace gazprea {
     }
 	
     void GlobalScope::defineTypeSymbol(std::shared_ptr<Symbol> sym) {
+        if (typeSymbols.count(sym->name) != 0) { 
+            sym->isDoubleDefined = true;
+        }
         typeSymbols.emplace(sym->name, sym);
         sym->scope = shared_from_this(); // track the scope in each symbol
     }

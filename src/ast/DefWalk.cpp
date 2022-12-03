@@ -80,7 +80,7 @@ namespace gazprea {
         vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = vs;  // track in AST
         currentScope->define(vs);
-        if (vs->doubleDefined ){ 
+        if (vs->isDoubleDefined) { 
             auto *ctx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext*>(t->parseTree);
             throw RedefineIdError(t->children[1]->getText(), ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
         }
@@ -144,6 +144,11 @@ namespace gazprea {
         typeDefTypeSymbol->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = typeDefTypeSymbol;  // track in AST
         symtab->globals->defineTypeSymbol(typeDefTypeSymbol);
+        
+        if (typeDefTypeSymbol->isDoubleDefined) {
+            auto *ctx = dynamic_cast<GazpreaParser::TypedefStatementContext*>(t->parseTree);
+            throw RedefineIdError(identiferAST->getText(), ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        }
         visitChildren(t);
     } 
     void DefWalk::visitBlock(std::shared_ptr<AST> t) {
