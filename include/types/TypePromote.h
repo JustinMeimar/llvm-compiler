@@ -17,7 +17,7 @@ class TypePromote {
         static int arithmeticResultType[16][16];
         static int relationalResultType[16][16];
         static int equalityResultType[16][16];
-        static int promotionFromTo[16][16];
+        static int promotionFromTo[17][17];
 
         TypePromote(std::shared_ptr<SymbolTable> symtab);
         ~TypePromote();

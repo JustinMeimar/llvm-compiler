@@ -66,7 +66,7 @@ int TypePromote::relationalResultType[16][16] = { // <=, >=, <, >
     /*   REAL_2         */ {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 };
 
-int TypePromote::equalityResultType[16][16] = { // ===, !=
+int TypePromote::equalityResultType[16][16] = { // ==, !=
     //                       0   1    2   3   4   5   6   7   8   9  10  11  1 2  13  14  15
     /*   TUPLE          */ { 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
     /*   INTERVAL       */ {-1,  2, -1, -1, -1, -1, -1, -1, -1, -1,  2, -1, -1, -1, -1, -1},
@@ -86,29 +86,30 @@ int TypePromote::equalityResultType[16][16] = { // ===, !=
     /*   REAL_ 2         */{-1, -1, -1, -1,  2,  2, -1, -1, -1, -1, -1, -1, -1, -1, -1,  2}
 };
 
-int TypePromote::promotionFromTo[16][16] = { // 0 = nullptr
-    //                          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15
-    /*   0  TUPLE          */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
-    /*   1  INTERVAL       */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0},
-    /*   2  BOOLEAN        */ { 0,  0,  0,  0,  0,  0,  0,  0,  8,  0,  0,  0, 12,  0,  0,  0},
-    /*   3  CHARACTER      */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  9,  0,  0,  0,  0,  0,  0},
-    /*   4  INTEGER        */ { 0,  0,  0,  0,  0,  5,  0,  0,  0,  0, 10, 11,  0,  0, 14, 15},
-    /*   5  REAL           */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 11,  0,  0,  0, 15},
-    /*   6  STRING         */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
-    /*   7  INTEGER_INTERVAL*/{ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 10,  0,  0,  0,  0,  0},
-    /*   8  BOOLEAN_1      */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 12,  0,  0,  0},
-    /*   9  CHARACTER_1    */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
-    /*   10 INTEGER_1      */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 11,  0,  0,  0,  0},
-    /*   11 REAL_1         */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
-    /*   12 BOOLEAN_2      */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
-    /*   13 CHARACTER_2    */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
-    /*   14 INTEGER_2      */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
-    /*   15 REAL_2         */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0}
+int TypePromote::promotionFromTo[17][17] = { // 0 = nullptr
+    //                          0   1   2   3   4   5   6   7   8   9   10  11  12  13  14  15 16
+    /*   0  TUPLE          */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+    /*   1  INTERVAL       */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  0,  0,  0,  0},
+    /*   2  BOOLEAN        */ { 0,  0,  0,  0,  0,  0,  0,  0,  8,  0,  0,  0, 12,  0,  0,  0,  0},
+    /*   3  CHARACTER      */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  9,  0,  0,  0,  0,  0,  0,  0},
+    /*   4  INTEGER        */ { 0,  0,  0,  0,  0,  5,  0,  0,  0,  0, 10, 11,  0,  0, 14, 15,  0},
+    /*   5  REAL           */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 11,  0,  0,  0, 15,  0},
+    /*   6  STRING         */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+    /*   7  INTEGER_INTERVAL*/{ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 10,  0,  0,  0,  0,  0,  0},
+    /*   8  BOOLEAN_1      */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 12,  0,  0,  0,  0},
+    /*   9  CHARACTER_1    */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+    /*   10 INTEGER_1      */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 11,  0,  0,  0,  0,  0},
+    /*   11 REAL_1         */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+    /*   12 BOOLEAN_2      */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+    /*   13 CHARACTER_2    */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+    /*   14 INTEGER_2      */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+    /*   15 REAL_2         */ { 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0},
+    /*   16 IDENTITYNULL   */ { 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,  0}
 };
 
 
 std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::shared_ptr<AST> lhs, std::shared_ptr<AST> rhs, std::shared_ptr<AST> t){
-    if(lhs->evalType == nullptr || rhs->evalType == nullptr) { //occurs when infered type on l/rhs
+    if (lhs->evalType == nullptr || rhs->evalType == nullptr) { //occurs when infered type on lhs/rhs
         return nullptr;
     }
 
@@ -116,14 +117,11 @@ std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::sha
     int rhsType = rhs->evalType->getTypeId();
 
     if (lhsType == Type::IDENTITYNULL && rhsType == Type::IDENTITYNULL) {
-        std::cout << "Compile-Time-Error! unable to infer type of two identities";
-        return nullptr;
-    } 
-    else if (lhsType == Type::IDENTITYNULL && rhsType != Type::IDENTITYNULL ) {
+        return this->symtab->getType(Type::IDENTITYNULL);
+    } else if (lhsType == Type::IDENTITYNULL && rhsType != Type::IDENTITYNULL ) {
         lhs->promoteToType = rhs->evalType;
         return rhs->evalType;
-    } 
-    else if (lhsType != Type::IDENTITYNULL && rhsType == Type::IDENTITYNULL ) {
+    } else if (lhsType != Type::IDENTITYNULL && rhsType == Type::IDENTITYNULL ) {
         rhs->promoteToType = lhs->evalType;
         return lhs->evalType;
 
@@ -150,7 +148,7 @@ std::shared_ptr<Type> TypePromote::getResultType(int typeTable[16][16], std::sha
         //rhs promote type
         int rhsPromoteType = this->promotionFromTo[rhsType][resTypeId];
         if (rhsPromoteType != 0) { 
-            rhs->promoteToType = newType; // 
+            rhs->promoteToType = newType;
         }
 
         //return eval type

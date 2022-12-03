@@ -37,8 +37,13 @@ void typeDebugPrint(Type *this) {
     switch (this->m_typeId) {
         case TYPEID_NDARRAY: {
             ArrayType *CTI = this->m_compoundTypeInfo;
-            fprintf(fd, ",eid=%d,nDim=%d,isString=%d,isOwned=%d,isRef=%d,isSelfRef=%d", CTI->m_elementTypeID, CTI->m_nDim,
-                CTI->m_isString, CTI->m_isOwned, CTI->m_isRef, CTI->m_isSelfRef);
+            if (CTI->m_refCount != NULL) {
+                fprintf(fd, ",refcount=%p->%d", CTI->m_refCount, *CTI->m_refCount);
+            } else {
+                fprintf(fd, ",refcount=NULL");
+            }
+            fprintf(fd, ",eid=%d,nDim=%d,isString=%d,isRef=%d,isSelfRef=%d", CTI->m_elementTypeID, CTI->m_nDim,
+                CTI->m_isString, CTI->m_isRef, CTI->m_isSelfRef);
             for (int8_t i = 0; i < CTI->m_nDim; i++) {
                 fprintf(fd, ",dim[%d]=%ld", i, CTI->m_dims[i]);
             }
@@ -119,6 +124,11 @@ void variablePrintToFile(FILE *fd, Variable *this) {
 #endif
         variableDestructThenFreeImpl(temp);
         return;
+    } else if (typeIsIntegerInterval(this->m_type)) {
+        Variable *vec = variableMalloc();
+        variableInitFromPCADPToIntegerVector(vec, this, &pcadpPromotionConfig);
+        variableDestructThenFreeImpl(vec);
+        return;
     }
 
     if (typeIsEmptyArray(this->m_type)) {
@@ -190,6 +200,7 @@ void variableDebugPrint(Variable *this) {
     if (reentry)
         return;
     reentry = true;
+#endif
 
     fprintf(stderr, "(Var(blockScoped=%d)", this->m_isBlockScoped);
     typeDebugPrint(this->m_type);
@@ -223,6 +234,7 @@ void variableDebugPrint(Variable *this) {
     }
     fprintf(stderr, ")");
 
+#ifdef DEBUG_PRINT
     reentry = false;
 #endif
 }
@@ -523,7 +535,7 @@ float readRealFromStdin() {
                     errorAndExit("This should not happen!");
             }
         }
-        if (!see_digit_before_exp || !see_digit_after_exp || !see_e_or_dot) {
+        if (!see_digit_before_exp || !see_digit_after_exp) {
             rewindInputBuffer();
             global_stream_state = 1;
             return 0.0f;

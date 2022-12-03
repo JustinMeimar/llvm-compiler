@@ -73,3 +73,19 @@ void variableInitFromStdInput(Variable *this);
 void variableInitFromStdOutput(Variable *this);
 // empty array
 void variableInitFromEmptyArray(Variable *this);
+
+/**
+ * Create a vector/matrix; creates empty matrix if 0 variables are offered
+ * @param this the variable to initialize as the result vector or matrix
+ * @param nVars the number of variables in the vars, for matrix this would be number of rows
+ * @param vars element in the vector; for matrix this would be vector literals
+ */
+void variableInitFromGeneratorArray(Variable *this, int64_t nVars, Variable **vars);
+/**
+ * Creates a tuple with nFilter + 1 fields from a filter construct
+ * @param this The variable to initialize as tuple
+ * @param nFilter the number of filter expressions in the filter
+ * @param domainExpr the single domain expression that this filter loops on
+ * @param accept a (flattened) matrix, an element accept[i][j] gives whether the result of evaluating the jth expression on ith domain variable is true
+ */
+void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *domainExpr, const bool *accept);

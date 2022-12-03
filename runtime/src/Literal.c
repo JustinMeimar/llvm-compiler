@@ -304,3 +304,84 @@ void variableInitFromEmptyArray(Variable *this) {
     variableInitDebugPrint(this, "an empty array");
 #endif
 }
+
+void variableInitFromGeneratorArray(Variable *this, int64_t nVars, Variable **vars) {
+    if (nVars == 0) {
+        // TODO: implement type inference if we have time
+        variableInitFromEmptyArray(this);
+        return;
+    }
+
+    // check every single variable of the literal is of the same type
+    int8_t elementNDim = variableGetNDim(vars[0]);
+    ArrayType *firstCTI = vars[0]->m_type->m_compoundTypeInfo;
+    ElementTypeID eid = firstCTI->m_elementTypeID;
+    if (elementNDim == 0) {
+        for (int64_t i = 0; i < nVars; i++) {
+            ArrayType *CTI = vars[i]->m_type->m_compoundTypeInfo;
+            if (variableGetNDim(vars[i]) != elementNDim || CTI->m_elementTypeID != eid) {
+                singleTypeError(vars[i]->m_type, "Found a generator element not of the same type with other elements: ");
+            }
+        }
+    } else if (elementNDim == 1) {
+        int64_t elementLen = variableGetLength(vars[0]);
+        for (int64_t i = 0; i < nVars; i++) {
+            ArrayType *CTI = vars[i]->m_type->m_compoundTypeInfo;
+            if (variableGetNDim(vars[i]) != elementNDim || CTI->m_elementTypeID != eid || variableGetLength(vars[0]) != elementLen) {
+                singleTypeError(vars[i]->m_type, "Found a generator element not of the same type with other elements: ");
+            }
+        }
+    } else {
+        singleTypeError(vars[0]->m_type, "Found a matrix type variable in generator array: ");
+    }
+
+    // if we haven't found any error, the input should be correct, then we can just treat it as a vector literal and promote it to same type array
+    Variable *literal = variableMalloc();
+    variableInitFromVectorLiteral(literal, nVars, vars);
+    variableInitFromMixedArrayPromoteToSameType(this, literal);
+    variableDestructThenFreeImpl(literal);
+}
+
+void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *domainExpr, const bool *accept) {
+    int64_t domainSize = variableGetLength(domainExpr);
+    int32_t *data = domainExpr->m_data;
+    int32_t resultBuffer[domainSize];
+
+    Variable **vars = variableArrayMalloc(nFilter + 1);
+    for (int64_t i = 0; i < nFilter; i++) {
+        int64_t k = 0;
+        for (int64_t j = 0; j < domainSize; j++) {
+            if (accept[i * domainSize + j]) {
+                resultBuffer[k] = data[j];
+                k += 1;
+            }
+        }
+        int64_t dims[1] = {k};
+        vars[i] = variableMalloc();
+        variableInitFromNDArray(vars[i], false, ELEMENT_INTEGER, 1, dims, resultBuffer, false);
+    }
+    {  // the last variable
+        int64_t k = 0;
+        for (int64_t i = 0; i < domainSize; i++) {
+            bool hasBeenAccepted = false;
+            for (int64_t j = 0; j < nFilter; j++) {
+                if (accept[i * domainSize + j]) {
+                    hasBeenAccepted = true;
+                    break;
+                }
+            }
+            if (!hasBeenAccepted) {
+                resultBuffer[k] = data[i];
+                k += 1;
+            }
+        }
+        int64_t dims[1] = {k};
+        vars[nFilter] = variableMalloc();
+        variableInitFromNDArray(vars[nFilter], false, ELEMENT_INTEGER, 1, dims, resultBuffer, false);
+    }
+
+    variableInitFromTupleLiteral(this, nFilter + 1, vars);
+    for (int64_t i = 0; i <= nFilter; i++)
+        variableDestructThenFreeImpl(vars[i]);
+    variableArrayFree(vars);
+}

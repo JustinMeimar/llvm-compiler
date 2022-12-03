@@ -253,6 +253,25 @@ void LLVMIRFunction::declareAllFunctions() {
         "variableInitFromMatrixIndexing"
     );
 
+    declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
+        "variableInitFromDomainExpression"
+    );
+
+    declareFunction(
+        llvm::FunctionType::get(int64Ty, {runtimeVariableTy->getPointerTo()}, false),
+        "variableGetLength"
+    );    
+
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int64Ty}, false),
+        "variableInitFromIntegerArrayElementAtIndex"
+    );
+
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), int8Ty}, false),
+        "variableSetIsBlockScoped"
+    );
     // Built-in functions
     declareFunction(
         llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), {}, false),

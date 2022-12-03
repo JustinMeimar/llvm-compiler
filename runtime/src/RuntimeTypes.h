@@ -95,3 +95,9 @@ void typeArrayFree(Type **arr);                                     /// INTERFAC
 void *stridArrayMalloc(int64_t size);                               /// INTERFACE
 void stridArraySet(int64_t *arr, int64_t idx, int64_t val);         /// INTERFACE
 void stridArrayFree(int64_t *arr);                                  /// INTERFACE
+
+// for filter
+// make an n * m matrix
+void *acceptMatrixMalloc(int64_t nFilter, int64_t domainSize);                                              /// INTERFACE
+void acceptArraySet(bool *accept, int64_t domainSize, int64_t filterIdx, int64_t domainIdx, bool val);      /// INTERFACE
+void acceptMatrixFree(bool *accept);                                                                        /// INTERFACE

@@ -24,6 +24,7 @@ namespace gazprea {
 
         llvm::Value *llvmPointerToTypeObject = nullptr;
         llvm::Value *llvmPointerToVariableObject = nullptr;
+        bool isDoubleDefined = false;
 
         Symbol(std::string name);
         Symbol(std::string name, std::shared_ptr<Type> type);
