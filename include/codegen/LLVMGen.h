@@ -111,6 +111,9 @@ class LLVMGen {
         void freeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol);
         void freeExpressionIfNecessary(std::shared_ptr<AST> t);
         void freeExprAtomIfNecessary(std::shared_ptr<AST> t);
+
+        //Iterator loop Generator & Filter Helper Methods
+        void incrementIndex(llvm::Value* index);
 };
 
 }
