@@ -14,4 +14,4 @@ procedure main() returns integer {
 }
 #split_token
 1. +.2 -2.3 +1e-1 -.1e+2 3e0 4.e1 3.3e-3 -0. 100 #split_token
-1 0.2 -2.3 0.1 -10 3 40 0.0033 -0 0
+1 0.2 -2.3 0.1 -10 3 40 0.0033 -0 100

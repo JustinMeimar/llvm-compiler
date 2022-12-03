@@ -1,21 +1,22 @@
 procedure main() returns integer {
     {
         integer a;
-        a <- std_input;
-        a -> std_output;
-        ' ' -> std_output;
-        a <- std_input;
-        a -> std_output;
-        ' ' -> std_output;
-        a <- std_input;
-        a -> std_output;
-        ' ' -> std_output;
-        a <- std_input;
-        a -> std_output;
-        ' ' -> std_output;
-        a <- std_input;
-        a -> std_output;
         character temp;
+        a <- std_input;
+        a -> std_output;
+        ' ' -> std_output;
+        a <- std_input;
+        a -> std_output;
+        ' ' -> std_output;
+        a <- std_input;
+        a -> std_output;
+        ' ' -> std_output;
+        a <- std_input;
+        a -> std_output;
+        ' ' -> std_output;
+        a <- std_input;
+        a -> std_output;
+    
         temp <- std_input;
         temp <- std_input;
         temp <- std_input;

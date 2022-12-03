@@ -535,7 +535,7 @@ float readRealFromStdin() {
                     errorAndExit("This should not happen!");
             }
         }
-        if (!see_digit_before_exp || !see_digit_after_exp || !see_e_or_dot) {
+        if (!see_digit_before_exp || !see_digit_after_exp) {
             rewindInputBuffer();
             global_stream_state = 1;
             return 0.0f;
