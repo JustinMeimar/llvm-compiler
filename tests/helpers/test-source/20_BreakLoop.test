@@ -33,16 +33,14 @@ procedure matrixloop
 
     i = i - i + 1; // Should make i = 0;
 
-    i -> std_out;
-
     // Print matrix
 
     noRow = rows(mtrx);
     noCol = columns(mtrx);
 
-    loop while i < noRow {
+    loop while i <= noRow {
         int j = 1;
-        loop while j < noCol {
+        loop while j <= noCol {
             mtrx[i, j] -> std_out;
             ' ' -> std_out;
             j = j + 1;
@@ -118,3 +116,11 @@ procedure main() returns int {
     call contloop();
     return 0;
 }
+#split_token
+#split_token
+0 1 1 1 
+0 2 2 2
+0 3 3 3
+0 0 0 0
+0 0 0 0
+314u151110-204-202

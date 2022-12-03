@@ -40,6 +40,6 @@ int
     int[*] arr = [10, 7, 8, 9, 1, 5];
     "Hello" -> std_out;
     call quickSort(arr, 1, length(arr));
-    arr -> std_out; // Should print [1 5 7 8 9 10]
+    /*arr -> std_out; // Should print [1 5 7 8 9 10]*/
     return as<int>(0.0);
 }

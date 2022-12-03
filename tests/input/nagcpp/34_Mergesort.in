@@ -7,24 +7,25 @@ procedure merge(var int[*] arr, int left, int mid, int right) {
     var subArrayOne = mid - left + 1;
     var subArrayTwo = right - mid;
 
-    int[subArrayOne] tempLeftArray;
-    int[subArrayTwo] tempRightArray;
-
-    int i = 1;
-    loop while i <= subArrayOne {
-        tempLeftArray[i] = arr[left + i];
-        i = i + 1;
-    }
-
-    int j = 0;
-    loop while j <= subArrayTwo {
-        tempRightArray[j] = arr[mid + 1 + j];
-        j = j + 1;
-    }
-
     var indexOfSubArrayOne = 1;
     var indexOfSubArrayTwo = 1;
     int indexOfMergedArray = left;
+
+    int[subArrayOne] tempLeftArray = 0;
+    int[subArrayTwo] tempRightArray = 0;
+
+    int i = 1;
+    int j = 1;
+
+    loop while i <= subArrayOne {
+        tempLeftArray[i] = arr[left + i - 1];
+        i = i + 1;
+    }
+
+    loop while j <= subArrayTwo {
+        tempRightArray[j] = arr[mid + 1 + j - 1];
+        j = j + 1;
+    }
 
     loop while indexOfSubArrayOne <= subArrayOne {
         if (indexOfSubArrayTwo > subArrayTwo) break;
@@ -52,9 +53,12 @@ procedure merge(var int[*] arr, int left, int mid, int right) {
 }
 
 procedure mergeSort(var int[*] arr, int begin, int end) {
+    var mid = begin + (end - begin) / 2;
+
+    //mid -> std_out;
+    
     if (begin >= end) return;
 
-    var mid = begin + (end - begin) / 2;
     call mergeSort(arr, begin, mid);
     call mergeSort(arr, mid + 1, end);
     call merge(arr, begin, mid, end);
@@ -62,11 +66,11 @@ procedure mergeSort(var int[*] arr, int begin, int end) {
 
 
 procedure main() returns int {
-    int[*] arr = [12, 11, 13, 5, 6, 7];
+    int[*] arr = [12, -2147483648, 11, 13, 2147483647, 5, 6, 7];
 
     call mergeSort(arr, 1, length(arr));
 
-    arr -> std_out; // Should print [5 6 7 11 12 13]
+    arr -> std_out; // Should print [-2147483648 5 6 7 11 12 13 2147483647]
 
     return 0;
 }

@@ -13,6 +13,7 @@ const float FLOAT_MAX = 3.40282347e+38;
 procedure matrixloop
 () 
 {
+    int noRow = 0; int noCol = 0;
     int[5, 4] mtrx = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
     int i = 1;
     loop while i < 5 {
@@ -30,13 +31,16 @@ procedure matrixloop
         i = i + 1;
     }
 
-    /*i = i - i + 1; // Should make i = 0;
+    i = i - i + 1; // Should make i = 0;
 
     // Print matrix
 
-    loop while i < rows(mtrx) {
+    noRow = rows(mtrx);
+    noCol = columns(mtrx);
+
+    loop while i <= noRow {
         int j = 1;
-        loop while j < columns(mtrx) {
+        loop while j <= noCol {
             mtrx[i, j] -> std_out;
             ' ' -> std_out;
             j = j + 1;
