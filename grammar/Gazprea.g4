@@ -251,7 +251,7 @@ fragment Digit: [0-9] ;
 // String and Char
 CharacterConstant: '\'' CChar '\'' ;
 fragment CChar
-    :   .
+    :   ~['\\]
     |   EscapeSequence
     ;
 //
