@@ -1314,6 +1314,9 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(19)});
         t->llvmValue = runtimeVariableObject;
+
+        freeExprAtomIfNecessary(t->children[0]);
+        freeExprAtomIfNecessary(t->children[1]);
     }
 
     void LLVMGen::visitCallSubroutineInExpression(std::shared_ptr<AST> t) {

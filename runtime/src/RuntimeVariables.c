@@ -735,7 +735,6 @@ void variableInitFromConcat(Variable *this, Variable *op1, Variable *op2) {
         singleTypeError(op2Type, "Attempt to concat with type: ");
     }
 
-    // TODO: concat between empty vector and scalar
     // [] || [] -> []
     // [] || A -> A
     // A || [] -> A
