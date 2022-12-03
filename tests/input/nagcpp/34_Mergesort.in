@@ -7,25 +7,24 @@ procedure merge(var int[*] arr, int left, int mid, int right) {
     var subArrayOne = mid - left + 1;
     var subArrayTwo = right - mid;
 
-    var indexOfSubArrayOne = 1;
-    var indexOfSubArrayTwo = 1;
-    int indexOfMergedArray = left;
-
     int[subArrayOne] tempLeftArray;
     int[subArrayTwo] tempRightArray;
 
     int i = 1;
-    int j = 1;
-
     loop while i <= subArrayOne {
         tempLeftArray[i] = arr[left + i];
         i = i + 1;
     }
 
+    int j = 0;
     loop while j <= subArrayTwo {
         tempRightArray[j] = arr[mid + 1 + j];
         j = j + 1;
     }
+
+    var indexOfSubArrayOne = 1;
+    var indexOfSubArrayTwo = 1;
+    int indexOfMergedArray = left;
 
     loop while indexOfSubArrayOne <= subArrayOne {
         if (indexOfSubArrayTwo > subArrayTwo) break;
@@ -53,10 +52,9 @@ procedure merge(var int[*] arr, int left, int mid, int right) {
 }
 
 procedure mergeSort(var int[*] arr, int begin, int end) {
-    var mid = begin + (end - begin) / 2;
-    
     if (begin >= end) return;
 
+    var mid = begin + (end - begin) / 2;
     call mergeSort(arr, begin, mid);
     call mergeSort(arr, mid + 1, end);
     call merge(arr, begin, mid, end);
