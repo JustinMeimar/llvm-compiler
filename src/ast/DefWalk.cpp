@@ -157,7 +157,6 @@ namespace gazprea {
 
     void DefWalk::visitIdentifier(std::shared_ptr<AST> t) {
         t->scope = currentScope;
-        std::cout << "set identifier scope to" << currentScope  << std::endl;
     }
 
     void DefWalk::visitTupleType(std::shared_ptr<AST> t) {
@@ -210,10 +209,10 @@ namespace gazprea {
         //create scope for domain expr and loop body
         auto blockScope = std::make_shared<LocalScope>(currentScope);
         t->children[t->children.size()-1]->scope = blockScope;
-        currentScope = blockScope; // push scope 
+        currentScope = blockScope; // push scope
         blockScope->parentIsSubroutineSymbol = false;
         //then visit domain expressions after scope defined
-        for (int i = 0; i < t->children.size()-1; i++) {
+        for (size_t i = 0; i < t->children.size()-1; i++) {
             visit(t->children[i]);
         }  
         visit(t->children[t->children.size()-1]); //visit the block statements
@@ -221,12 +220,11 @@ namespace gazprea {
         return;
     }
 
-    void DefWalk::visitGenerator(std::shared_ptr<AST> t) { 
-        
+    void DefWalk::visitGenerator(std::shared_ptr<AST> t) {  
         auto blockScope = std::make_shared<LocalScope>(currentScope);
         currentScope = blockScope; // push scope 
 
-        for (int i = 0; i < t->children[0]->children.size(); i++) { 
+        for (size_t i = 0; i < t->children[0]->children.size(); i++) { 
             visit(t->children[0]->children[i]); //visit each domain expression  
         }
         visit(t->children[1]);
@@ -236,7 +234,6 @@ namespace gazprea {
     }
 
     void DefWalk::visitDomainExpression(std::shared_ptr<AST> t) {
-        std::cout << "here" << t->getText() << std::endl;
         visitChildren(t);
         std::shared_ptr<AST> identifierAST = t->children[0];
         auto vs = std::make_shared<VariableSymbol>(identifierAST->parseTree->getText(), nullptr);

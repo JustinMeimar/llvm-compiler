@@ -113,7 +113,10 @@ class LLVMGen {
         void freeExprAtomIfNecessary(std::shared_ptr<AST> t);
 
         //Iterator loop Generator & Filter Helper Methods
-        void incrementIndex(llvm::Value* index);
+        llvm::Value* createBranchCondition(llvm::Value* currentIndex, llvm::Value* domainLength);
+        void initializeVariableSymbol(std::shared_ptr<AST> t, llvm::Value* domainVariable);
+        void incrementIndex(llvm::Value* index, unsigned int increment);
+        void initializeDomainVariable(llvm::Value* domainVariable, llvm::Value* domainArray, llvm::Value* index);
 };
 
 }

@@ -1119,28 +1119,21 @@ namespace gazprea
         }
     }
 
-    void LLVMGen::visitGenerator(std::shared_ptr<AST> t) {        
-            
+    void LLVMGen::visitGenerator(std::shared_ptr<AST> t) {         
         if (t->children[0]->children.size() ==  1) {
-            auto constOne = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)});
-        
             auto indexVariableType = llvmFunction.call("typeMalloc", {});
-            llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
-
             auto indexInitialization = llvmFunction.call("variableMalloc", {});
             auto indexVariable = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
             llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(0)});
             llvmFunction.call("variableInitFromDeclaration", {indexVariable, indexVariableType, indexInitialization}); 
             llvmFunction.call("variableDestructThenFree", {indexInitialization});
-
-           // create basic blocks            
+            // create basic blocks            
             llvm::Function* parentFunc = ir.GetInsertBlock()->getParent();
             llvm::BasicBlock* preHeader = llvm::BasicBlock::Create(globalCtx, "generatorPreHeader", parentFunc);
             llvm::BasicBlock* header = llvm::BasicBlock::Create(globalCtx, "generatorHeader", parentFunc);
             llvm::BasicBlock* body = llvm::BasicBlock::Create(globalCtx, "generatorBody", parentFunc);
             llvm::BasicBlock* merge = llvm::BasicBlock::Create(globalCtx, "generatorMerge", parentFunc);
-
             // enter the preheader
             ir.CreateBr(preHeader);
             ir.SetInsertPoint(preHeader);
@@ -1152,60 +1145,39 @@ namespace gazprea
             if (domainArray->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { //free is not id
                 freeExpressionIfNecessary(domainArray); 
             } 
-
             //init length 
             llvm::Value *length = llvmFunction.call("variableGetLength", {runtimeDomainArray});
             llvm::Value *truncLength = ir.CreateIntCast(length, ir.getInt32Ty(), true);
             auto lengthVariable = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromIntegerScalar", {lengthVariable, truncLength});
-
             // create the result vector
             auto generatorArray = llvmFunction.call("variableArrayMalloc", {length}); //result vector i
-
-            // vector generator
+            // move onto header 
             ir.CreateBr(header);
             ir.SetInsertPoint(header);
-
-            // compare  
-            auto comparissonVariable = llvmFunction.call("variableMalloc", {}); 
-            llvmFunction.call("variableInitFromBinaryOp", {comparissonVariable, indexVariable, lengthVariable, ir.getInt32(10)});
-            llvm::Value *boolCond = llvmFunction.call("variableGetBooleanValue", {comparissonVariable});
-            llvmFunction.call("variableDestructThenFree", {comparissonVariable});
-            llvm::Value *branchCond = ir.CreateICmpNE(boolCond, ir.getInt32(0));
+            // compare current index with length of domain vector 
+            llvm::Value *branchCond = createBranchCondition(indexVariable, lengthVariable); 
             ir.CreateCondBr(branchCond, body, merge); 
             ir.SetInsertPoint(body);
-
-            //initialize domain variable at start of body
-            auto runtimeDomainVar = llvmFunction.call("variableMalloc", {});
-            auto tempDomainVar = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {runtimeDomainVar, ir.getInt32(0)});
+            // get integer values of current index because some runtime functions require i64 type 
             llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {indexVariable});
             llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false);
-            llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {tempDomainVar, runtimeDomainArray, index_i64});
-            llvmFunction.call("variableAssignment", {runtimeDomainVar, tempDomainVar});
-            llvmFunction.call("variableDestructThenFree", {tempDomainVar});
+            // intialzie the domain var for current index
+            auto runtimeDomainVar = llvmFunction.call("variableMalloc", {});
+            initializeDomainVariable(runtimeDomainVar, runtimeDomainArray, index_i64);
             t->children[0]->children[0]->llvmValue = runtimeDomainVar;
-
             //initialize variable symbol to from variable at current index in domain array
             auto variableAST = t->children[0]->children[0];
-            auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(variableAST->symbol); 
-            variableAST->llvmValue = runtimeDomainVar;
-            variableSymbol->llvmPointerToVariableObject = runtimeDomainVar; 
-
+            initializeVariableSymbol(variableAST, runtimeDomainVar);
             //evaluate RHS expression with current domain variable value
             visit(t->children[1]);
             llvmFunction.call("variableArraySet", {generatorArray, index_i64, t->children[1]->llvmValue});
-
             //increment the index variable
-            auto newIndex = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromBinaryOp", {newIndex, indexVariable, constOne, ir.getInt32(7)});
-            llvmFunction.call("variableAssignment", {indexVariable, newIndex});
-            llvmFunction.call("variableDestructThenFree", {newIndex});
-
+            incrementIndex(indexVariable, 1);
             //give back control to merge block 
             ir.CreateBr(header);
             ir.SetInsertPoint(merge);
-
+            //current 
             auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromVectorLiteral", { runtimeVariableObject, length, generatorArray }); 
             t->llvmValue = runtimeVariableObject;
@@ -1237,18 +1209,21 @@ namespace gazprea
             llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)}); 
             llvmFunction.call("variableInitFromDomainExpression", {outerRuntimeDomainArray, outerDomainArray->llvmValue});
             llvmFunction.call("variableInitFromDomainExpression", {innerRuntimeDomainArray, innerDomainArray->llvmValue});
-            if (outerDomainArray->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { freeExpressionIfNecessary(outerDomainArray); }    
-            if (innerDomainArray->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { freeExpressionIfNecessary(innerDomainArray); }    
+            if (outerDomainArray->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { 
+                freeExpressionIfNecessary(outerDomainArray); 
+            }    
+            if (innerDomainArray->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { 
+                freeExpressionIfNecessary(innerDomainArray); 
+            }    
 
             auto indexVariableType = llvmFunction.call("typeMalloc", {});
-            llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
-
             auto outerDomainLengthVar = llvmFunction.call("variableMalloc", {}); 
             auto innerDomainLengthVar = llvmFunction.call("variableMalloc", {});
             auto outerIndex = llvmFunction.call("variableMalloc", {});
             auto innerIndex = llvmFunction.call("variableMalloc", {});
             auto indexInitialization = llvmFunction.call("variableMalloc", {});
-        
+
+            llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType}); 
             llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(0)});
             llvmFunction.call("variableInitFromDeclaration", {outerIndex, indexVariableType, indexInitialization}); 
             llvmFunction.call("variableInitFromDeclaration", {innerIndex, indexVariableType, indexInitialization}); 
@@ -1265,26 +1240,16 @@ namespace gazprea
             //result matrix 
             auto generatorMatrix = llvmFunction.call("variableArrayMalloc", {outerDomainLength}); //result vector i 
             ir.CreateBr(outerHeader);
-            ir.SetInsertPoint(outerHeader);
- 
-            auto comparissonVariable = llvmFunction.call("variableMalloc", {}); 
-            llvmFunction.call("variableInitFromBinaryOp", {comparissonVariable, outerIndex, outerDomainLengthVar, ir.getInt32(10)});
-            llvm::Value *boolCond = llvmFunction.call("variableGetBooleanValue", {comparissonVariable});
-            llvmFunction.call("variableDestructThenFree", {comparissonVariable});
-            llvm::Value *branchCond = ir.CreateICmpNE(boolCond, ir.getInt32(0));
-
+            ir.SetInsertPoint(outerHeader); 
+            llvm::Value *branchCond = createBranchCondition(outerIndex, outerDomainLengthVar);
             ir.CreateCondBr(branchCond, innerPreHeader, outerMerge); 
+            
             ir.SetInsertPoint(innerPreHeader);
             auto matrixRow = llvmFunction.call("variableArrayMalloc", {innerDomainLength});
             llvmFunction.call("variableAssignment", {innerIndex, constZero});
             ir.CreateBr(innerHeader);
-
-            ir.SetInsertPoint(innerHeader);
-            auto innerCompVar = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromBinaryOp", {innerCompVar, innerIndex, innerDomainLengthVar, ir.getInt32(10)});
-            llvm::Value *innerBoolCond = llvmFunction.call("variableGetBooleanValue", {innerCompVar});
-            llvmFunction.call("variableDestructThenFree", {innerCompVar});
-            llvm::Value *innerBranchCond = ir.CreateICmpNE(innerBoolCond, ir.getInt32(0));
+            ir.SetInsertPoint(innerHeader); 
+            llvm::Value *innerBranchCond = createBranchCondition(innerIndex, innerDomainLengthVar);
 
             //hoist index values 
             llvm::Value* outerIndex_i32 = llvmFunction.call("variableGetIntegerValue", {outerIndex});
@@ -1297,45 +1262,27 @@ namespace gazprea
 
             //load the two domain variables at respective index            
             auto runtimeOuterDomainVar = llvmFunction.call("variableMalloc", {});
-            auto tempOuterDomainVar = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {runtimeOuterDomainVar, ir.getInt32(0)});
-            //indexes were here 
-            llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {tempOuterDomainVar, outerRuntimeDomainArray, outerIndex_i64});
-            llvmFunction.call("variableAssignment", {runtimeOuterDomainVar, tempOuterDomainVar});
-            llvmFunction.call("variableDestructThenFree", {tempOuterDomainVar});
-            t->children[0]->children[0]->llvmValue = runtimeOuterDomainVar;
-
             auto runtimeInnerDomainVar = llvmFunction.call("variableMalloc", {});
-            auto tempInnerDomainVar = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {runtimeInnerDomainVar, ir.getInt32(0)});
-            //index values were here 
-            llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {tempInnerDomainVar, innerRuntimeDomainArray, innerIndex_i64});
-            llvmFunction.call("variableAssignment", {runtimeInnerDomainVar, tempInnerDomainVar});
-            llvmFunction.call("variableDestructThenFree", {tempInnerDomainVar});
+            initializeDomainVariable(runtimeOuterDomainVar, outerRuntimeDomainArray, outerIndex_i64);
+            initializeDomainVariable(runtimeInnerDomainVar, innerRuntimeDomainArray, innerIndex_i64); 
+            t->children[0]->children[0]->llvmValue = runtimeOuterDomainVar;
             t->children[0]->children[1]->llvmValue = runtimeInnerDomainVar;
 
             //initialize variable symbol to from variable at current index in domain array
-            auto outerVariableAST = t->children[0]->children[0];
-            auto outerVS = std::dynamic_pointer_cast<VariableSymbol>(outerVariableAST->symbol); 
-            outerVariableAST->llvmValue = runtimeOuterDomainVar;
-            outerVS->llvmPointerToVariableObject = runtimeOuterDomainVar; 
+            auto outerVarAST = t->children[0]->children[0];
+            auto innerVarAST = t->children[0]->children[1];
+            initializeVariableSymbol(outerVarAST, runtimeOuterDomainVar); 
+            initializeVariableSymbol(innerVarAST, runtimeInnerDomainVar);  
 
-            //initialize variable symbol to from variable at current index in domain array
-            auto innerVariableAST = t->children[0]->children[1];
-            auto innerVS = std::dynamic_pointer_cast<VariableSymbol>(innerVariableAST->symbol); 
-            innerVariableAST->llvmValue = runtimeInnerDomainVar;
-            innerVS->llvmPointerToVariableObject = runtimeInnerDomainVar; 
             visit(t->children[1]);
             auto expr = t->children[1]->llvmValue;
 
             //set row to computed value
             auto dummyInt = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromIntegerScalar", {dummyInt, ir.getInt32(1)});
-            llvmFunction.call("variableArraySet", {matrixRow, innerIndex_i64, expr});
- 
-            //increment inner index 
-            incrementIndex(innerIndex);
+            llvmFunction.call("variableArraySet", {matrixRow, innerIndex_i64, expr}); 
 
+            incrementIndex(innerIndex, 1); // increment the inner index
             ir.CreateBr(innerHeader);
             ir.SetInsertPoint(innerMerge);
             
@@ -1346,10 +1293,7 @@ namespace gazprea
 
             ir.CreateBr(outerBody);
             ir.SetInsertPoint(outerBody);
-
-            // increment outer index variable 
-            incrementIndex(outerIndex);
-
+            incrementIndex(outerIndex, 1); // increment the outer index
 
             ir.CreateBr(outerHeader);
             ir.SetInsertPoint(outerMerge);
@@ -1360,10 +1304,36 @@ namespace gazprea
         }
     }
 
-    void LLVMGen::incrementIndex(llvm::Value* index) {
+    // creates boolean value that represents the comparisson currenIndex < domainLength
+    llvm::Value* LLVMGen::createBranchCondition(llvm::Value* currentIndex, llvm::Value* domainLength) {
+        auto comparissonVariable = llvmFunction.call("variableMalloc", {}); 
+        llvmFunction.call("variableInitFromBinaryOp", {comparissonVariable, currentIndex, domainLength, ir.getInt32(10)}); //10 = < 
+        llvm::Value *boolCond = llvmFunction.call("variableGetBooleanValue", {comparissonVariable});
+        llvmFunction.call("variableDestructThenFree", {comparissonVariable});
+        return ir.CreateICmpNE(boolCond, ir.getInt32(0));
+    }
+
+    // after domain variable is initialized, tie it to the vairable symbol so it may be used in generator expression
+    void LLVMGen::initializeVariableSymbol(std::shared_ptr<AST> t, llvm::Value* domainVariable) {
+        auto vs = std::dynamic_pointer_cast<VariableSymbol>(t->symbol); 
+        t->llvmValue = domainVariable;
+        vs->llvmPointerToVariableObject = domainVariable;
+    }
+
+    // for current index i, initialize the domain variable at array[i]
+    void LLVMGen::initializeDomainVariable(llvm::Value* domainVariable, llvm::Value* domainArray, llvm::Value* index) {
+        auto tempDomainVariable = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromIntegerScalar", {domainVariable, ir.getInt32(0)});
+        llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {tempDomainVariable, domainArray, index});
+        llvmFunction.call("variableAssignment", {domainVariable, tempDomainVariable});
+        llvmFunction.call("variableDestructThenFree", {tempDomainVariable});
+    }
+
+    // increment and index variable by constant one 
+    void LLVMGen::incrementIndex(llvm::Value* index, unsigned int increment) {
         auto constOne = llvmFunction.call("variableMalloc", {});
         auto newIndex = llvmFunction.call("variableMalloc", {});
-        llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)}); 
+        llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(increment)}); 
         llvmFunction.call("variableInitFromBinaryOp", {newIndex, index, constOne, ir.getInt32(7)});
         llvmFunction.call("variableAssignment", {index, newIndex});
         llvmFunction.call("variableDestructThenFree", {newIndex});
