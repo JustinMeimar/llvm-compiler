@@ -1,0 +1,11 @@
+procedure test() {
+    integer x = 0;
+    if (x >= 5) return;
+
+    "hello" -> std_out;
+}
+
+procedure main() returns integer {
+    call test();
+    return 0;
+}

@@ -1,0 +1,63 @@
+// Testing built in functions
+
+const integer INT_MAX = 2147483647;
+const integer INT_MIN = -2147483648;
+
+procedure testUB() returns boolean {
+    integer[10] vec = (2147483647-9)..INT_MAX;
+    vec -> std_out;
+    '\n' -> std_out;
+    reverse(vec) -> std_out;
+    '\n' ->std_out;
+    return true;
+}
+
+procedure testLB() returns real {
+    // Try again with lower bound
+    integer lb = -2147483648;
+    integer ub = -2147483648+9;
+
+    lb -> std_out;
+    '\n' ->std_out;
+    ub -> std_out;
+    '\n' ->std_out;
+
+    integer[10] lowvec = lb..ub;
+    lowvec -> std_out;
+    integer[*] revlow = reverse(lowvec);
+    '\n' -> std_out;
+
+    revlow -> std_out;
+
+    '\n' ->std_out;
+    
+    return 192.5;
+}
+
+function testLength() returns real {
+    integer[*] lengths = (-5)..(10);
+    return length(lengths);
+}
+
+function testLength2() returns integer {
+    integer[*] nothing = [];
+    return length(nothing);
+}
+
+function testRowCol() returns real {
+    integer[5, *] rowcol = [[], [], [], [], []];
+    return rows(rowcol) + columns(rowcol);
+}
+
+procedure main() returns integer {
+    call testUB();
+    integer result = as<integer>(testLB());
+    result -> std_out; // Prints 192
+    '\n' ->std_out;
+    testLength() -> std_out;
+    '\n' -> std_out;
+    testLength2() -> std_out;
+    '\n' -> std_out;
+    testRowCol() -> std_out;
+    return 0;
+}
