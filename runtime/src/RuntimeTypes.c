@@ -369,6 +369,18 @@ void tupleTypeFreeData(TupleType *this, void *data) {
 void *variableArrayMalloc(int64_t size) { return malloc(size * sizeof(Variable *)); }
 void variableArraySet(Variable **arr, int64_t idx, Variable *var) { arr[idx] = var; }
 void variableArrayFree(Variable **arr) { free(arr); }
+void freeArrayContents(Variable **arr, int64_t size) {
+    for (int64_t i = 0; i< size; i++) {
+        printf("freeing variable: %p\n", arr[i]);
+        variableDestructThenFree(arr[i]);
+    }
+}
+
+// void freeMatrixContents(Variable **arr, int64_t n, int64_t m) {
+//     for (int64_t i = 0; i < n; i++) { 
+//         variableDestructThenFree(arr[i]);
+//     }
+// }
 
 void *typeArrayMalloc(int64_t size) { return malloc(size * sizeof(Type *)); }
 void typeArraySet(Type **arr, int64_t idx, Type *type) { arr[idx] = type; }

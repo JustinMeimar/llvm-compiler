@@ -221,15 +221,14 @@ namespace gazprea {
     }
 
     void DefWalk::visitGenerator(std::shared_ptr<AST> t) {  
-        auto blockScope = std::make_shared<LocalScope>(currentScope);
-        currentScope = blockScope; // push scope 
-
+        auto generatorScope = std::make_shared<LocalScope>(currentScope);
+        currentScope = generatorScope; // push scope 
+        t->scope = generatorScope;
         for (size_t i = 0; i < t->children[0]->children.size(); i++) { 
             visit(t->children[0]->children[i]); //visit each domain expression  
         }
-        visit(t->children[1]);
-        currentScope = currentScope->getEnclosingScope(); // pop scope 
-         
+        visit(t->children[t->children.size()-1]); //visit expression
+        currentScope = currentScope->getEnclosingScope(); // pop scope  
         return;
     }
 
