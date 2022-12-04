@@ -1,0 +1,49 @@
+procedure foo() {
+    loop {
+        return;
+    }
+}
+
+procedure post() {
+    loop {
+        return;
+    } while(true);
+}
+
+
+procedure foo2 () { 
+    loop return;
+}
+
+procedure bar2 () {
+    loop while(true) return;
+}
+
+procedure post2 () {
+    loop return; while(true);
+}
+
+procedure bar(integer x) {
+    integer x = 5;
+    integer y = 6;
+    integer z = 7; 
+    loop while(true) {
+        return;     
+    }
+}
+
+procedure main() returns integer {
+    call foo();
+    call bar(7);
+    call post();
+
+    call foo2();
+    call bar2();
+    call post2();
+    "abc" -> std_output;
+    loop return 0;
+    return 0;
+} 
+#split_token
+#split_token
+abc

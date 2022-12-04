@@ -839,9 +839,14 @@ namespace gazprea
         // create infinite loop
         ir.CreateBr(InfiniteBodyBB);
         ir.SetInsertPoint(InfiniteBodyBB);
+        llvmBranch.hitReturnStat = false;
         visitChildren(t);
+        if (!llvmBranch.hitReturnStat){
+            ir.CreateBr(InfiniteBodyBB);
+        }
+        llvmBranch.hitReturnStat = false;
+        //construct merge 
         parentFunc->getBasicBlockList().push_back(MergeBB);
-        ir.CreateBr(InfiniteBodyBB);
         ir.SetInsertPoint(MergeBB);
         // keep stack organized
         llvmBranch.blockStack.pop_back();
@@ -850,8 +855,6 @@ namespace gazprea
     }
 
     void LLVMGen::visitPrePredicatedLoop(std::shared_ptr<AST> t) {
-        auto runtimeVarConstZero = llvmFunction.call("variableMalloc", {});
-        llvmFunction.call("variableInitFromIntegerScalar", {runtimeVarConstZero, ir.getInt32(0)}); //Type must match for ICmpNE
         llvmBranch.createPrePredConditionalBB("PrePredLoop");
         visit(t->children[0]);      // Conditional Expr
         auto exprValue = llvmFunction.call("variableGetBooleanValue", {t->children[0]->llvmValue});
@@ -859,17 +862,15 @@ namespace gazprea
         
         llvm::Value* condition = ir.CreateICmpNE(exprValue, ir.getInt32(0)); 
         llvmBranch.createPrePredBodyBB(condition);
+        llvmBranch.hitReturnStat = false;
         visit(t->children[1]);      // Visit body
         llvmBranch.createPrePredMergeBB();
-
-        llvmFunction.call("variableDestructThenFree", { runtimeVarConstZero });
     }
 
     void LLVMGen::visitPostPredicatedLoop(std::shared_ptr<AST> t) {
-        auto runtimeVarConstZero = llvmFunction.call("variableMalloc", {});
-        llvmFunction.call("variableInitFromIntegerScalar", {runtimeVarConstZero, ir.getInt32(0)}); //Type must match for ICmpNE 
         llvmBranch.createPostPredBodyBB(); 
-        visit(t->children[0]);      //visit Body 
+        llvmBranch.hitReturnStat = false;
+        visit(t->children[0]);      //visit Body  
         llvmBranch.createPostPredConditionalBB(); 
         visit(t->children[1]);      //grab value from post predicate
         auto exprValue = llvmFunction.call("variableGetBooleanValue", {t->children[1]->llvmValue});
@@ -878,8 +879,6 @@ namespace gazprea
         
         llvm::Value *condition = ir.CreateICmpNE(exprValue, ir.getInt32(0));
         llvmBranch.createPostPredMergeBB(condition);
-
-        llvmFunction.call("variableDestructThenFree", { runtimeVarConstZero });
     }
  
     void LLVMGen::visitIteratorLoop(std::shared_ptr<AST> t) { 
@@ -979,12 +978,8 @@ namespace gazprea
 
             //create comparisson between index variable and length of domain vector
             auto indexVariable = domainIndexVars[i];
-            auto comparissonVariable = llvmFunction.call("variableMalloc", {});
             auto lengthVariable = domainExprSizes[i];
-            llvmFunction.call("variableInitFromBinaryOp", {comparissonVariable, indexVariable, lengthVariable, ir.getInt32(10)});
-            llvm::Value *boolCond = llvmFunction.call("variableGetBooleanValue", {comparissonVariable});
-            llvmFunction.call("variableDestructThenFree", {comparissonVariable});
-            llvm::Value *branchCond = ir.CreateICmpNE(boolCond, ir.getInt32(0));
+            llvm::Value* branchCond = createBranchCondition(indexVariable, lengthVariable);
             ir.CreateCondBr(branchCond, branchTrue, branchFalse);
         }
         // Create Body and Merge Blocks
@@ -1009,29 +1004,24 @@ namespace gazprea
                     auto runtimeDomainArray = domainExprs[j];
                     auto runtimeDomainVar = domainVars[j];
                     llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {indexVariable});
-                    llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false);
-                    auto tempDomainVar = llvmFunction.call("variableMalloc", {});
-                    llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {tempDomainVar, runtimeDomainArray, index_i64});
-                    llvmFunction.call("variableAssignment", {runtimeDomainVar, tempDomainVar});
-                    llvmFunction.call("variableDestructThenFree", {tempDomainVar});
-
-                    //initialize variable symbol to from variable at current index in domain array
+                    llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false); 
+                    
+                    //init domain variable & variable symbol 
                     auto variableAST = t->children[j]->children[0];
-                    auto variableSymbol = std::dynamic_pointer_cast<VariableSymbol>(variableAST->symbol); 
-                    variableAST->llvmValue = runtimeDomainVar;
-                    variableSymbol->llvmPointerToVariableObject = runtimeDomainVar; 
+                    initializeDomainVariable(runtimeDomainVar, runtimeDomainArray, index_i64); 
+                    initializeVariableSymbol(variableAST, runtimeDomainVar); 
                 }
+                llvmBranch.hitReturnStat = false;
                 visit(t->children[numChildren-1]);
             }
-
-            //increment the index variable
-            auto indexVariable = domainIndexVars[i];
-            auto newIndex = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromBinaryOp", {newIndex, indexVariable, constOne, ir.getInt32(7)});
-            llvmFunction.call("variableAssignment", {indexVariable, newIndex});
-            llvmFunction.call("variableDestructThenFree", {newIndex});
-
-            ir.CreateBr(header_i);
+            // close loop if no return statement
+            if (!llvmBranch.hitReturnStat){
+                //increment the index variable
+                auto indexVariable = domainIndexVars[i];
+                incrementIndex(indexVariable, 1); 
+                ir.CreateBr(header_i);
+            }
+            llvmBranch.hitReturnStat = false;
             parentFunc->getBasicBlockList().push_back(merge_i);
             ir.SetInsertPoint(merge_i);
             if (i != 0) {
@@ -1202,15 +1192,14 @@ namespace gazprea
             auto runtimeDomainVar = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromIntegerScalar", {runtimeDomainVar, ir.getInt32(0)});
             initializeDomainVariable(runtimeDomainVar, runtimeDomainArray, index_i64); 
-             
+            
             //initialize variable symbol to from variable at current index in domain array
             auto variableAST = t->children[0]->children[0]->children[0]; 
             initializeVariableSymbol(variableAST, runtimeDomainVar);  
             visit(t->children[1]); //evaluate RHS expression with current domain variable value 
-            
-            auto exprScalar = llvmFunction.call("variableGetIntegerValue", {t->children[1]->llvmValue});
+
             auto exprVar = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {exprVar, exprScalar});
+            llvmFunction.call("variableInitFromMemcpy", {exprVar, t->children[1]->llvmValue});
             llvmFunction.call("variableArraySet", {generatorArray, index_i64, exprVar}); 
             // free what we can
             llvmFunction.call("variableDestructThenFree", {runtimeDomainVar});
@@ -1327,12 +1316,10 @@ namespace gazprea
             initializeVariableSymbol(innerVarAST, runtimeInnerDomainVar);  
 
             visit(t->children[1]);
-            auto expr = t->children[1]->llvmValue;
             
             //set row to computed value
-            auto exprScalar = llvmFunction.call("variableGetIntegerValue", {t->children[1]->llvmValue});
             auto exprVar = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {exprVar, exprScalar});
+            llvmFunction.call("variableInitFromMemcpy", {exprVar, t->children[1]->llvmValue});
             llvmFunction.call("variableArraySet", {matrixRow, innerIndex_i64, exprVar});
             freeExpressionIfNecessary(t->children[1]);
 
