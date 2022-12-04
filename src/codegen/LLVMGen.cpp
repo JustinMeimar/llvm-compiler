@@ -1212,8 +1212,6 @@ namespace gazprea
             llvm::BasicBlock* outerBody = llvm::BasicBlock::Create(globalCtx, "generatorMatrixOuterBody", parentFunc);
             llvm::BasicBlock* outerMerge = llvm::BasicBlock::Create(globalCtx, "generatorMatrixOuterMerge", parentFunc);
 
-            std::vector<llvm::Value*> testVec;
-
             ir.CreateBr(preHeader);
             ir.SetInsertPoint(preHeader);           
             
@@ -1296,12 +1294,13 @@ namespace gazprea
 
             visit(t->children[1]);
             auto expr = t->children[1]->llvmValue;
-
+            
             //set row to computed value
             auto exprScalar = llvmFunction.call("variableGetIntegerValue", {t->children[1]->llvmValue});
             auto exprVar = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromIntegerScalar", {exprVar, exprScalar});
             llvmFunction.call("variableArraySet", {matrixRow, innerIndex_i64, exprVar});
+            freeExpressionIfNecessary(t->children[1]);
 
             incrementIndex(innerIndex, 1); // increment the inner index
             ir.CreateBr(innerHeader);
@@ -1311,9 +1310,9 @@ namespace gazprea
             auto matrixRowVariable = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromVectorLiteral", { matrixRowVariable, innerDomainLength, matrixRow });
             llvmFunction.call("variableArraySet", {generatorMatrix, outerIndex_i64, matrixRowVariable});
+            llvmFunction.call("freeArrayContents", {matrixRow, innerDomainLength});
             llvmFunction.call("variableArrayFree", {matrixRow});
-            testVec.push_back(matrixRowVariable);
-            
+
             ir.CreateBr(outerBody);
             ir.SetInsertPoint(outerBody);
             incrementIndex(outerIndex, 1); // increment the outer index
@@ -1326,6 +1325,7 @@ namespace gazprea
             t->llvmValue = generatorMatrixVariable;
 
             // low hanging fruits
+            llvmFunction.call("typeDestructThenFree", {indexVariableType});
             llvmFunction.call("variableDestructThenFree", {constZero});
             llvmFunction.call("variableDestructThenFree", {outerIndex});
             llvmFunction.call("variableDestructThenFree", {innerIndex});
@@ -1333,9 +1333,6 @@ namespace gazprea
             llvmFunction.call("variableDestructThenFree", {innerDomainLengthVar});
             llvmFunction.call("variableDestructThenFree", {outerRuntimeDomainArray});
             llvmFunction.call("variableDestructThenFree", {innerRuntimeDomainArray});
-            // for (int i = 0; i < testVec.size(); i++){
-            //     llvmFunction.call("freeArrayContents", {testVec[i], innerDomainLength});
-            // }
             llvmFunction.call("freeArrayContents", {generatorMatrix, outerDomainLength});
             llvmFunction.call("variableArrayFree", {generatorMatrix});
             llvmFunction.call("variableDestructThenFree", {t->children[0]->children[0]->llvmValue});
