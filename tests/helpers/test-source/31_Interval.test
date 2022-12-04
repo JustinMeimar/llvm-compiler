@@ -1,0 +1,26 @@
+// Testing interval
+
+procedure main() returns integer {
+    integer[*] by2 = 1..10 by 2;
+    integer i = 1;
+    tuple(integer, integer, real) tple;
+    tple.3 = 10.523;
+    integer[3] test = (0-10)..(as<integer>(tple.3)) by 10;
+
+    loop {
+        by2[i] -> std_out; // Should print 13579
+        i = i + 1;
+    } while i <= 5;
+    '\n'->std_out;
+    by2 -> std_out; '\n'->std_out; // Should print [1 3 5 7 9]
+
+    test -> std_out; '\n'->std_out;
+    // Should print [-10 0 10]
+
+    return 0;
+}
+#split_token
+#split_token
+13579
+[1 3 5 7 9]
+[-10 0 10]

@@ -1,0 +1,45 @@
+// Quicksort algorithm
+// Copied from geeksforgeeks
+typedef integer int;
+
+procedure swap(var int a, var int b) {
+    const int temp = a;
+    a = b;
+    b = temp;
+}
+
+procedure partition(var int[*] arr, int low, int high) returns int {
+    int pivot = arr[high];
+    int i = (low - 1);
+
+    int j = low;
+    loop while j <= (high - 1) {
+        if (arr[j] < pivot) {
+            i = i + 1;
+            call swap (arr[i], arr[j]);
+        }
+    }
+    call swap(arr[i + 1], arr[high]);
+    return i + 1;
+}
+
+procedure quickSort(var int[*] arr, int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+
+        call quickSort(arr, low, pi - 1);
+        call quickSort(arr, pi + 1, high);
+    }
+}
+
+procedure main
+()
+returns
+int
+{
+    int[*] arr = [10, 7, 8, 9, 1, 5];
+    "Hello" -> std_out;
+    call quickSort(arr, 1, length(arr));
+    /*arr -> std_out; // Should print [1 5 7 8 9 10]*/
+    return as<int>(0.0);
+}
