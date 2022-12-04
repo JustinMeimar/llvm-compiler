@@ -1,0 +1,12 @@
+procedure one() returns integer {
+    return 1;
+}
+
+procedure main() returns integer {
+    integer b = one() + 0;
+    return 0;
+}
+
+#split_token
+#split_token
+compile_error
