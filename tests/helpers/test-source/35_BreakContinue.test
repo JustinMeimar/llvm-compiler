@@ -1,0 +1,70 @@
+
+typedef integer int;
+
+procedure test1() {
+    int x = -1;
+    loop break;
+    x -> std_out; '\n' -> std_out; // Print
+    loop {
+        x = x + 1;
+        if (x == 0) continue;
+        x -> std_out; '\n' -> std_out;
+        if (x == 1) break;
+    }
+}
+
+procedure test2() {
+    int x = 9;
+    loop {
+        loop {
+            loop {
+                loop {
+                    loop {
+                        loop {
+                            break;
+                        }
+                        break;
+                    } while x == 10;
+                    break;
+                }
+                break;
+            }
+            break;
+        }
+        break;
+    }
+}
+
+procedure test3() {
+    loop break;
+    loop break;
+    loop break;
+    loop break;
+    loop break;
+}
+
+procedure test4() {
+    int x = 0;
+    loop {
+        x = x + 1;
+        break;
+    }
+    loop {
+        x = x + 1;
+        break;
+    }
+
+}
+
+procedure main() returns int {
+    call test1();
+    call test2();
+    call test3();
+    "finished" -> std_out;
+    return 0;
+}
+#split_token
+#split_token
+-1
+1
+finished

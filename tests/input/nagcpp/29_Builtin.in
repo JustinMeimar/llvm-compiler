@@ -36,12 +36,12 @@ procedure testLB() returns real {
 
 function testLength() returns real {
     integer[*] lengths = (-5)..(10);
-    return length(lengths);
+    return as<integer>(length(lengths));
 }
 
 function testLength2() returns integer {
     integer[*] nothing = [];
-    return length(nothing);
+    return as<integer>(length(nothing));
 }
 
 function testRowCol() returns real {

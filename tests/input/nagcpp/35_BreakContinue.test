@@ -1,0 +1,12 @@
+
+typedef integer int;
+
+procedure foo() {
+  loop while return;
+}
+
+procedure main() returns int {
+    call foo();
+    "test" -> std_out;
+    return 0;
+}
