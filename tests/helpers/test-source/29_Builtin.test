@@ -39,9 +39,9 @@ function testLength() returns real {
     return length(lengths);
 }
 
-function testLength2() returns real {
+function testLength2() returns integer {
     integer[*] nothing = [];
-    return nothing;
+    return length(nothing);
 }
 
 function testRowCol() returns real {
