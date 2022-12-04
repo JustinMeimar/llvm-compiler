@@ -53,6 +53,15 @@ namespace gazprea {
                 case GazpreaParser::TUPLE_ACCESS_TOKEN:
                     visitTupleAccess(t);
                     break;
+                case GazpreaParser::INFINITE_LOOP_TOKEN:
+                    vistInfiniteLoop(t);
+                    break;
+                case GazpreaParser::PRE_PREDICATE_LOOP_TOKEN:
+                    visitPrePredicatedLoop(t);
+                    break;
+                case GazpreaParser::POST_PREDICATE_LOOP_TOKEN:
+                    visitPostPredicatedLoop(t);
+                    break;
                 case GazpreaParser::ITERATOR_LOOP_TOKEN:
                     visitIteratorLoop(t);
                     break;
@@ -220,6 +229,24 @@ namespace gazprea {
         }
     }
 
+    void DefWalk::vistInfiniteLoop(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto bodyScope = std::dynamic_pointer_cast<LocalScope>(t->children[0]->scope);
+        bodyScope->parentIsLoop = true;
+    }
+
+    void DefWalk::visitPrePredicatedLoop(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto bodyScope = std::dynamic_pointer_cast<LocalScope>(t->children[1]->scope);
+        bodyScope->parentIsLoop = true;
+    }
+
+    void DefWalk::visitPostPredicatedLoop(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto bodyScope = std::dynamic_pointer_cast<LocalScope>(t->children[0]->scope);
+        bodyScope->parentIsLoop = true;
+    }
+
     //Change the order of visit children so that domain expressions are defined in the block scope
     void DefWalk::visitIteratorLoop(std::shared_ptr<AST> t) {
         //create scope for domain expr and loop body
@@ -232,6 +259,8 @@ namespace gazprea {
             visit(t->children[i]);
         }  
         visit(t->children[t->children.size()-1]); //visit the block statements
+        auto bodyScope = std::dynamic_pointer_cast<LocalScope>(t->children[t->children.size()-1]->scope);
+        bodyScope->parentIsLoop = true;
         currentScope = currentScope->getEnclosingScope(); // pop scope 
         return;
     }

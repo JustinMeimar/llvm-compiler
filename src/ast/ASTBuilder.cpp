@@ -224,20 +224,38 @@ namespace gazprea {
 
     std::any ASTBuilder::visitInfiniteLoopStatement(GazpreaParser::InfiniteLoopStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::INFINITE_LOOP_TOKEN, ctx);
-        t->addChild(visit(ctx->statement()));
+        if (ctx->statement()->nonBlockStatement()) {
+            auto blockAST = std::make_shared<AST>(GazpreaParser::BLOCK_TOKEN, ctx);
+            blockAST->addChild(visit(ctx->statement()));
+            t->addChild(blockAST);
+        } else {
+            t->addChild(visit(ctx->statement()));
+        }
         return t;
     }
 
     std::any ASTBuilder::visitPrePredicatedLoopStatement(GazpreaParser::PrePredicatedLoopStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::PRE_PREDICATE_LOOP_TOKEN, ctx);
         t->addChild(visit(ctx->expression()));
-        t->addChild(visit(ctx->exprPrecededStatement()));
+        if (ctx->exprPrecededStatement()->nonBlockStatement()) {
+            auto blockAST = std::make_shared<AST>(GazpreaParser::BLOCK_TOKEN, ctx);
+            blockAST->addChild(visit(ctx->exprPrecededStatement()));
+            t->addChild(blockAST);
+        } else {
+            t->addChild(visit(ctx->exprPrecededStatement()));
+        }
         return t;
     }
 
     std::any ASTBuilder::visitPostPredicatedLoopStatement(GazpreaParser::PostPredicatedLoopStatementContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::POST_PREDICATE_LOOP_TOKEN, ctx);
-        t->addChild(visit(ctx->statement()));
+        if (ctx->statement()->nonBlockStatement()) {
+            auto blockAST = std::make_shared<AST>(GazpreaParser::BLOCK_TOKEN, ctx);
+            blockAST->addChild(visit(ctx->statement()));
+            t->addChild(blockAST);
+        } else {
+            t->addChild(visit(ctx->statement()));
+        }
         t->addChild(visit(ctx->expression()));
         return t;
     }
@@ -247,7 +265,13 @@ namespace gazprea {
         for (auto domainExpression : ctx->domainExpression()) {
             t->addChild(visit(domainExpression));
         }
-        t->addChild(visit(ctx->exprPrecededStatement()));
+        if (ctx->exprPrecededStatement()->nonBlockStatement()) {
+            auto blockAST = std::make_shared<AST>(GazpreaParser::BLOCK_TOKEN, ctx);
+            blockAST->addChild(visit(ctx->exprPrecededStatement()));
+            t->addChild(blockAST);
+        } else {
+            t->addChild(visit(ctx->exprPrecededStatement()));
+        }
         return t;
     }
 

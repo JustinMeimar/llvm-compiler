@@ -51,6 +51,12 @@ class DefWalk {
 
         void visitIteratorLoop(std::shared_ptr<AST> t);
 
+        void vistInfiniteLoop(std::shared_ptr<AST> t);
+
+        void visitPrePredicatedLoop(std::shared_ptr<AST> t);
+        
+        void visitPostPredicatedLoop(std::shared_ptr<AST> t);
+
         void visitGenerator(std::shared_ptr<AST> t);
 };
 

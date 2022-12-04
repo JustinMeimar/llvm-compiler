@@ -781,6 +781,17 @@ namespace gazprea
     }
     
     void LLVMGen::visitBreak(std::shared_ptr<AST> t) {
+        std::shared_ptr<Scope> temp = t->scope;
+        while (true) {
+            // The enclosing scope of the subroutine symbol is global variable
+            auto localScope = std::dynamic_pointer_cast<LocalScope>(temp);
+            freeAllVariablesDeclaredInBlockScope(localScope);
+            if (localScope->parentIsLoop) {
+                break;
+            }
+            temp = temp->getEnclosingScope();
+        }
+        
         int stackSize = llvmBranch.blockStack.size();
         llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
         llvm::BasicBlock* mergeBB = llvmBranch.blockStack[stackSize -1]; 
@@ -794,6 +805,17 @@ namespace gazprea
     }
 
     void LLVMGen::visitContinue(std::shared_ptr<AST> t) {
+        std::shared_ptr<Scope> temp = t->scope;
+        while (true) {
+            // The enclosing scope of the subroutine symbol is global variable
+            auto localScope = std::dynamic_pointer_cast<LocalScope>(temp);
+            freeAllVariablesDeclaredInBlockScope(localScope);
+            if (localScope->parentIsLoop) {
+                break;
+            }
+            temp = temp->getEnclosingScope();
+        }
+
         int stackSize = llvmBranch.blockStack.size();
         llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
         llvm::BasicBlock* loopHeader = llvmBranch.blockStack[stackSize -3]; 
