@@ -53,8 +53,20 @@ namespace gazprea {
                 case GazpreaParser::TUPLE_ACCESS_TOKEN:
                     visitTupleAccess(t);
                     break;
+                case GazpreaParser::INFINITE_LOOP_TOKEN:
+                    vistInfiniteLoop(t);
+                    break;
+                case GazpreaParser::PRE_PREDICATE_LOOP_TOKEN:
+                    visitPrePredicatedLoop(t);
+                    break;
+                case GazpreaParser::POST_PREDICATE_LOOP_TOKEN:
+                    visitPostPredicatedLoop(t);
+                    break;
                 case GazpreaParser::ITERATOR_LOOP_TOKEN:
                     visitIteratorLoop(t);
+                    break;
+                case GazpreaParser::GENERATOR_TOKEN:
+                    visitGenerator(t);
                     break;
                 case GazpreaParser::DOMAIN_EXPRESSION_TOKEN:
                     visitDomainExpression(t);
@@ -217,19 +229,51 @@ namespace gazprea {
         }
     }
 
+    void DefWalk::vistInfiniteLoop(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto bodyScope = std::dynamic_pointer_cast<LocalScope>(t->children[0]->scope);
+        bodyScope->parentIsLoop = true;
+    }
+
+    void DefWalk::visitPrePredicatedLoop(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto bodyScope = std::dynamic_pointer_cast<LocalScope>(t->children[1]->scope);
+        bodyScope->parentIsLoop = true;
+    }
+
+    void DefWalk::visitPostPredicatedLoop(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        auto bodyScope = std::dynamic_pointer_cast<LocalScope>(t->children[0]->scope);
+        bodyScope->parentIsLoop = true;
+    }
+
     //Change the order of visit children so that domain expressions are defined in the block scope
     void DefWalk::visitIteratorLoop(std::shared_ptr<AST> t) {
         //create scope for domain expr and loop body
         auto blockScope = std::make_shared<LocalScope>(currentScope);
         t->children[t->children.size()-1]->scope = blockScope;
-        currentScope = blockScope; // push scope 
+        currentScope = blockScope; // push scope
         blockScope->parentIsSubroutineSymbol = false;
         //then visit domain expressions after scope defined
-        for (int i = 0; i < t->children.size()-1; i++) {
+        for (size_t i = 0; i < t->children.size()-1; i++) {
             visit(t->children[i]);
         }  
         visit(t->children[t->children.size()-1]); //visit the block statements
+        auto bodyScope = std::dynamic_pointer_cast<LocalScope>(t->children[t->children.size()-1]->scope);
+        bodyScope->parentIsLoop = true;
         currentScope = currentScope->getEnclosingScope(); // pop scope 
+        return;
+    }
+
+    void DefWalk::visitGenerator(std::shared_ptr<AST> t) {  
+        auto generatorScope = std::make_shared<LocalScope>(currentScope);
+        currentScope = generatorScope; // push scope 
+        t->scope = generatorScope;
+        for (size_t i = 0; i < t->children[0]->children.size(); i++) { 
+            visit(t->children[0]->children[i]); //visit each domain expression  
+        }
+        visit(t->children[t->children.size()-1]); //visit expression
+        currentScope = currentScope->getEnclosingScope(); // pop scope  
         return;
     }
 

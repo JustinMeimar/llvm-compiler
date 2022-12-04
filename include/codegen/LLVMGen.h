@@ -19,6 +19,7 @@
 #include "MatrixType.h"
 #include "TypedefTypeSymbol.h"
 #include "LocalScope.h"
+#include "TypePromote.h"
 
 namespace gazprea {
 
@@ -37,8 +38,9 @@ class LLVMGen {
         LLVMIRFunction llvmFunction;
         LLVMIRBranch llvmBranch;
         int numExprAncestors;
+        std::shared_ptr<TypePromote> tp;
 
-        LLVMGen(std::shared_ptr<SymbolTable> symtab, std::string& outfile);
+        LLVMGen(std::shared_ptr<SymbolTable> symtab, std::shared_ptr<TypePromote> tp, std::string& outfile);
         ~LLVMGen();
 
         //AST Walker
@@ -111,6 +113,13 @@ class LLVMGen {
         void freeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol);
         void freeExpressionIfNecessary(std::shared_ptr<AST> t);
         void freeExprAtomIfNecessary(std::shared_ptr<AST> t);
+        std::string unescapeString(const std::string &s);
+
+        //Iterator loop Generator & Filter Helper Methods
+        llvm::Value* createBranchCondition(llvm::Value* currentIndex, llvm::Value* domainLength);
+        void initializeVariableSymbol(std::shared_ptr<AST> t, llvm::Value* domainVariable);
+        void incrementIndex(llvm::Value* index, unsigned int increment);
+        void initializeDomainVariable(llvm::Value* domainVariable, llvm::Value* domainArray, llvm::Value* index);
 };
 
 }
