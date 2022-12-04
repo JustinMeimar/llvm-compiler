@@ -50,6 +50,8 @@ class DefWalk {
         void visitDomainExpression(std::shared_ptr<AST> t);
 
         void visitIteratorLoop(std::shared_ptr<AST> t);
+
+        void visitGenerator(std::shared_ptr<AST> t);
 };
 
 } // namespace gazrepa

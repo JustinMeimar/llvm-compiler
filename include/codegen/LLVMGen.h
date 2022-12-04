@@ -111,6 +111,12 @@ class LLVMGen {
         void freeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol);
         void freeExpressionIfNecessary(std::shared_ptr<AST> t);
         void freeExprAtomIfNecessary(std::shared_ptr<AST> t);
+
+        //Iterator loop Generator & Filter Helper Methods
+        llvm::Value* createBranchCondition(llvm::Value* currentIndex, llvm::Value* domainLength);
+        void initializeVariableSymbol(std::shared_ptr<AST> t, llvm::Value* domainVariable);
+        void incrementIndex(llvm::Value* index, unsigned int increment);
+        void initializeDomainVariable(llvm::Value* domainVariable, llvm::Value* domainArray, llvm::Value* index);
 };
 
 }
