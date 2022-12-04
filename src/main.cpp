@@ -11,6 +11,7 @@
 #include "RefWalk.h"
 #include "TypeWalk.h"
 #include "LLVMGen.h"
+#include "TypePromote.h"
 #include "DiagnosticErrorListener.h"
 #include "BailErrorStrategy.h"
 #include "exceptions.h"
@@ -64,10 +65,12 @@ int main(int argc, char **argv) {
   gazprea::RefWalk refwalk(symtab);
   refwalk.visit(ast);
 
-  gazprea::TypeWalk typewalk(symtab);
+  auto tp = std::make_shared<gazprea::TypePromote>(symtab);
+
+  gazprea::TypeWalk typewalk(symtab, tp);
   typewalk.visit(ast);
 
-  gazprea::LLVMGen llvmgen(symtab, outfile);
+  gazprea::LLVMGen llvmgen(symtab, tp, outfile);
   llvmgen.visit(ast);
   
   return 0;

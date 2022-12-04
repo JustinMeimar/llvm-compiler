@@ -5,11 +5,13 @@ namespace gazprea
 
     LLVMGen::LLVMGen(
         std::shared_ptr<SymbolTable> symtab,
+        std::shared_ptr<TypePromote> tp,
         std::string &outfile)
         : symtab(symtab), globalCtx(), ir(globalCtx), mod("gazprea", globalCtx), outfile(outfile),
           llvmFunction(&globalCtx, &ir, &mod),
           llvmBranch(&globalCtx, &ir, &mod),
-          numExprAncestors(0)
+          numExprAncestors(0),
+          tp(tp)
     {
         runtimeTypeTy = llvm::StructType::create(
             globalCtx,
@@ -272,8 +274,15 @@ namespace gazprea
 
         // return expression; statement
         //throw incompatible return type exception
-        if(t->children[0]->evalType != nullptr && subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
-            throw BadReturnTypeError(subroutineSymbol->type->getName(),ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        if(t->children[0]->evalType != nullptr 
+            && subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
+            if (tp->promotionFromTo[t->children[0]->evalType->getTypeId()][subroutineSymbol->type->getTypeId()] == 0) {
+                throw BadReturnTypeError(
+                    subroutineSymbol->type->getName(),ctx->getText(), 
+                    ctx->getStart()->getLine(), 
+                    ctx->getStart()->getCharPositionInLine()
+                );
+            }
         }
         
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
@@ -1098,7 +1107,7 @@ namespace gazprea
 
     void LLVMGen::visitStringLiteral(std::shared_ptr<AST> t) {
         visitChildren(t);
-        std::string stringChars = t->parseTree->getText().substr(1, t->parseTree->getText().length() - 2);
+        std::string stringChars = unescapeString(t->parseTree->getText().substr(1, t->parseTree->getText().length() - 2));
         auto stringLength = t->parseTree->getText().length() - 2;
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvm::StringRef string = llvm::StringRef(stringChars.c_str());
@@ -2201,6 +2210,48 @@ namespace gazprea
         && t->getNodeType() != GazpreaParser::TUPLE_ACCESS_TOKEN) {
             llvmFunction.call("variableDestructThenFree", t->llvmValue);
         }
+    }
+
+    std::string LLVMGen::unescapeString(const std::string &s) {
+        std::string res = "";
+        std::string::const_iterator it = s.begin();
+        while (it != s.end())
+        {
+            char c = *it++;
+            if (c == '\\' && it != s.end()) {
+                switch (*it++) {
+                    case 'a':
+                        c = '\a';
+                        break;
+                    case 'b':
+                        c = '\b';
+                        break;
+                    case 'n':
+                        c = '\n';
+                        break;
+                    case 'r':
+                        c = '\r';
+                        break;
+                    case 't':
+                        c = '\t';
+                        break;
+                    case '\"':
+                        c = '\"';
+                        break;
+                    case '\'':
+                        c = '\'';
+                        break;
+                    case '\\':
+                        c = '\\';
+                        break;
+                    default: 
+                        // invalid escape sequence
+                        continue;
+                }
+            }
+            res += c;
+        }
+        return res;
     }
 
     void LLVMGen::Print() {

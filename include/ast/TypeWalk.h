@@ -23,7 +23,7 @@ class TypeWalk {
         std::shared_ptr<TypePromote> tp;
 
     public:
-        TypeWalk(std::shared_ptr<SymbolTable> symtab);
+        TypeWalk(std::shared_ptr<SymbolTable> symtab, std::shared_ptr<TypePromote> tp);
         ~TypeWalk();
 
         void visit(std::shared_ptr<AST> t); 

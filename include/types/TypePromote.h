@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include "Type.h"
 #include "BuiltInScalarTypeSymbol.h"

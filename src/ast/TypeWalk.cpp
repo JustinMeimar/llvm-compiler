@@ -2,9 +2,7 @@
 
 namespace gazprea {
 
-    TypeWalk::TypeWalk(std::shared_ptr<SymbolTable> symtab) : symtab(symtab), currentScope(symtab->globals) {
-        this->tp = std::make_shared<TypePromote>(TypePromote(this->symtab));
-    }
+    TypeWalk::TypeWalk(std::shared_ptr<SymbolTable> symtab, std::shared_ptr<TypePromote> tp) : symtab(symtab), currentScope(symtab->globals), tp(tp) {}
     TypeWalk::~TypeWalk() {}
 
     void TypeWalk::visit(std::shared_ptr<AST> t) {
