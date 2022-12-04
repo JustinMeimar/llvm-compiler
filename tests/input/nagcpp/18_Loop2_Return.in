@@ -10,6 +10,7 @@ procedure post() {
     } while(true);
 }
 
+
 procedure foo2 () { 
     loop return;
 }
@@ -39,7 +40,7 @@ procedure main() returns integer {
     call foo2();
     call bar2();
     call post2();
-
-    loop return 1;
-    return 1;
+    "abc" -> std_output;
+    loop return 0;
+    return 0;
 } 

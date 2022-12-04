@@ -1192,15 +1192,14 @@ namespace gazprea
             auto runtimeDomainVar = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromIntegerScalar", {runtimeDomainVar, ir.getInt32(0)});
             initializeDomainVariable(runtimeDomainVar, runtimeDomainArray, index_i64); 
-             
+            
             //initialize variable symbol to from variable at current index in domain array
             auto variableAST = t->children[0]->children[0]->children[0]; 
             initializeVariableSymbol(variableAST, runtimeDomainVar);  
             visit(t->children[1]); //evaluate RHS expression with current domain variable value 
-            
-            auto exprScalar = llvmFunction.call("variableGetIntegerValue", {t->children[1]->llvmValue});
+
             auto exprVar = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {exprVar, exprScalar});
+            llvmFunction.call("variableInitFromMemcpy", {exprVar, t->children[1]->llvmValue});
             llvmFunction.call("variableArraySet", {generatorArray, index_i64, exprVar}); 
             // free what we can
             llvmFunction.call("variableDestructThenFree", {runtimeDomainVar});
@@ -1319,9 +1318,8 @@ namespace gazprea
             visit(t->children[1]);
             
             //set row to computed value
-            auto exprScalar = llvmFunction.call("variableGetIntegerValue", {t->children[1]->llvmValue});
             auto exprVar = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {exprVar, exprScalar});
+            llvmFunction.call("variableInitFromMemcpy", {exprVar, t->children[1]->llvmValue});
             llvmFunction.call("variableArraySet", {matrixRow, innerIndex_i64, exprVar});
             freeExpressionIfNecessary(t->children[1]);
 
