@@ -92,3 +92,4 @@ Variable *variableGetTupleFieldFromID(Variable *tuple, int64_t id);             
 int64_t variableGetNumFieldInTuple(Variable *this);                                               /// INTERFACE
 bool variableAliasWith(Variable *this, Variable *other);                                          /// INTERFACE return ture if the two variable alias
 void variableAssignment(Variable *this, Variable *rhs);                                           /// INTERFACE
+void variableReplace(Variable *this, Variable *rhs);                                              /// INTERFACE

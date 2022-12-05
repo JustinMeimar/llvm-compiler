@@ -1,12 +1,12 @@
 procedure main() returns integer {
     
-    real[*] v = [i in 1..10 | i + 1.2];
-    real[*] v2 = [i in [i in [i in 1..10 | i + 1] | i + 111.113] | i + 1]; 
-    integer[*] v3 = [i in 1..10 | i];
-    real[*] v4 = [i in [1.3, 1.4, 1.5] | i];
+    real[*] v = [i in 1..2 | i + 1.2];  // [2.2 3.2]
+    real[*] v2 = [i in [i in [i in 1..2 | i + 1] | i + 111.113] | i + 1];  // [114.113 115.113]
+    integer[*] v3 = [i in 1..2 | i];  // [1 2]
+    real[*] v4 = [i in [1.3, 1.4, 1.5] | i];  // [1.3 1.4 1.5]
     
-    integer[*,*] m = [i in 1..10, j in 1..10 | i* j];
-    real[*,*] m2 = [r in v, t in [1,2,3] | r + t + 1.0];
+    integer[*,*] m = [i in 1..2, j in 1..3 | i * j];  // [[1 2 3] [2 4 6]]
+    real[*,*] m2 = [r in v, t in [1,2,3] | r + t + 1.0];  // [[4.2 5.2 6.2] [5.2 6.2 7.2]]
 
     v -> std_output;
     '\n' -> std_output;
@@ -18,7 +18,7 @@ procedure main() returns integer {
     '\n' -> std_output;
     m2 -> std_output; 
     '\n' -> std_output;
-    m2 + 3.14 -> std_output; 
+    m2 + 3.14 -> std_output;  // [[7.34 8.34 9.34] [8.34 9.34 10.34]]
     '\n' -> std_output;
     
     return 0;

@@ -99,6 +99,11 @@ void LLVMIRFunction::declareAllFunctions() {
         "variableAssignment"
     );
 
+    declareFunction(
+            llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo() }, false),
+            "variableReplace"
+    );
+
 
     declareFunction(
         llvm::FunctionType::get(int32Ty, { runtimeVariableTy->getPointerTo() }, false),

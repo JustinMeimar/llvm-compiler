@@ -971,7 +971,7 @@ namespace gazprea
                 ir.SetInsertPoint(header_i);
                 //reset the next header array index and domain variable to initial values 
                 auto next_loop_index = domainIndexVars[i+1];
-                llvmFunction.call("variableAssignment", {next_loop_index, constZero});  
+                llvmFunction.call("variableReplace", {next_loop_index, constZero});
                 branchTrue = next_header;
                 branchFalse = merge_i;
             }
@@ -1289,7 +1289,7 @@ namespace gazprea
             
             ir.SetInsertPoint(innerPreHeader);
             auto matrixRow = llvmFunction.call("variableArrayMalloc", {innerDomainLength});
-            llvmFunction.call("variableAssignment", {innerIndex, constZero});
+            llvmFunction.call("variableReplace", {innerIndex, constZero});
             ir.CreateBr(innerHeader);
             ir.SetInsertPoint(innerHeader); 
             llvm::Value *innerBranchCond = createBranchCondition(innerIndex, innerDomainLengthVar);
@@ -1381,7 +1381,7 @@ namespace gazprea
     void LLVMGen::initializeDomainVariable(llvm::Value* domainVariable, llvm::Value* domainArray, llvm::Value* index) {
         auto tempDomainVariable = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromArrayElementAtIndex", {tempDomainVariable, domainArray, index});
-        llvmFunction.call("variableAssignment", {domainVariable, tempDomainVariable});
+        llvmFunction.call("variableReplace", {domainVariable, tempDomainVariable});
         llvmFunction.call("variableDestructThenFree", {tempDomainVariable});
     }
 
@@ -1391,7 +1391,7 @@ namespace gazprea
         auto newIndex = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromIntegerScalar", {constIncrement, ir.getInt32(increment)}); 
         llvmFunction.call("variableInitFromBinaryOp", {newIndex, index, constIncrement, ir.getInt32(7)});
-        llvmFunction.call("variableAssignment", {index, newIndex});
+        llvmFunction.call("variableReplace", {index, newIndex});
         llvmFunction.call("variableDestructThenFree", {newIndex});
         llvmFunction.call("variableDestructThenFree", {constIncrement});
     }

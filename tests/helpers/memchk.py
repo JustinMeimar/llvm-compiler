@@ -57,6 +57,8 @@ def main():
             # to .ll
             llFile = "../gazprea_program.ll"
             args = [root_path + "bin/gazc", test_path, llFile]
+            if "-gazc" in sys.argv:
+                args.insert(0, "valgrind")
             run_program(args)
 
             # to .o
