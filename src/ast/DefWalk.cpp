@@ -278,11 +278,16 @@ namespace gazprea {
     }
 
     void DefWalk::visitDomainExpression(std::shared_ptr<AST> t) {
-        visitChildren(t);
+        visit(t->children[0]);
         std::shared_ptr<AST> identifierAST = t->children[0];
         auto vs = std::make_shared<VariableSymbol>(identifierAST->parseTree->getText(), nullptr);
         vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
         t->symbol = vs;   // track in AST
         currentScope->define(vs);
+
+        auto temp = currentScope;
+        currentScope = temp->getEnclosingScope();
+        visit(t->children[1]);
+        currentScope = temp;
     }
 } // namespace gazprea
