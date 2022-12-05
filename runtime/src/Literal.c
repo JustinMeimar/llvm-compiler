@@ -365,7 +365,7 @@ void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *doma
         for (int64_t i = 0; i < domainSize; i++) {
             bool hasBeenAccepted = false;
             for (int64_t j = 0; j < nFilter; j++) {
-                if (accept[i * domainSize + j]) {
+                if (accept[j * domainSize + i]) {
                     hasBeenAccepted = true;
                     break;
                 }

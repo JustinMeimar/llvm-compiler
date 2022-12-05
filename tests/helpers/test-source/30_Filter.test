@@ -1,0 +1,24 @@
+procedure main() returns integer {
+
+    integer i = 5;
+    var y = [i in 1..3 & i == 2, i == 3, i == 5];   
+
+    y.1 -> std_outpuk;
+    y.2 -> std_outpuk;
+    y.3 -> std_outpuk;
+    y.4 -> std_outpuk;
+
+    var f = [j in 1..10 & j < 4, j > 7]; 
+    f.1 -> std_output;
+    f.2 -> std_output;
+    f.3 -> std_output;
+
+    var k = [t in [i in 1..10 | i * 10] & t < 40];
+    k.1 -> std_output;
+    k.2 -> std_output;
+
+    return 0;
+} 
+#split_token
+#split_token
+[2][3][][3]

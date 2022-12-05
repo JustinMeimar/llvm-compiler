@@ -1431,6 +1431,7 @@ namespace gazprea
         llvmFunction.call("variableInitFromDeclaration", {numFiltersIndexVar, indexVarType, constZero});
 
         auto acceptMatrix = llvmFunction.call("acceptMatrixMalloc", {ir.getInt64(numFilters), domainArrayLength_i64}); 
+        
         for (size_t i = 0; i < numFilters; i++) {
             //create basic blocks
             llvm::BasicBlock* preHeader = llvm::BasicBlock::Create(globalCtx, "filterPreHeader", parentFunc);
@@ -1465,20 +1466,35 @@ namespace gazprea
             visit(t->children[1]->children[i]);
             
             //get boolean value from ast
-            llvm::Value *boolValue = llvmFunction.call("variableGetBooleanValue", {t->children[1]->children[i]->llvmValue});
+            auto exprVar = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromMemcpy", {exprVar, t->children[1]->children[i]->llvmValue});
+            llvm::Value *boolValue = llvmFunction.call("variableGetBooleanValue", {exprVar});
             auto filterIdx = ir.getInt64(i);
             auto domainIdx = ir.CreateIntCast(llvmFunction.call("variableGetIntegerValue", {domainIndexVar}), ir.getInt64Ty(),false);
-            
+            freeExpressionIfNecessary(t->children[1]->children[i]);
+            llvmFunction.call("variableDestructThenFree", {exprVar});
+
             //set the accept matrix
             llvmFunction.call("acceptArraySet", {acceptMatrix, domainArrayLength_i64, filterIdx, domainIdx, boolValue});
             incrementIndex(domainIndexVar, 1);
-            //
+
+            //free domain var 
+            llvmFunction.call("variableDestructThenFree", {domainVar});
             ir.CreateBr(header);    
             ir.SetInsertPoint(merge);
         }
         auto resultTuple = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromFilterArray", {resultTuple, ir.getInt64(numFilters), domainArrayVar, acceptMatrix}); 
         t->llvmValue = resultTuple;
+
+        llvmFunction.call("typeDestructThenFree", {indexVarType});
+        llvmFunction.call("variableDestructThenFree", {constZero});
+        llvmFunction.call("variableDestructThenFree", {domainIndexVar});
+        llvmFunction.call("variableDestructThenFree", {domainArrayVar});
+        llvmFunction.call("variableDestructThenFree", {domainArrayLengthVar});
+        llvmFunction.call("variableDestructThenFree", {numFiltersVar});
+        llvmFunction.call("variableDestructThenFree", {numFiltersIndexVar});
+        llvmFunction.call("acceptMatrixFree", {acceptMatrix});
     }
 
     void LLVMGen::visitExpression(std::shared_ptr<AST> t) {
