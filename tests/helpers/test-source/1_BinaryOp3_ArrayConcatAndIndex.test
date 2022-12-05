@@ -1,0 +1,25 @@
+procedure main() returns integer {
+    {
+        character[3, 3] mat = ["cat", "cat", "cat"];
+        
+        mat[[3, 2, 2], 1] || [] -> std_output; // [c c c]
+        mat[2, [3, 1]] || "" -> std_output; // tc
+        mat[[1, 2, 3], 2] || mat[2, [1, 2, 3]] -> std_output;  // [a a a c a t]
+    }
+    '\n' -> std_output;
+    {
+        integer[2, 2] intMat = [[1, 2], [3, 0]];
+        real[2, 1] realMat = [[4.0], [1.0]];
+        
+        realMat[1, [1]] || intMat[1, [1, 2]] -> std_output;  // [4 1 2]
+        intMat[[2, 1], 1] || realMat[[2, 1], 1] -> std_output;  // [3 1 1 4]
+        realMat[2, [1]] || intMat[2, 2] -> std_output;  // [2 0]
+        intMat[[1], 2] || realMat[2, 1] -> std_output;  // [2 1]
+    }
+
+    return 0;
+}
+#split_token
+#split_token
+[c c c]tc[a a a c a t]
+[4 1 2][3 1 1 4][1 0][2 1]

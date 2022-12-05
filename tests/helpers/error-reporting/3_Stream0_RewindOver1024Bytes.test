@@ -1,0 +1,9 @@
+procedure main() returns integer {
+    integer c;
+    c <- std_input;  // needs to rewind >1024 bytes here
+    return 0;
+}
+#split_token
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                1.3
+#split_token
+runtime_error

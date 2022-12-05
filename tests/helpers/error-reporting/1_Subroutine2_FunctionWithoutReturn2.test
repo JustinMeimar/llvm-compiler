@@ -1,0 +1,11 @@
+function noReturn() returns real;  // forward declaration
+
+procedure main() returns integer {
+    return 0;
+}
+
+function noReturn() returns real {}
+
+#split_token
+#split_token
+compile_error

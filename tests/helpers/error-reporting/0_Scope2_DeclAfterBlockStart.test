@@ -1,0 +1,10 @@
+procedure main() returns integer {
+    integer a = 0;
+    a = 1;
+    integer b = 2;  // ERROR
+
+    return 0;
+}
+#split_token
+#split_token
+compile_error

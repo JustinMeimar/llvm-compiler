@@ -259,7 +259,7 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
         ArrayType *CTI = this->m_type->m_compoundTypeInfo;
 
         if (rhsNDim == DIM_UNSPECIFIED) {  // empty array -> array
-            if (CTI->m_nDim == 0)
+            if (CTI->m_nDim == 0 || CTI->m_nDim == 2)
                 singleTypeError(targetType, "Attempt to convert empty array into:");
 
             // otherwise we do conversion to null/identity/basic type vector/string/matrix, of unspecified/unknown/any size
@@ -735,15 +735,26 @@ void variableInitFromConcat(Variable *this, Variable *op1, Variable *op2) {
         singleTypeError(op2Type, "Attempt to concat with type: ");
     }
 
-    // TODO: concat between empty vector and scalar
     // [] || [] -> []
     // [] || A -> A
     // A || [] -> A
     if (op1nDim == DIM_UNSPECIFIED) {
-        variableInitFromMemcpy(this, op2);
+        if (typeIsScalar(op2Type)) {
+            ArrayType *CTI = op2Type->m_compoundTypeInfo;
+            int64_t dims[1] = {1};
+            variableInitFromNDArray(this, false, CTI->m_elementTypeID, 1, dims, op2->m_data, true);
+        } else {
+            variableInitFromMemcpy(this, op2);
+        }
         return;
     } else if (op2nDim == DIM_UNSPECIFIED) {
-        variableInitFromMemcpy(this, op1);
+        if (typeIsScalar(op1Type)) {
+            ArrayType *CTI = op1Type->m_compoundTypeInfo;
+            int64_t dims[1] = {1};
+            variableInitFromNDArray(this, false, CTI->m_elementTypeID, 1, dims, op1->m_data, true);
+        } else {
+            variableInitFromMemcpy(this, op1);
+        }
         return;
     }
 
@@ -862,21 +873,54 @@ void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs) {
 }
 
 void variableInitFromDomainExpression(Variable *this, Variable *rhs) {
-    variableInitFromPCADPToIntegerVector(this, rhs, &pcadpDomainExpressionConfig);
+    variableInitFromPCADP1dVariableToVector(this, rhs, &pcadpDomainExpressionConfig);
+}
+
+void variableInitFromPCADP1dVariableToVector(Variable *this, Variable *rhs, PCADPConfig *config) {
+    Type *vec = typeMalloc();
+    int64_t dims[1] = { SIZE_UNKNOWN };
+    ElementTypeID resultEID = ELEMENT_INTEGER;
+    switch (rhs->m_type->m_typeId) {
+        case TYPEID_NDARRAY: {
+            ArrayType *rhsCTI = rhs->m_type->m_compoundTypeInfo;
+            resultEID = rhsCTI->m_elementTypeID;
+            switch (resultEID) {
+
+                case ELEMENT_INTEGER:
+                case ELEMENT_REAL:
+                case ELEMENT_BOOLEAN:
+                case ELEMENT_CHARACTER:
+                    break;
+                case ELEMENT_MIXED:
+                    variableInitFromMixedArrayPromoteToSameType(this, rhs);
+                    return;  // the responsibility of initializing this variable is transferred to mixed array promotion, so we don't need to go further
+                default:
+                    singleTypeError(rhs->m_type, "RHS is null or identity when trying to convert to vector!");
+            }
+        } break;
+        case TYPEID_INTERVAL: {
+            resultEID = ELEMENT_INTEGER;
+        } break;
+        default:
+            singleTypeError(rhs->m_type, "Invalid rhs type!");
+    }
+    typeInitFromArrayType(vec, false, resultEID, 1, dims);
+    variableInitFromPCADP(this, vec, rhs, config);
+    typeDestructThenFree(vec);
 }
 
 void variableInitFromPCADPToIntegerVector(Variable *this, Variable *rhs, PCADPConfig *config) {
     Type *intVec = typeMalloc();
     int64_t dims[1] = { SIZE_UNKNOWN };
     typeInitFromArrayType(intVec, false, ELEMENT_INTEGER, 1, dims);
-    variableInitFromPCADP(this, intVec, rhs, &pcadpCastConfig);
+    variableInitFromPCADP(this, intVec, rhs, config);
     typeDestructThenFree(intVec);
 }
 
 void variableInitFromPCADPToIntegerScalar(Variable *this, Variable *rhs, PCADPConfig *config) {
     Type *intTy = typeMalloc();
     typeInitFromArrayType(intTy, false, ELEMENT_INTEGER, 0, NULL);
-    variableInitFromPCADP(this, intTy, rhs, &pcadpCastConfig);
+    variableInitFromPCADP(this, intTy, rhs, config);
     typeDestructThenFree(intTy);
 }
 
@@ -1047,6 +1091,29 @@ int64_t variableGetLength(Variable *this) {
     }
 }
 
+void variableInitFromArrayElementAtIndex(Variable *this, Variable *arr, int64_t idx) {
+    int64_t len = variableGetLength(arr);
+    if (idx < 0 || idx >= len) {
+        fprintf(stderr, "Variable integer array/interval index %ld out of range [%d, %ld)!", idx, 0, len);
+        errorAndExit("Index out of range!");
+    }
+    switch(arr->m_type->m_typeId) {
+        case TYPEID_NDARRAY: {
+            if (variableGetNDim(arr) != 1)
+                errorAndExit("Unexpected array dimension!");
+            ArrayType *arrCTI = arr->m_type->m_compoundTypeInfo;
+            void *elementPtr = variableNDArrayGet(arr, idx);
+            variableInitFromNDArray(this, false, arrCTI->m_elementTypeID, 0, NULL, elementPtr, true);
+        } break;
+        case TYPEID_INTERVAL:
+            variableInitFromIntegerScalar(this, intervalTypeGetElementAtIndex(arr->m_data, idx));
+            break;
+        default: {
+            singleTypeError(arr->m_type, "Invalid type for variableInitFromArrayElementAtIndex!");
+        } break;
+    }
+}
+
 void variableInitFromIntegerArrayElementAtIndex(Variable *this, Variable *arr, int64_t idx) {
     int32_t value = variableGetIntegerElementAtIndex(arr, idx);
     variableInitFromIntegerScalar(this, value);
@@ -1056,7 +1123,7 @@ void variableInitFromIntegerArrayElementAtIndex(Variable *this, Variable *arr, i
 int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx) {
     int64_t len = variableGetLength(this);
     if (idx < 0 || idx >= len) {
-        fprintf(stderr, "Variable integer array/interval index %ld out of range [%d, %ld]!", idx, 0, len);
+        fprintf(stderr, "Variable integer array/interval index %ld out of range [%d, %ld)!", idx, 0, len);
         errorAndExit("Index out of range!");
     }
     switch(this->m_type->m_typeId) {
@@ -1102,7 +1169,7 @@ Variable *variableConvertLiteralAndRefToConcreteArray(Variable *arr) {
 
 int32_t variableGetIntegerValue(Variable *this) {
     Variable *intVar = variableMalloc();
-    variableInitFromPCADPToIntegerScalar(intVar, this, &pcadpPromotionConfig);
+    variableInitFromPCADPToIntegerScalar(intVar, this, &pcadpCastConfig);
     int32_t result = *(int32_t *)intVar->m_data;
 #ifdef DEBUG_PRINT
     fprintf(stderr, "daf#22\n");

@@ -1,0 +1,9 @@
+procedure main() returns integer {
+    integer i = 1;
+    loop i in [3], j in i..i {  // see section 13.4
+    }
+    return 0;
+}
+#split_token
+#split_token
+compile_error

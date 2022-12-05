@@ -1,0 +1,16 @@
+procedure main() returns integer {
+    if null 0 -> std_output;
+    if identity 1 -> std_output;
+    loop while null 2 -> std_output;
+    loop 3 -> std_output; while null;
+
+    loop while identity {
+        4 -> std_output;
+        break;
+    }
+
+    return 0;
+}
+#split_token
+#split_token
+134

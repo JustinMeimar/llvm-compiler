@@ -1,0 +1,15 @@
+function noReturn() returns real {
+    if (true) {
+        return 1.0;
+    } else {
+
+    }
+}
+
+procedure main() returns integer {
+    return 0;
+}
+
+#split_token
+#split_token
+compile_error

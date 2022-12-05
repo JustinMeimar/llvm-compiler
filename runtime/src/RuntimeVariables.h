@@ -56,6 +56,7 @@ void variableInitFromDeclaration(Variable *this, Type *lhsType, Variable *rhs); 
 void variableInitFromAssign(Variable *this, Type *lhsType, Variable *rhs);
 void variableInitFromPromotion(Variable *this, Type *lhsType, Variable *rhs);                     /// INTERFACE
 void variableInitFromDomainExpression(Variable *this, Variable *rhs);                             /// INTERFACE
+void variableInitFromPCADP1dVariableToVector(Variable *this, Variable *rhs, PCADPConfig *config);
 void variableInitFromPCADPToIntegerVector(Variable *this, Variable *rhs, PCADPConfig *config);
 void variableInitFromPCADPToIntegerScalar(Variable *this, Variable *rhs, PCADPConfig *config);
 void variableInitFromScalarToConcreteArray(Variable *this, Variable *scalar, int8_t nDim, int64_t *dims, bool isString);
@@ -74,6 +75,7 @@ bool variableIsIntegerInterval(Variable *this);
 bool variableIsIntegerArray(Variable *this);
 bool variableIsDomainExprCompatible(Variable *this);
 int64_t variableGetLength(Variable *this);
+void variableInitFromArrayElementAtIndex(Variable *this, Variable *arr, int64_t idx);
 void variableInitFromIntegerArrayElementAtIndex(Variable *this, Variable *arr, int64_t idx);
 int32_t variableGetIntegerElementAtIndex(Variable *this, int64_t idx);  // works for both vectors and integer intervals
 

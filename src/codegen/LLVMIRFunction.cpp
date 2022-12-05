@@ -184,6 +184,10 @@ void LLVMIRFunction::declareAllFunctions() {
         "variableArrayFree"
     );
     declareFunction(
+        llvm::FunctionType::get(voidTy, { runtimeVariableTy->getPointerTo()->getPointerTo(), int64Ty }, false),
+        "freeArrayContents"
+    );
+    declareFunction(
         llvm::FunctionType::get(runtimeTypeTy->getPointerTo()->getPointerTo(), { int64Ty }, false),
         "typeArrayMalloc"
     );
@@ -261,11 +265,20 @@ void LLVMIRFunction::declareAllFunctions() {
     declareFunction(
         llvm::FunctionType::get(int64Ty, {runtimeVariableTy->getPointerTo()}, false),
         "variableGetLength"
-    );    
+    );
+
+    declareFunction(
+            llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int64Ty}, false),
+            "variableInitFromArrayElementAtIndex"
+    );
 
     declareFunction(
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int64Ty}, false),
         "variableInitFromIntegerArrayElementAtIndex"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo()}, false),
+        "variableInitFromVariableArrayElementAtIndex"
     );
 
     declareFunction(

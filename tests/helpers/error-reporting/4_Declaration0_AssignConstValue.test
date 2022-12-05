@@ -1,0 +1,8 @@
+procedure main() returns integer {
+    const integer c = 0;
+    c = 1;
+    return 0;
+}
+#split_token
+#split_token
+compile_error
