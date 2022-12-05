@@ -358,10 +358,18 @@ void elementMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, void 
                 *result = arrayMallocFromIntegerValue(1, integerExponentiation(v1, v2)); break;
             case BINARY_MULTIPLY:
                 *result = arrayMallocFromIntegerValue(1, v1 * v2); break;
-            case BINARY_DIVIDE:
-                *result = arrayMallocFromIntegerValue(1, v1 / v2); break;
-            case BINARY_REMAINDER:
-                *result = arrayMallocFromIntegerValue(1, (int)((long)v1 % (long)v2)); break;
+            case BINARY_DIVIDE: {
+                if (v2 == 0) {
+                    errorAndExit("Attempt to divide by zero!");
+                }
+                *result = arrayMallocFromIntegerValue(1, v1 / v2);
+            } break;
+            case BINARY_REMAINDER: {
+                if (v2 == 0) {
+                    errorAndExit("Attempt to mod by zero!");
+                }
+                *result = arrayMallocFromIntegerValue(1, (int) ((long) v1 % (long) v2));
+            } break;
             case BINARY_PLUS:
                 *result = arrayMallocFromIntegerValue(1, v1 + v2); break;
             case BINARY_MINUS:

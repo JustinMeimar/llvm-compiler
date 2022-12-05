@@ -133,8 +133,8 @@ def main():
         except subprocess.CalledProcessError as e:
             estr = str(e)
             print(estr, file=sys.stderr, flush=True)
-            if (estr.find("died with") != -1):
-                error_state = 5
+            # if (estr.find("died with") != -1):
+            #     error_state = 5
         
         if error_state == expected_error_state:
             print("PASS", file=sys.stderr, flush=True)
