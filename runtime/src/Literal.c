@@ -342,7 +342,7 @@ void variableInitFromGeneratorArray(Variable *this, int64_t nVars, Variable **va
     variableDestructThenFreeImpl(literal);
 }
 
-void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *domainExpr, const bool *accept) {
+void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *domainExpr, bool *accept) {
     int64_t domainSize = variableGetLength(domainExpr);
     int32_t *data = domainExpr->m_data;
     int32_t resultBuffer[domainSize];
