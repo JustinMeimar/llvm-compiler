@@ -1,5 +1,8 @@
 typedef integer int;
 
+const int INT_MAX = 2147483647;
+const int INT_MIN = -2147483648;
+
 procedure test1() {
     // Lets try something simple
     real[*] vec = [1, 2, 3.55, 4, 5];
@@ -37,7 +40,7 @@ procedure test1() {
     loop vec2 in vec2 {
         vec[1] + 5 -> std_out;
         loop vec in vec {
-
+            vec2 % vec -> std_out; " " -> std_out;
         }
     }
 
@@ -45,36 +48,64 @@ procedure test1() {
 
 procedure test2() {
     // Try break with loop
-    loop {
-
+    loop i in [1, 2, 3, 4, 5] {
+        i -> std_out;
+        if (i == 3) {
+            break;
+        }
+        break;
     }
+    '\n' -> std_out;
+    // Should 123
 }
 
 procedure test3() {
     // Try continue with loop
+    loop i in 1..10 by 2 {
+        if (i == 5) {
+            i -> std_out;
+        }
+    }
+    '\n' -> std_out;
+    // Should print 1379
 }
 
-procedure test4() {
+procedure test4() return real {
     // Try return with loop
+    loop i in [i in [-23.2, 1.5, 12.23, 42.1]] {
+        if i == 12.23 return i;
+    }
 }
 
-procedure test5(var int[*] arr) return int {
+procedure test45() {
+    // Try return with loop
+    loop i in [i in [-23.2, 1.5, 12.23, 42.1]] {
+        if i == 1.5 return;
+    }
+}
+
+procedure test5(var int[*] arr) returns int {
     // Referencing arr iterator loop
+
+    return length(arr);
 }
 
-function test6(int[*] arr) return int {
+function test6(int[*] arr) returns int {
 
+    return 5;
 }
 
 procedure main() returns integer {
     int[*] arr1 = -2147483648..-2147483638;
     int[*] arr2 = 2147483637..2147483647;
     real[*] arr3 = [12.134, 13.5345, 231.232, 645.23];
+    real yee = 0.0;
 
     call test1();
     call test2();
     call test3();
-    call test4();
+    yee = test4(); yee -> std_out; // Should print 12.12
+    call test45();
 
     return 0;
 }
