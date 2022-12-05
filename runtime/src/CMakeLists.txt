@@ -22,6 +22,8 @@ set(
   "${CMAKE_CURRENT_SOURCE_DIR}/NDArrayVariable.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/BuiltInFunctions.c"
   "${CMAKE_CURRENT_SOURCE_DIR}/BuiltInFunctions.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RuntimeStack.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/RuntimeStack.h"
 )
 
 # Build our executable from the source files.

@@ -1,0 +1,16 @@
+procedure foo() {
+    loop i in 1..1 {
+        return;
+    }
+}
+
+procedure foo2() {
+    loop i in 1..1 return;
+}
+
+procedure main() returns integer {
+    call foo();
+    call foo2();
+    return 0;
+}
+

@@ -103,3 +103,8 @@ typedef enum enum_binary_op_code {
 
     NUM_BINARY_OPS
 } BinOpCode;                            /// INTERFACE
+
+typedef enum enum_gazprea_stack_item_type {
+    STACK_ITEM_VARIABLE,
+    STACK_ITEM_TYPE,
+} StackItemType;
