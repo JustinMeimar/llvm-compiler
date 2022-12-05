@@ -1,6 +1,0 @@
-procedure main() returns integer {
-    integer[*] a = [];
-    [] || a -> std_output;
-
-    return 0;
-}

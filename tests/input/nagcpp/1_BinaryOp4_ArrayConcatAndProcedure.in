@@ -41,7 +41,6 @@ procedure main() returns integer {
     {
         var string[5] a = "hello"[1..5];
         var string[*] b = " world"[1..6];
-        '\n' -> std_output;
         call concatAndPrint(a[1..5], b[1..6][1..6]);
     }
 

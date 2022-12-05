@@ -1011,7 +1011,7 @@ namespace gazprea
                     llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {indexVariable});
                     llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false);
                     auto tempDomainVar = llvmFunction.call("variableMalloc", {});
-                    llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {tempDomainVar, runtimeDomainArray, index_i64});
+                    llvmFunction.call("variableInitFromArrayElementAtIndex", {tempDomainVar, runtimeDomainArray, index_i64});
                     llvmFunction.call("variableAssignment", {runtimeDomainVar, tempDomainVar});
                     llvmFunction.call("variableDestructThenFree", {tempDomainVar});
 
@@ -1393,7 +1393,7 @@ namespace gazprea
     // for current index i, initialize the domain variable at array[i]
     void LLVMGen::initializeDomainVariable(llvm::Value* domainVariable, llvm::Value* domainArray, llvm::Value* index) {
         auto tempDomainVariable = llvmFunction.call("variableMalloc", {});
-        llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {tempDomainVariable, domainArray, index});
+        llvmFunction.call("variableInitFromArrayElementAtIndex", {tempDomainVariable, domainArray, index});
         llvmFunction.call("variableAssignment", {domainVariable, tempDomainVariable});
         llvmFunction.call("variableDestructThenFree", {tempDomainVariable});
     }
