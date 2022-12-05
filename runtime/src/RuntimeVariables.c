@@ -301,7 +301,11 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
                         dims[i] = rhsDims[i];
                 }
                 if (config->m_rhsSizeRestriction < arrayTypeMinimumCompatibleRestriction(rhsCTI, CTI)) {
-                    errorAndExit("Incompatible vector size in convertion!");
+                    fprintf(stderr, "TargetType:");
+                    typeDebugPrint(targetType);
+                    fprintf(stderr, "\nRHS Type:");
+                    typeDebugPrint(rhsType);
+                    errorAndExit("\nIncompatible vector size in array->array convertion!");
                 }
                 // resize
                 if (rhsNDim == 1) {
@@ -877,7 +881,6 @@ void variableInitFromDomainExpression(Variable *this, Variable *rhs) {
 }
 
 void variableInitFromPCADP1dVariableToVector(Variable *this, Variable *rhs, PCADPConfig *config) {
-    Type *vec = typeMalloc();
     int64_t dims[1] = { SIZE_UNKNOWN };
     ElementTypeID resultEID = ELEMENT_INTEGER;
     switch (rhs->m_type->m_typeId) {
@@ -904,6 +907,7 @@ void variableInitFromPCADP1dVariableToVector(Variable *this, Variable *rhs, PCAD
         default:
             singleTypeError(rhs->m_type, "Invalid rhs type!");
     }
+    Type *vec = typeMalloc();
     typeInitFromArrayType(vec, false, resultEID, 1, dims);
     variableInitFromPCADP(this, vec, rhs, config);
     typeDestructThenFree(vec);
@@ -1268,4 +1272,9 @@ void variableAssignment(Variable *this, Variable *rhs) {
     fprintf(stderr, "daf#24\n");
 #endif
     variableDestructThenFreeImpl(result);
+}
+
+void variableReplace(Variable *this, Variable *rhs) {
+    variableDestructor(this);
+    variableInitFromMemcpy(this, rhs);
 }

@@ -1,0 +1,7 @@
+procedure main() returns integer {
+    integer interval b = 1..2;
+
+    b -> std_output;
+
+    return 0;
+}

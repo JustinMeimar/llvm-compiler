@@ -17,6 +17,7 @@ To run memchk.py
 - run it with no argument: 'python3 memchk.py', make sure your terminal is inside the helper folder when running the script
 - run it with output redirection 'python3 memchk.py 2&>../memchk.out' redicts stderr to tests/memchk.out; I don't put the output in helpers folder because I don't know how to exclude them in the gitignore if they are nested inside a ignore->include->ignore directory
 - run it with one argument for the specific test case to run 'python3 memchk.py 2_Branch0_IfStat.test 2&>../memchk.ou' this will only run the given test
+- run it with argument "-gazc" will use valgrind on gazc compiler to check for mem leak in the C++ side
 
 To run testerr.py
 - run 'python3 testerr.py 2&>../testerr.out' should generate test results in the parent folder
