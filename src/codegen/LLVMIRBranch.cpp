@@ -45,7 +45,10 @@ void LLVMIRBranch::createPrePredMergeBB() {
     llvm::BasicBlock *ConditionalBB = blockStack[blockStack.size() - 3];
     llvm::BasicBlock *MergeBB = blockStack[blockStack.size() - 1];
 
-    m_builder->CreateBr(ConditionalBB);
+    if (!this->hitReturnStat){
+        m_builder->CreateBr(ConditionalBB);
+    }
+    this->hitReturnStat = false; 
     
     llvm::Function *parentFunc = m_builder->GetInsertBlock()->getParent();
     parentFunc->getBasicBlockList().push_back(MergeBB);
@@ -78,7 +81,12 @@ void LLVMIRBranch::createPostPredBodyBB() {
 
 void LLVMIRBranch::createPostPredConditionalBB() {
     llvm::BasicBlock* ConditionalBB = blockStack[blockStack.size() - 2];
-    m_builder->CreateBr(ConditionalBB);
+    
+    if (!this->hitReturnStat){
+        m_builder->CreateBr(ConditionalBB);
+    }
+    this->hitReturnStat = false; 
+ 
     m_builder->SetInsertPoint(ConditionalBB);
 }
 
