@@ -379,7 +379,7 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
         freeList = freeListAppend(freeList, pop1);
     } else if (typeIsIntegerInterval(arrType)) {
         pop1 = variableMalloc();
-        variableInitFromPCADPToIntegerVector(pop1, arr, &pcadpPromotionConfig);
+        variableInitFromPCADPToIntegerVector(pop1, arr, &pcadpCastConfig);
 #ifdef DEBUG_PRINT
         fprintf(stderr, "daf#10.2\n");
 #endif

@@ -126,7 +126,8 @@ void variablePrintToFile(FILE *fd, Variable *this) {
         return;
     } else if (typeIsIntegerInterval(this->m_type)) {
         Variable *vec = variableMalloc();
-        variableInitFromPCADPToIntegerVector(vec, this, &pcadpPromotionConfig);
+        variableInitFromPCADPToIntegerVector(vec, this, &pcadpCastConfig);
+        variablePrintToFile(fd, vec);
         variableDestructThenFreeImpl(vec);
         return;
     }
@@ -181,6 +182,8 @@ void variablePrintToFile(FILE *fd, Variable *this) {
                 }
             }
         }
+    } else {
+        singleTypeError(this->m_type, "Unrecognized variable type in std_output: ");
     }
 }
 

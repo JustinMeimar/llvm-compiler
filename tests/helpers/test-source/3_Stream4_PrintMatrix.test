@@ -1,0 +1,11 @@
+procedure main() returns integer {
+    [[1], [], [2, 3]] -> std_output;
+    '\n' -> std_output;
+    [[1]] -> std_output;
+
+    return 0;
+}
+#split_token
+#split_token
+[[1 0] [0 0] [2 3]]
+[[1]]

@@ -301,7 +301,11 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
                         dims[i] = rhsDims[i];
                 }
                 if (config->m_rhsSizeRestriction < arrayTypeMinimumCompatibleRestriction(rhsCTI, CTI)) {
-                    errorAndExit("Incompatible vector size in convertion!");
+                    fprintf(stderr, "TargetType:");
+                    typeDebugPrint(targetType);
+                    fprintf(stderr, "\nRHS Type:");
+                    typeDebugPrint(rhsType);
+                    errorAndExit("\nIncompatible vector size in array->array convertion!");
                 }
                 // resize
                 if (rhsNDim == 1) {

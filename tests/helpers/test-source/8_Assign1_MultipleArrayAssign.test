@@ -1,0 +1,12 @@
+procedure main() returns integer {
+    integer b;
+    boolean[2] c;
+    c, b = ([true, false], 1);
+
+    c -> std_output;
+
+    return 0;
+}
+#split_token
+#split_token
+[T F]

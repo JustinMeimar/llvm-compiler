@@ -1,4 +1,4 @@
-procedure set415(var str) {
+procedure set415(var string[*] str) {
     str[2..4] = "415";
 }
 

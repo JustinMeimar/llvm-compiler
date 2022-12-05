@@ -1,4 +1,4 @@
-procedure changeTup4(var a) {
+procedure changeTup4(var tuple(integer b, integer) a) {
   a.b = 3;
 }
 procedure changeTup1(var tuple(integer b, integer) a) {

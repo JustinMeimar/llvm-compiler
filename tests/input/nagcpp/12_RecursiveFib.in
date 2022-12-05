@@ -1,4 +1,4 @@
-procedure fib(var a) returns integer {
+procedure fib(var integer a) returns integer {
     integer temp;
     if(a == 0){ 
         return 0; 
