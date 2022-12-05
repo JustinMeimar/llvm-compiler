@@ -367,8 +367,8 @@ namespace gazprea {
 
     std::any ASTBuilder::visitFilter(GazpreaParser::FilterContext *ctx) {
         auto t = std::make_shared<AST>(GazpreaParser::FILTER_TOKEN, ctx);
-        t->addChild(visit(ctx->identifier()));
-        t->addChild(visit(ctx->expression()));
+        t->addChild(visit(ctx->domainExpression()));
+        // t->addChild(visit(ctx->expression()));
         t->addChild(visit(ctx->expressionList()));
         return t;
     }

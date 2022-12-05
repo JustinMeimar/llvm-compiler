@@ -1188,7 +1188,7 @@ namespace gazprea
             // get integer values of current index because some runtime functions require i64 type 
             llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {indexVariable});
             llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false);
-            
+
             auto runtimeDomainVar = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromIntegerScalar", {runtimeDomainVar, ir.getInt32(0)});
             initializeDomainVariable(runtimeDomainVar, runtimeDomainArray, index_i64); 
@@ -1397,8 +1397,117 @@ namespace gazprea
     }
 
     void LLVMGen::visitFilter(std::shared_ptr<AST> t) {
-        visitChildren(t);
-        // TODO
+
+        llvm::Function* parentFunc = ir.GetInsertBlock()->getParent();
+        llvm::BasicBlock* filterSetup = llvm::BasicBlock::Create(globalCtx, "filterSetup", parentFunc);
+        ir.CreateBr(filterSetup);
+        ir.SetInsertPoint(filterSetup);
+
+        auto constZero = llvmFunction.call("variableMalloc", {});
+        auto indexVarType = llvmFunction.call("typeMalloc", {});
+        auto domainIndexVar = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("typeInitFromIntegerScalar", {indexVarType}); 
+        llvmFunction.call("variableInitFromIntegerScalar", {constZero, ir.getInt32(0)}); 
+        llvmFunction.call("variableInitFromDeclaration", {domainIndexVar, indexVarType, constZero});
+ 
+        visit(t->children[0]); // domain expression
+        auto domainArray = t->children[0]->children[1]; //expr pass up domain var 
+        auto domainArrayVar = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromDomainExpression", {domainArrayVar, domainArray->llvmValue}); 
+        if (domainArray->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { //free is not id
+            freeExpressionIfNecessary(domainArray); 
+        }
+
+        llvm::Value *domainArrayLength_i64 = llvmFunction.call("variableGetLength", {domainArrayVar});
+        llvm::Value *domainArrayLength_i32 = ir.CreateIntCast(domainArrayLength_i64, ir.getInt32Ty(), false); 
+        size_t numFilters = t->children[1]->children.size();
+
+        auto domainArrayLengthVar = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromIntegerScalar", {domainArrayLengthVar, domainArrayLength_i32});
+
+        auto numFiltersVar = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromIntegerScalar", {numFiltersVar, ir.getInt32(numFilters)});
+
+        auto numFiltersIndexVar = llvmFunction.call("variableMalloc", {}); 
+        llvmFunction.call("variableInitFromDeclaration", {numFiltersIndexVar, indexVarType, constZero});
+
+        // BOOL MATRIX 
+        // llvm::Value* boolMatrix = ir.getInt8();
+        llvm::Value* boolMtrxSize = ir.CreateMul(ir.getInt32(numFilters), domainArrayLength_i32);
+        llvm::Value* boolMtrx = ir.CreateAlloca(ir.getInt8Ty(), boolMtrxSize, "boolMatrix");
+
+        for (size_t i = 0; i < numFilters; i++) {
+            //create basic blocks
+            llvm::BasicBlock* preHeader = llvm::BasicBlock::Create(globalCtx, "filterPreHeader", parentFunc);
+            llvm::BasicBlock* header = llvm::BasicBlock::Create(globalCtx, "fitlerHeader", parentFunc);
+            llvm::BasicBlock* body = llvm::BasicBlock::Create(globalCtx, "fitlerBody", parentFunc);
+            llvm::BasicBlock* merge = llvm::BasicBlock::Create(globalCtx, "filterMerge", parentFunc);
+
+            ir.CreateBr(preHeader);
+            ir.SetInsertPoint(preHeader);
+            llvmFunction.call("variableAssignment", {domainIndexVar, constZero});
+
+            ir.CreateBr(header);
+            ir.SetInsertPoint(header);
+            
+            llvm::Value* condition = createBranchCondition(domainIndexVar, domainArrayLengthVar);
+            ir.CreateCondBr(condition, body, merge);
+
+            ir.SetInsertPoint(body);          
+            //initialize the domain variable
+            auto domainVar = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromIntegerScalar", {domainVar, ir.getInt32(0)}); //need to do this or else crash
+            llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {domainIndexVar});
+            llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false); 
+            initializeDomainVariable(domainVar, domainArrayVar, index_i64);
+
+            auto variableAST = t->children[0]->children[0];
+            initializeVariableSymbol(variableAST, domainVar);
+            visit(t->children[1]->children[i]);
+
+            //JUST FOR PRINTOUT
+            auto exprVar = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromMemcpy", {exprVar, t->children[1]->children[i]->llvmValue});
+            llvmFunction.call("variablePrintToStdout", {exprVar});
+
+            llvm::Value *boolValue = llvmFunction.call("variableGetBooleanValue", {t->children[1]->children[i]->llvmValue});
+            llvm::Value *boolValue_i8 = ir.CreateIntCast(boolValue, ir.getInt8Ty(), false);
+            
+            //     f0           f1              f2 
+            // [ [d0, d1, d2], [d0, d1, d2], [d0, d1, d2] ]
+            llvm::Value* domainIndex_i32 = llvmFunction.call("variableGetIntegerValue", {domainIndexVar});
+            llvm::Value* matrixIndexOffset = ir.CreateAdd(
+                domainIndex_i32,
+                ir.CreateMul(domainArrayLength_i32, ir.getInt32(i))
+            );
+            llvm::Value* finalIndex = ir.CreateGEP(
+                ir.getInt8Ty(),
+                boolMtrx,
+                llvm::ArrayRef<llvm::Value*>{matrixIndexOffset} 
+            );
+            ir.CreateStore(boolValue_i8, finalIndex);
+ 
+            incrementIndex(domainIndexVar, 1);
+            ir.CreateBr(header);    
+            ir.SetInsertPoint(merge);
+        }
+
+        //check contents of the bool matrix
+        for (int i = 0; i < numFilters * 6; i++) {
+            llvm::Value* boolPtr = ir.CreateGEP(ir.getInt8Ty(), boolMtrx, ir.getInt32(i));
+            llvm::Value* boolElem = ir.CreateLoad(boolPtr);
+            llvm::Value* bool32 = ir.CreateIntCast(boolElem, ir.getInt32Ty(), false);
+            auto boolVar = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromBooleanScalar", {boolVar, bool32});
+            llvmFunction.call("variablePrintToStdout", {boolVar});
+        }
+
+        auto resultTuple = llvmFunction.call("variableMalloc", {});
+        // llvmFunction.call("variableInitFromFilterArray", {resultTuple, numFilters, domainArrayVar, boolMtrx});
+        
+        auto dummyRT = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromIntegerScalar", {dummyRT, ir.getInt32(999)});
+        t->llvmValue = dummyRT;
     }
 
     void LLVMGen::visitExpression(std::shared_ptr<AST> t) {

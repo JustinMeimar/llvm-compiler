@@ -20,6 +20,7 @@ void LLVMIRFunction::declareAllFunctions() {
     llvm::IntegerType * int32Ty = m_builder->getInt32Ty();
     llvm::IntegerType * int64Ty = m_builder->getInt64Ty();
     llvm::Type * floatTy = m_builder->getFloatTy();
+    llvm::PointerType * int8PtrTy = m_builder->getInt8PtrTy();
 
     // Expression Atom
     declareFunction(
@@ -271,9 +272,10 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int64Ty}, false),
         "variableInitFromIntegerArrayElementAtIndex"
     );
+    
     declareFunction(
-        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo()}, false),
-        "variableInitFromVariableArrayElementAtIndex"
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), int64Ty, runtimeVariableTy->getPointerTo(), int8PtrTy}, false),
+        "variableInitFromFilterArray"
     );
 
     declareFunction(
