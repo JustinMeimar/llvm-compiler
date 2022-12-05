@@ -20,7 +20,6 @@ void LLVMIRFunction::declareAllFunctions() {
     llvm::IntegerType * int32Ty = m_builder->getInt32Ty();
     llvm::IntegerType * int64Ty = m_builder->getInt64Ty();
     llvm::Type * floatTy = m_builder->getFloatTy();
-    llvm::PointerType * int8PtrTy = m_builder->getInt8PtrTy();
 
     // Expression Atom
     declareFunction(
