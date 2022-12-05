@@ -1,0 +1,11 @@
+procedure foo() {
+    loop i in 1..10 continue;
+}
+
+procedure main() returns integer {
+    call foo();
+    return 0;
+}
+
+#split_token
+#split_token
