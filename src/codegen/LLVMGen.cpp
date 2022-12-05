@@ -1188,7 +1188,7 @@ namespace gazprea
             // get integer values of current index because some runtime functions require i64 type 
             llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {indexVariable});
             llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false);
-            
+
             auto runtimeDomainVar = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromIntegerScalar", {runtimeDomainVar, ir.getInt32(0)});
             initializeDomainVariable(runtimeDomainVar, runtimeDomainArray, index_i64); 
@@ -1397,8 +1397,104 @@ namespace gazprea
     }
 
     void LLVMGen::visitFilter(std::shared_ptr<AST> t) {
-        visitChildren(t);
-        // TODO
+
+        llvm::Function* parentFunc = ir.GetInsertBlock()->getParent();
+        llvm::BasicBlock* filterSetup = llvm::BasicBlock::Create(globalCtx, "filterSetup", parentFunc);
+        ir.CreateBr(filterSetup);
+        ir.SetInsertPoint(filterSetup);
+
+        auto constZero = llvmFunction.call("variableMalloc", {});
+        auto indexVarType = llvmFunction.call("typeMalloc", {});
+        auto domainIndexVar = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("typeInitFromIntegerScalar", {indexVarType}); 
+        llvmFunction.call("variableInitFromIntegerScalar", {constZero, ir.getInt32(0)}); 
+        llvmFunction.call("variableInitFromDeclaration", {domainIndexVar, indexVarType, constZero});
+ 
+        visit(t->children[0]); // domain expression
+        auto domainArray = t->children[0]->children[1]; //expr pass up domain var 
+        auto domainArrayVar = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromDomainExpression", {domainArrayVar, domainArray->llvmValue}); 
+        if (domainArray->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { //free is not id
+            freeExpressionIfNecessary(domainArray); 
+        }
+
+        llvm::Value *domainArrayLength_i64 = llvmFunction.call("variableGetLength", {domainArrayVar});
+        llvm::Value *domainArrayLength_i32 = ir.CreateIntCast(domainArrayLength_i64, ir.getInt32Ty(), false); 
+        size_t numFilters = t->children[1]->children.size();
+
+        auto domainArrayLengthVar = llvmFunction.call("variableMalloc", {});
+        auto numFiltersVar = llvmFunction.call("variableMalloc", {});
+        auto numFiltersIndexVar = llvmFunction.call("variableMalloc", {}); 
+
+        llvmFunction.call("variableInitFromIntegerScalar", {domainArrayLengthVar, domainArrayLength_i32});
+        llvmFunction.call("variableInitFromIntegerScalar", {numFiltersVar, ir.getInt32(numFilters)});
+        llvmFunction.call("variableInitFromDeclaration", {numFiltersIndexVar, indexVarType, constZero});
+
+        auto acceptMatrix = llvmFunction.call("acceptMatrixMalloc", {ir.getInt64(numFilters), domainArrayLength_i64}); 
+        
+        for (size_t i = 0; i < numFilters; i++) {
+            //create basic blocks
+            llvm::BasicBlock* preHeader = llvm::BasicBlock::Create(globalCtx, "filterPreHeader", parentFunc);
+            llvm::BasicBlock* header = llvm::BasicBlock::Create(globalCtx, "fitlerHeader", parentFunc);
+            llvm::BasicBlock* body = llvm::BasicBlock::Create(globalCtx, "fitlerBody", parentFunc);
+            llvm::BasicBlock* merge = llvm::BasicBlock::Create(globalCtx, "filterMerge", parentFunc);
+
+            //start inserting 
+            ir.CreateBr(preHeader);
+            ir.SetInsertPoint(preHeader);
+            llvmFunction.call("variableAssignment", {domainIndexVar, constZero});
+            
+            //set in header
+            ir.CreateBr(header);
+            ir.SetInsertPoint(header);
+            
+            // create condition when domain variable index < domainSize 
+            llvm::Value* condition = createBranchCondition(domainIndexVar, domainArrayLengthVar);
+            ir.CreateCondBr(condition, body, merge);
+            ir.SetInsertPoint(body);          
+            
+            //initialize the domain variable
+            auto domainVar = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromIntegerScalar", {domainVar, ir.getInt32(0)}); //need to do this or else crash
+            llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {domainIndexVar});
+            llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false); 
+            initializeDomainVariable(domainVar, domainArrayVar, index_i64);
+            
+            //initialize variable symbol with durrent domain variable
+            auto variableAST = t->children[0]->children[0];
+            initializeVariableSymbol(variableAST, domainVar);
+            visit(t->children[1]->children[i]);
+            
+            //get boolean value from ast
+            auto exprVar = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromMemcpy", {exprVar, t->children[1]->children[i]->llvmValue});
+            llvm::Value *boolValue = llvmFunction.call("variableGetBooleanValue", {exprVar});
+            auto filterIdx = ir.getInt64(i);
+            auto domainIdx = ir.CreateIntCast(llvmFunction.call("variableGetIntegerValue", {domainIndexVar}), ir.getInt64Ty(),false);
+            freeExpressionIfNecessary(t->children[1]->children[i]);
+            llvmFunction.call("variableDestructThenFree", {exprVar});
+
+            //set the accept matrix
+            llvmFunction.call("acceptArraySet", {acceptMatrix, domainArrayLength_i64, filterIdx, domainIdx, boolValue});
+            incrementIndex(domainIndexVar, 1);
+
+            //free domain var 
+            llvmFunction.call("variableDestructThenFree", {domainVar});
+            ir.CreateBr(header);    
+            ir.SetInsertPoint(merge);
+        }
+        auto resultTuple = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromFilterArray", {resultTuple, ir.getInt64(numFilters), domainArrayVar, acceptMatrix}); 
+        t->llvmValue = resultTuple;
+
+        llvmFunction.call("typeDestructThenFree", {indexVarType});
+        llvmFunction.call("variableDestructThenFree", {constZero});
+        llvmFunction.call("variableDestructThenFree", {domainIndexVar});
+        llvmFunction.call("variableDestructThenFree", {domainArrayVar});
+        llvmFunction.call("variableDestructThenFree", {domainArrayLengthVar});
+        llvmFunction.call("variableDestructThenFree", {numFiltersVar});
+        llvmFunction.call("variableDestructThenFree", {numFiltersIndexVar});
+        llvmFunction.call("acceptMatrixFree", {acceptMatrix});
     }
 
     void LLVMGen::visitExpression(std::shared_ptr<AST> t) {

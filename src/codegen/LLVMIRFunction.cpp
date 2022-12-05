@@ -281,9 +281,23 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int64Ty}, false),
         "variableInitFromIntegerArrayElementAtIndex"
     );
+    
+    // Filter functions
     declareFunction(
-        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo()}, false),
-        "variableInitFromVariableArrayElementAtIndex"
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), int64Ty, runtimeVariableTy->getPointerTo(), int32Ty->getPointerTo()}, false),
+        "variableInitFromFilterArray"
+    );
+    declareFunction(
+        llvm::FunctionType::get(int32Ty->getPointerTo(), {int64Ty, int64Ty}, false),
+        "acceptMatrixMalloc"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {int32Ty->getPointerTo(), int64Ty, int64Ty, int64Ty, int32Ty}, false),
+        "acceptArraySet"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {int32Ty->getPointerTo()}, false),
+        "acceptMatrixFree"
     );
 
     declareFunction(

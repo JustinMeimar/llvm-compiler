@@ -68,6 +68,9 @@ namespace gazprea {
                 case GazpreaParser::GENERATOR_TOKEN:
                     visitGenerator(t);
                     break;
+                case GazpreaParser::FILTER_TOKEN:
+                    visitFilter(t);
+                    break;
                 case GazpreaParser::DOMAIN_EXPRESSION_TOKEN:
                     visitDomainExpression(t);
                     break;
@@ -274,6 +277,22 @@ namespace gazprea {
         }
         visit(t->children[t->children.size()-1]); //visit expression
         currentScope = currentScope->getEnclosingScope(); // pop scope  
+        return;
+    }
+
+    void DefWalk::visitFilter(std::shared_ptr<AST> t) {
+        auto filterScope = std::make_shared<LocalScope>(currentScope);
+        currentScope = filterScope;
+        t->scope = filterScope; 
+        visitChildren(t);  
+        //manually define the identifier in filter scope
+        // std::shared_ptr<AST> identifierAST = t->children[0];
+        // auto vs = std::make_shared<VariableSymbol>(identifierAST->parseTree->getText(), nullptr);
+        // vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
+        // t->symbol = vs;   // track in AST
+        // currentScope->define(vs); 
+        //pop scope
+        currentScope = currentScope->getEnclosingScope();
         return;
     }
 

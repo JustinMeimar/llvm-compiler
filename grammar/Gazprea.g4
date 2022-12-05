@@ -175,7 +175,7 @@ expr:
     | expr wS? op=('or' | 'xor') wS? expr                                           # BinaryOp
     | <assoc=right> expr wS? '||' wS? expr                                          # Concatenation
     | '[' wS? generatorDomainVariableList wS? '|' wS? expression wS? ']'            # Generator
-    | '[' wS? identifier wS? IN wS? expression wS? '&' wS? expressionList wS? ']'   # Filter
+    | '[' wS? domainExpression wS? '&' wS? expressionList wS? ']'                   # Filter
     | (TRUE | FALSE )                                                               # BooleanAtom
     | identifier                                                                    # IdentifierAtom
     | IntegerConstant                                                               # IntegerAtom

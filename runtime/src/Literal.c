@@ -341,7 +341,7 @@ void variableInitFromGeneratorArray(Variable *this, int64_t nVars, Variable **va
     variableDestructThenFreeImpl(literal);
 }
 
-void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *domainExpr, const bool *accept) {
+void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *domainExpr, bool *accept) {
     int64_t domainSize = variableGetLength(domainExpr);
     int32_t *data = domainExpr->m_data;
     int32_t resultBuffer[domainSize];
@@ -364,7 +364,7 @@ void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *doma
         for (int64_t i = 0; i < domainSize; i++) {
             bool hasBeenAccepted = false;
             for (int64_t j = 0; j < nFilter; j++) {
-                if (accept[i * domainSize + j]) {
+                if (accept[j * domainSize + i]) {
                     hasBeenAccepted = true;
                     break;
                 }

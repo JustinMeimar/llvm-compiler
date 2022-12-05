@@ -58,6 +58,8 @@ class DefWalk {
         void visitPostPredicatedLoop(std::shared_ptr<AST> t);
 
         void visitGenerator(std::shared_ptr<AST> t);
+
+        void visitFilter(std::shared_ptr<AST> t);
 };
 
 } // namespace gazrepa
