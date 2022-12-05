@@ -1,0 +1,80 @@
+typedef integer int;
+
+procedure test1() {
+    // Lets try something simple
+    real[*] vec = [1, 2, 3.55, 4, 5];
+    real[*] vec2 = [34.23, 12.24, 435.32, 12.3, 34.2, 43.2];
+
+    loop yeet in [-1, 34, 2, -2, -2147483648] {
+        yeet + 10 -> std_out; ":" -> std_out;
+        yeet -> std_out; '\n' -> std_out;
+    } 
+    /* Should print 
+        9:-1
+        44:34
+        12:2
+        8:-2
+        -2147483638:-2147483648
+    */
+
+    loop vec in vec {
+        vec -> std_out; " " -> std_out;
+        vec = 1.1;
+    } // Should print 1 2 3.55 4 5
+    '\n' -> std_out;
+    vec -> std_out; // Should print [1.1 1.1 1.1 1.1 1.1]
+    '\n' -> std_out;
+
+    loop vec2 in vec2, vec in vec {
+        vec2 % vec -> std_out; " " -> std_out;
+    } // Should print 
+    '\n' -> std_out;
+
+    loop vec in vec vec+2 -> std_out; // Should print 2.12.12.12.12.1
+
+    '\n' -> std_out;
+
+    loop vec2 in vec2 {
+        vec[1] + 5 -> std_out;
+        loop vec in vec {
+
+        }
+    }
+
+}
+
+procedure test2() {
+    // Try break with loop
+    loop {
+
+    }
+}
+
+procedure test3() {
+    // Try continue with loop
+}
+
+procedure test4() {
+    // Try return with loop
+}
+
+procedure test5(var int[*] arr) return int {
+    // Referencing arr iterator loop
+}
+
+function test6(int[*] arr) return int {
+
+}
+
+procedure main() returns integer {
+    int[*] arr1 = -2147483648..-2147483638;
+    int[*] arr2 = 2147483637..2147483647;
+    real[*] arr3 = [12.134, 13.5345, 231.232, 645.23];
+
+    call test1();
+    call test2();
+    call test3();
+    call test4();
+
+    return 0;
+}

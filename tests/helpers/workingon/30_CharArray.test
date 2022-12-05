@@ -3,7 +3,7 @@ typedef character char;
 
 procedure main() returns int {
     char[*] hello = ['h', 'e', 'l', 'l', 'o'];
-    string wow = hello || "world";
+    string[5+5+4+] wow = hello || "world";
 
     int test = 100;
 
@@ -15,6 +15,8 @@ procedure main() returns int {
 
     identities -> std_out;
     nu -> std_out;
+
+    wow = wow || [' ', 'y', 'e', 's'];
 
     return 0;
 }
