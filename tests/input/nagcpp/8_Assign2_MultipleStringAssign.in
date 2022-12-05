@@ -1,0 +1,19 @@
+procedure main() returns integer {
+    string d = "hello ";
+    string e = "world";
+    tuple(string[length(d)], string[length(e)]) f;
+
+    f.1[1..length(d)], f.2[1..length(e)] = (d[1..length(d)], e[1..length(e)]);
+    e, d = (null, "hello-");
+
+    f.1 || f.2 -> std_output;
+    '\n' -> std_output;
+    d -> std_output;
+    '\n' -> std_output;
+    {
+        d, e = f;
+        d || e -> std_output;
+    }
+
+    return 0;
+}

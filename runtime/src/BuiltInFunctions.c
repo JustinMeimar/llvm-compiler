@@ -55,7 +55,7 @@ Variable *BuiltInReverse(Variable *vec) {
             }
                 break;
             case TYPEID_INTERVAL: {
-                variableInitFromPCADPToIntegerVector(result, vec, &pcadpPromotionConfig);
+                variableInitFromPCADPToIntegerVector(result, vec, &pcadpCastConfig);
                 int64_t len = variableGetLength(vec);
                 for (int64_t i = 0; i < len; i++) {
                     int32_t *arr = result->m_data;

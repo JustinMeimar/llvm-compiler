@@ -19,11 +19,11 @@
 #include <fstream>
 
 class MyErrorListener : public antlr4::BaseErrorListener {
-    
+
     void syntaxError(antlr4::Recognizer *recognizer, antlr4::Token * offendingSymbol, size_t line, size_t charPositionInLine, const std::string &msg, std::exception_ptr e) override {
         std::vector<std::string> rule_stack = ((antlr4::Parser*) recognizer)->getRuleInvocationStack();
         std::string newMsg = "Synatax error in rule: " + rule_stack[0] + " " + std::to_string(line) + ":" + std::to_string(charPositionInLine);
-        throw gazprea::SyntaxError(newMsg); 
+        throw gazprea::SyntaxError(newMsg);
     }
 };
 
@@ -41,13 +41,14 @@ int main(int argc, char **argv) {
   antlr4::CommonTokenStream tokens(&lexer);
   gazprea::GazpreaParser parser(&tokens);
 
+  MyErrorListener errorListener{};
   parser.removeErrorListeners(); // Remove the default console error listener
-  parser.addErrorListener(new MyErrorListener()); // Add our error listener
-  
+  parser.addErrorListener(&errorListener); // Add our error listener
+
   // Get the root of the parse tree. Use your base rule name.
   antlr4::tree::ParseTree *tree = parser.compilationUnit();
   // std::cout << tree->toStringTree(&parser, true) << std::endl;  // pretty print parse tree
-  
+
   //Build AST
   gazprea::ASTBuilder builder;
   auto ast = std::any_cast<std::shared_ptr<gazprea::AST>>(builder.visit(tree));
@@ -72,6 +73,6 @@ int main(int argc, char **argv) {
 
   gazprea::LLVMGen llvmgen(symtab, tp, outfile);
   llvmgen.visit(ast);
-  
+
   return 0;
 }

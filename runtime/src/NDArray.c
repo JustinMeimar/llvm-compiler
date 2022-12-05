@@ -436,7 +436,9 @@ void *arrayMallocFromIdentity(ElementTypeID id, int64_t size) {
             return arrayMallocFromCharacterValue(size, 1);
         case ELEMENT_REAL:
             return arrayMallocFromRealValue(size, 1.0f);
-        default:  break;
+        case ELEMENT_MIXED:
+            errorAndExit("Attempt to malloc a mixed type array from identity!");
+        default: break;
     }
     return NULL;
 }
@@ -468,6 +470,15 @@ void *arrayMallocFromMemcpy(ElementTypeID id, int64_t size, void *value) {
         int64_t elementSize = elementGetSize(id);
         void *target = malloc(elementSize * size);
         memcpy(target, value, elementSize * size);
+        return target;
+    } else if (elementIsMixedType(id)) {
+        int64_t elementSize = elementGetSize(id);
+        char *target = malloc(elementSize * size);
+        char *src = value;
+        for (int64_t i = 0; i < size; i++) {
+            MixedTypeElement *element = (void *)(src + i * elementSize);
+            mixedTypeElementInitFromValue((void *)(target + i * elementSize), element->m_elementTypeID, element->m_element);
+        }
         return target;
     }
     return NULL;

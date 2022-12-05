@@ -1,0 +1,17 @@
+function func() returns integer;
+
+function func() returns integer {
+    return 1;
+}
+
+procedure main() returns integer {
+    return 0;
+}
+
+function func() returns integer {
+    return 1;
+}
+
+#split_token
+#split_token
+compile_error
