@@ -341,7 +341,14 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
 
     /// if arr is empty array, then only possible cases are [][[]] or [][[],[]]
     if (typeIsEmptyArray(arrType)) {
-        // TODO: check indices are empty as well (note indices can be integer vector with size 0 instead of empty vector)
+        if (!typeIsEmptyArray(rowIndexType) &&
+            !(typeIsIntegerVector(rowIndexType) && variableGetLength(rowIndex) == 0)) {
+            errorAndExit("Array index can only be integer array of size 0 or empty array!");
+        }
+        if (colIndex != NULL && !typeIsEmptyArray(colIndexType) &&
+            !(typeIsIntegerVector(colIndexType) && variableGetLength(colIndex) == 0)) {
+            errorAndExit("Array index can only be integer array of size 0 or empty array!");
+        }
         variableInitFromEmptyArray(this);
         return;
     }
@@ -400,21 +407,21 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
         // promote both indices to either scalar integer or vector integer
         if (rowNDim != 1 && rowNDim != DIM_UNSPECIFIED) {  // rowIndex is scalar
             pop2 = variableMalloc();
-            variableInitFromPCADPToIntegerScalar(pop2, rowIndex, &pcadpPromotionConfig);
+            variableInitFromPCADPToIntegerScalar(pop2, rowIndex, &pcadpCastConfig);
             rowNDim = 0;
         } else {  // is a vector
             pop2 = variableMalloc();
-            variableInitFromPCADPToIntegerVector(pop2, rowIndex, &pcadpPromotionConfig);
+            variableInitFromPCADPToIntegerVector(pop2, rowIndex, &pcadpCastConfig);
             rowNDim = 1;
         }
         if (nIndex == 2) {
             if (colNDim != 1 && colNDim != DIM_UNSPECIFIED) {
                 pop3 = variableMalloc();
-                variableInitFromPCADPToIntegerScalar(pop3, colIndex, &pcadpPromotionConfig);
+                variableInitFromPCADPToIntegerScalar(pop3, colIndex, &pcadpCastConfig);
                 colNDim = 0;
             } else {  // is a vector
                 pop3 = variableMalloc();
-                variableInitFromPCADPToIntegerVector(pop3, colIndex, &pcadpPromotionConfig);
+                variableInitFromPCADPToIntegerVector(pop3, colIndex, &pcadpCastConfig);
                 colNDim = 1;
             }
         }

@@ -1,0 +1,10 @@
+procedure varparam(var p) {}
+
+procedure main() returns integer {
+    const integer c = 0;
+    call varparam(c);
+    return 0;
+}
+#split_token
+#split_token
+compile_error

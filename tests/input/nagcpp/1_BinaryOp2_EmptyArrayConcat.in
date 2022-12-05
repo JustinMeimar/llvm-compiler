@@ -1,0 +1,16 @@
+procedure main() returns integer {
+    // empty array and empty integer array
+    {
+        integer[0] intEmptyArr = null;
+        [] || [] -> std_output;
+        ([] || 'a') || identity -> std_output;
+        (2.0 || []) || null -> std_output;
+        (intEmptyArr || []) || identity -> std_output;
+        ([] || intEmptyArr) || null -> std_output;
+        
+        [null, identity, 3.0, 2] || [] -> std_output;
+        [] || [2, 3.0, identity, null] -> std_output;
+    }
+
+    return 0;
+}

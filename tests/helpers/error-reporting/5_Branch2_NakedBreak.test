@@ -1,0 +1,9 @@
+procedure main() returns integer {
+    if true {
+        break;
+    }
+    return 0;
+}
+#split_token
+#split_token
+compile_error

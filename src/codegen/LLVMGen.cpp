@@ -1006,7 +1006,7 @@ namespace gazprea
                     llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {indexVariable});
                     llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false); 
                     
-                    //init domain variable & variable symbol 
+                    //init domain variable & variable symbol
                     auto variableAST = t->children[j]->children[0];
                     initializeDomainVariable(runtimeDomainVar, runtimeDomainArray, index_i64); 
                     initializeVariableSymbol(variableAST, runtimeDomainVar); 
@@ -1380,7 +1380,7 @@ namespace gazprea
     // for current index i, initialize the domain variable at array[i]
     void LLVMGen::initializeDomainVariable(llvm::Value* domainVariable, llvm::Value* domainArray, llvm::Value* index) {
         auto tempDomainVariable = llvmFunction.call("variableMalloc", {});
-        llvmFunction.call("variableInitFromIntegerArrayElementAtIndex", {tempDomainVariable, domainArray, index});
+        llvmFunction.call("variableInitFromArrayElementAtIndex", {tempDomainVariable, domainArray, index});
         llvmFunction.call("variableAssignment", {domainVariable, tempDomainVariable});
         llvmFunction.call("variableDestructThenFree", {tempDomainVariable});
     }
@@ -1584,6 +1584,9 @@ namespace gazprea
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(19)});
         t->llvmValue = runtimeVariableObject;
+
+        freeExprAtomIfNecessary(t->children[0]);
+        freeExprAtomIfNecessary(t->children[1]);
     }
 
     void LLVMGen::visitCallSubroutineInExpression(std::shared_ptr<AST> t) {

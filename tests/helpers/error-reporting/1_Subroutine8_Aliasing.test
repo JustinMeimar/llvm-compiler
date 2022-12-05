@@ -1,0 +1,13 @@
+procedure test(var a, var b) {
+    a = b;
+}
+
+procedure main() returns integer {
+    integer a = 1;
+    call test(a, a);
+    return 0;
+}
+
+#split_token
+#split_token
+runtime_error

@@ -1,0 +1,19 @@
+procedure main() returns integer {
+    integer[3] a = [2, 3, 1];
+    a[a] = a;  // equivalent to a[a] = [2, 3, 1];
+    
+    // expected: [2 3 1] -> [2 2 1] -> [2 3 1] -> [1 3 1]
+    // however if the index is computed as a temp value, the result would be: [1 2 3]
+    a -> std_output;
+
+    a[a] = [2, 2, 2];
+
+    // expected: [1 3 1] -> [2 3 1] -> [2 3 2] -> [2 2 2]
+    // however if the index is computed as a temp value, the result would be: [2 3 2]
+    a -> std_output;
+
+    return 0;
+}
+#split_token
+#split_token
+[1 3 1][2 2 2]

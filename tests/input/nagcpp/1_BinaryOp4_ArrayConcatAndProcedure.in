@@ -1,0 +1,48 @@
+procedure set415(var str) {
+    str[2..4] = "415";
+}
+
+procedure concatAndPrint(var string[5] str1, var string[*] str2) returns string {
+    var string temp = str1 || str2;
+    temp[1] = 'w';
+    str1 || str2 -> std_output;
+    '\n' -> std_output;
+    temp -> std_output;
+    return temp;
+}
+
+procedure main() returns integer {
+    {
+        integer[0] intEmptyArr = null;
+        string[4] str = "c174";
+        string strConcat = str || " cat";
+        
+        call set415(str);
+
+        strConcat -> std_output;
+        '\n' -> std_output;
+        str || " cat" -> std_output;
+    }
+
+    '\n' -> std_output;
+    {
+        var string[5] a = "hello";
+        var string[*] b = " world";
+        var string c = "hello";
+        var string[6] d = " world";
+        const temp = concatAndPrint(c, d);
+        '\n' -> std_output;
+        call concatAndPrint(a, b);
+        '\n' -> std_output;
+        temp -> std_output;
+    }
+    '\n' -> std_output;
+    '\n' -> std_output;
+    {
+        var string[5] a = "hello"[1..5];
+        var string[*] b = " world"[1..6];
+        call concatAndPrint(a[1..5], b[1..6][1..6]);
+    }
+
+    return 0;
+}

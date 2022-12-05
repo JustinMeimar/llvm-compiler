@@ -265,7 +265,12 @@ void LLVMIRFunction::declareAllFunctions() {
     declareFunction(
         llvm::FunctionType::get(int64Ty, {runtimeVariableTy->getPointerTo()}, false),
         "variableGetLength"
-    );    
+    );
+
+    declareFunction(
+            llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int64Ty}, false),
+            "variableInitFromArrayElementAtIndex"
+    );
 
     declareFunction(
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int64Ty}, false),

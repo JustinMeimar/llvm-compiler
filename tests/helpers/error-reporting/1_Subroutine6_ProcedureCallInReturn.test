@@ -1,0 +1,15 @@
+procedure one2() returns integer {
+    return 1;
+}
+
+procedure one() returns integer {
+    return one2();
+}
+
+procedure main() returns integer {
+    return 0;
+}
+
+#split_token
+#split_token
+compile_error
