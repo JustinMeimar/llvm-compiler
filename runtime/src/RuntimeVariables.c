@@ -655,7 +655,7 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
                     Type *targetType2 = typeMalloc();
                     typeInitFromCopy(targetType2, op2Type);
                     ArrayType *target2CTI = targetType2->m_compoundTypeInfo;
-                    target1CTI->m_elementTypeID = resultEID;
+                    target2CTI->m_elementTypeID = resultEID;
                     Variable *target2 = variableMalloc();
                     variableInitFromPromotion(target2, targetType2, op2);
                     typeDestructThenFree(targetType2);

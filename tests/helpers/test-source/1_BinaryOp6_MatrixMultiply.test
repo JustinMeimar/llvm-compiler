@@ -17,11 +17,18 @@ procedure main() returns integer {
     real[1, 1] D = identity;
 
     A ** B -> std_output;
+    '\n' -> std_output;
     A[1..2, 1..2] ** B -> std_output;
-    AT ** B -> std_output;
+    '\n' -> std_output;
+    AT ** A -> std_output;
+    '\n' -> std_output;
     C ** D -> std_output;
 
     return 0;
 }
 #split_token
 #split_token
+[[1 2] [3 4] [4 6]]
+[[1 2] [3 4]]
+[[2 1] [1 2]]
+[[1]]
