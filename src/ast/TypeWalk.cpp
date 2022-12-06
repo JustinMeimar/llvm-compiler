@@ -394,9 +394,15 @@ namespace gazprea {
     void TypeWalk::visitExpression(std::shared_ptr<AST> t) {
         visitChildren(t);
         t->evalType = t->children[0]->evalType;
-        t->promoteToType = nullptr; 
+        t->promoteToType = nullptr;
         if (t->evalType != nullptr && t->evalType->getTypeId() == Type::TUPLE) {
-            auto tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
+            std::shared_ptr<TupleType> tupleType = nullptr;
+            if (t->evalType->isTypedefType()) {
+                auto typedefType = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->evalType);
+                tupleType = std::dynamic_pointer_cast<TupleType>(typedefType->type);
+            } else {
+                tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
+            }
             t->tuplePromoteTypeList = std::vector<std::shared_ptr<Type>>(tupleType->orderedArgs.size());
         }
     } 
