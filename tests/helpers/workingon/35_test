@@ -1,11 +1,7 @@
-procedure test() {
-    integer x = 0;
-    if (x >= 5) return;
-
-    "hello" -> std_out;
-}
-
 procedure main() returns integer {
-    call test();
+    integer[*] vec = [1, 2, 3];
+
+    loop vec in vec vec+2 -> std_out; // Should print 345
+
     return 0;
 }

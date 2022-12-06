@@ -2249,10 +2249,7 @@ namespace gazprea
     void LLVMGen::visitBlock(std::shared_ptr<AST> t) {
         llvmBranch.hitReturnStat = false; 
         auto parentFunc = ir.GetInsertBlock()->getParent();
-        llvm::BasicBlock* enterBlock = llvm::BasicBlock::Create(globalCtx, "enterBlock", parentFunc);
-        ir.CreateBr(enterBlock);
-        ir.SetInsertPoint(enterBlock);
-        
+
         //visit the body
         visitChildren(t);
         

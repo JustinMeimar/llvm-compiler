@@ -1,0 +1,100 @@
+// Quick binary search algo
+
+typedef integer int;
+
+procedure mergeSort(var int[*] arr, int begin, int end);
+procedure merge(var int[*] arr, int left, int mid, int right);
+procedure BS(var int[*] arr, int size, int target) returns int;
+
+
+procedure main() returns integer {
+    int[*] vec = [5, 2, 1000, -43949, 500, 2147483647, -2147483638, 433562346];
+    call mergeSort(vec, 1, length(vec));
+
+    vec -> std_out; '\n' -> std_out;
+
+    BS(vec, length(vec), -2147483638) -> std_out; '\n' -> std_out;
+    BS(vec, length(vec), 1000) -> std_out; '\n' -> std_out;
+    BS(vec, length(vec), 2147483647) -> std_out; '\n' -> std_out;
+    BS(vec, length(vec), 433562346) -> std_out; '\n' -> std_out;
+    BS(vec, length(vec), -43949) -> std_out; '\n' -> std_out;
+
+    return 0;
+}
+
+procedure merge(var int[*] arr, int left, int mid, int right) {
+    var subArrayOne = mid - left + 1;
+    var subArrayTwo = right - mid;
+
+    var indexOfSubArrayOne = 1;
+    var indexOfSubArrayTwo = 1;
+    int indexOfMergedArray = left;
+
+    int[subArrayOne] tempLeftArray = 0;
+    int[subArrayTwo] tempRightArray = 0;
+
+    int i = 1;
+    int j = 1;
+
+    loop while i <= subArrayOne {
+        tempLeftArray[i] = arr[left + i - 1];
+        i = i + 1;
+    }
+
+    loop while j <= subArrayTwo {
+        tempRightArray[j] = arr[mid + 1 + j - 1];
+        j = j + 1;
+    }
+
+    loop while indexOfSubArrayOne <= subArrayOne {
+        if (indexOfSubArrayTwo > subArrayTwo) break;
+        if (tempLeftArray[indexOfSubArrayOne] <= tempRightArray[indexOfSubArrayTwo]) {
+            arr[indexOfMergedArray] = tempLeftArray[indexOfSubArrayOne];
+            indexOfSubArrayOne = indexOfSubArrayOne + 1;
+        } else {
+            arr[indexOfMergedArray] = tempRightArray[indexOfSubArrayTwo];
+            indexOfSubArrayTwo = indexOfSubArrayTwo + 1;
+        }
+        indexOfMergedArray = indexOfMergedArray + 1;
+    }
+
+    loop while indexOfSubArrayOne <= subArrayOne {
+        arr[indexOfMergedArray] = tempLeftArray[indexOfSubArrayOne];
+        indexOfSubArrayOne = indexOfSubArrayOne + 1;
+        indexOfMergedArray = indexOfMergedArray + 1;
+    }
+
+    loop while indexOfSubArrayTwo <= subArrayTwo {
+        arr[indexOfMergedArray] = tempRightArray[indexOfSubArrayTwo];
+        indexOfSubArrayTwo = indexOfSubArrayTwo + 1;
+        indexOfMergedArray = indexOfMergedArray + 1;
+    }
+}
+
+procedure mergeSort(var int[*] arr, int begin, int end) {
+    var mid = begin + (end - begin) / 2;
+
+    //mid -> std_out;
+    
+    if (begin >= end) return;
+
+    call mergeSort(arr, begin, mid);
+    call mergeSort(arr, mid + 1, end);
+    call merge(arr, begin, mid, end);
+}
+
+procedure BS(var int[*] arr, int size, int target) returns int {
+    int low = 1; int high = size;
+    int mid = 0;
+
+    loop while low <= high {
+        mid = (low + high) / 2;
+
+        if (target == arr[mid])
+            return mid;
+        else if (target < arr[mid])
+            high = mid - 1;
+        else 
+            low = mid + 1;
+    }
+}
