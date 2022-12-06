@@ -2,47 +2,61 @@
 
 namespace gazprea {
     void SymbolTable::initTypeSystem() {
-        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("integer"));
-        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("real"));
-        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("character"));
-        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("string"));
-        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("boolean"));
-        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("interval"));
-        globals->defineTypeSymbol(std::make_shared<BuiltInScalarTypeSymbol>("gazprea.type.identityNull"));
+        booleanType = std::make_shared<BuiltInScalarTypeSymbol>("boolean");
+        characterType = std::make_shared<BuiltInScalarTypeSymbol>("character");
+        integerType = std::make_shared<BuiltInScalarTypeSymbol>("integer");
+        realType = std::make_shared<BuiltInScalarTypeSymbol>("real");
+        stringType = std::make_shared<BuiltInScalarTypeSymbol>("string");
+        intervalType = std::make_shared<BuiltInScalarTypeSymbol>("interval");
+        identityNullType = std::make_shared<BuiltInScalarTypeSymbol>("gazprea.type.identityNull");
+
+        integerIntervalType = std::make_shared<IntervalType>(integerType);
+        booleanVectorType = std::make_shared<MatrixType>(booleanType, 1);
+        characterVectorType = std::make_shared<MatrixType>(characterType, 1);
+        integerVectorType = std::make_shared<MatrixType>(integerType, 1);
+        realVectorType = std::make_shared<MatrixType>(realType, 1);
+        booleanMatrixType = std::make_shared<MatrixType>(booleanType, 2);
+        characterMatrixType = std::make_shared<MatrixType>(characterType, 2);
+        integerMatrixType = std::make_shared<MatrixType>(integerType, 2);
+        realMatrixType = std::make_shared<MatrixType>(realType, 2);
+
+        globals->defineTypeSymbol(std::dynamic_pointer_cast<BuiltInScalarTypeSymbol>(booleanType));
+        globals->defineTypeSymbol(std::dynamic_pointer_cast<BuiltInScalarTypeSymbol>(characterType));
+        globals->defineTypeSymbol(std::dynamic_pointer_cast<BuiltInScalarTypeSymbol>(integerType));
+        globals->defineTypeSymbol(std::dynamic_pointer_cast<BuiltInScalarTypeSymbol>(realType));
+        globals->defineTypeSymbol(std::dynamic_pointer_cast<BuiltInScalarTypeSymbol>(stringType));
+        globals->defineTypeSymbol(std::dynamic_pointer_cast<BuiltInScalarTypeSymbol>(intervalType));
+        globals->defineTypeSymbol(std::dynamic_pointer_cast<BuiltInScalarTypeSymbol>(identityNullType));
     }
 
     SymbolTable::SymbolTable() : globals(std::make_shared<GlobalScope>()), numTupleIdentifierAccess(0) { 
-        initTypeSystem(); 
+        initTypeSystem();
     }
 
     std::shared_ptr<Type> SymbolTable::getType(size_t typeEnum) {
-
-        auto booleanBaseType    = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("boolean"));
-        auto integerBaseType    = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("integer"));
-        auto realBaseType       = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("real"));
-        auto characterBaseType  = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("character"));
-        auto stringBaseType     = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("string"));
-        auto intervalBaseType   = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("interval"));
-        auto identityNullBaseType = std::dynamic_pointer_cast<Type>(this->globals->resolveTypeSymbol("gazprea.type.identityNull"));
-
         switch(typeEnum) {
             case 0:  return nullptr; break;
-            case 1:  return intervalBaseType; break;
-            case 2:  return booleanBaseType; break;
-            case 3:  return characterBaseType; break;
-            case 4:  return integerBaseType; break;
-            case 5:  return realBaseType; break;
-            case 6:  return stringBaseType; break;
-            case 7:  return std::dynamic_pointer_cast<Type>(std::make_shared<IntervalType>(integerBaseType)); break;
-            case 8:  return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(booleanBaseType, 1)); break;
-            case 9:  return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(characterBaseType, 1)); break;
-            case 10: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(integerBaseType, 1)); break;
-            case 11: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(realBaseType, 1)); break;
-            case 12: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(booleanBaseType, 2)); break;
-            case 13: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(characterBaseType, 2)); break;
-            case 14: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(integerBaseType, 2)); break;
-            case 15: return std::dynamic_pointer_cast<Type>(std::make_shared<MatrixType>(realBaseType, 2)); break;
-            case 16: return identityNullBaseType; break;
+            case 1:  return intervalType; break;
+            
+            case 2:  return booleanType; break;
+            case 3:  return characterType; break;
+            case 4:  return integerType; break;
+            case 5:  return realType; break;
+            
+            case 6:  return stringType; break;
+            case 7:  return integerIntervalType; break;
+            
+            case 8:  return booleanVectorType; break;
+            case 9:  return characterVectorType; break;
+            case 10: return integerVectorType; break;
+            case 11: return realVectorType; break;
+            
+            case 12: return booleanVectorType; break;
+            case 13: return characterVectorType; break;
+            case 14: return integerVectorType; break;
+            case 15: return realVectorType; break;
+            
+            case 16: return identityNullType; break;
         }
         return nullptr;
     }
