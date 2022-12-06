@@ -1,0 +1,12 @@
+a || b
+abababababababababab[a b a b]abab[a b a b]abababababababababab[a b a b]abab[a b a b]
+a[1] || b
+aab[a a b]aab[a a b]
+a || b[1]
+abaaba[a b a][a b a]
+a[1..1] || b
+aabaabaab[a a b]
+a || b[1..1]
+abaabaaba[a b a]
+a[1..1] || b[1..1]
+aaaaaa[a a]

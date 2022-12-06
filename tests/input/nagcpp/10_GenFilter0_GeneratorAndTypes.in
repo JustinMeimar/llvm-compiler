@@ -1,0 +1,27 @@
+procedure main() returns integer {
+    [i in [1] | i] -> std_output;
+    [i in [1.1] | i] -> std_output;
+    [i in [false] | i] -> std_output;
+    [i in "u" | i] -> std_output;
+
+    '\n' -> std_output;
+
+    [i in [1, 2] | i + 0.1] -> std_output;
+    [i in [1, 2] | as<boolean>(i)] -> std_output;
+    [i in [1, 2] | as<character>(i + as<integer>('0'))] -> std_output;
+    [i in [1.1, 2.1] | as<integer>(i)] -> std_output;
+    [i in [1.1, 2.1] | i == 1.1] -> std_output;
+    [i in [1.1, 2.1] | "ab"[as<integer>(i)]] -> std_output;
+    [i in [false, true] | as<integer>(i)] -> std_output;
+    [i in [false, true] | as<real>(i)] -> std_output;
+    [i in [false, true] | "ab"[as<integer>(i) + 1]] -> std_output;
+
+    '\n' -> std_output;
+
+    [i in [1], j in [1.1] | i] -> std_output;
+    [i in [1.1], j in [false] | i] -> std_output;
+    [i in [false], j in "u" | i] -> std_output;
+    [i in "u", j in [1] | i] -> std_output;
+
+    return 0;
+}

@@ -1,0 +1,32 @@
+procedure main() returns integer {
+    character[3, 3] M = [
+        ['0', '0', '0'], 
+        ['0', '0', '0'], 
+        ['0', '0', '0']
+        ];
+    
+    M = [
+        ['a', 'b', 'c'], 
+        ['A', 'B', 'C'], 
+        ['1', '2', '3']
+        ];
+    M -> std_output;
+    '\n' -> std_output;
+    
+    M[[3, 1], [1, 3]] = [['3', '1'], ['c', 'a']];
+    M -> std_output;
+    '\n' -> std_output;
+
+    M = [
+        ['0', '0', '0'], 
+        ['0', '0', '0'], 
+        ['0', '0', '0']
+        ];
+    M -> std_output;
+    '\n' -> std_output;
+
+    M[[1, 1], [1, 1]] = [['3', '1'], ['c', 'a']];
+    M -> std_output;
+
+    return 0;
+}

@@ -1,0 +1,68 @@
+procedure main() returns integer {
+    string str = "ab";
+    char[*] arr = "ab";
+    string str2 = ['a', 'b'];
+    char[*] arr2 = ['a', 'b'];
+
+    "a || b\n" -> std_output;
+    // two possible outcomes: abab or [a b a b]
+
+    str || str -> std_output;
+    str || arr -> std_output;
+    str || str2 -> std_output;
+    str || arr2 -> std_output;
+    arr || str -> std_output;
+    arr || arr -> std_output;
+    arr || str2 -> std_output;
+    arr || arr2 -> std_output;
+    str2 || str -> std_output;
+    str2 || arr -> std_output;
+    str2 || str2 -> std_output;
+    str2 || arr2 -> std_output;
+    arr2 || str -> std_output;
+    arr2 || arr -> std_output;
+    arr2 || str2 -> std_output;
+    arr2 || arr2 -> std_output;
+
+    "\na[1] || b\n" -> std_output;
+    // aab or [a a b]
+
+    str[1] || str -> std_output;
+    str[1] || arr -> std_output;
+    arr[1] || str -> std_output;
+    arr[1] || arr -> std_output;
+    
+    "\na || b[1]\n" -> std_output;
+    // aba or [a b a]
+
+    str || str[1] -> std_output;
+    str || arr[1] -> std_output;
+    arr || str[1] -> std_output;
+    arr || arr[1] -> std_output;
+
+    "\na[1..1] || b\n" -> std_output;
+    // aab or [a a b]
+
+    str[1..1] || str -> std_output;
+    str[1..1] || arr -> std_output;
+    arr[1..1] || str -> std_output;
+    arr[1..1] || arr -> std_output;
+
+    "\na || b[1..1]\n" -> std_output;
+    // aba or [a b a]
+
+    str || str[1..1] -> std_output;
+    str || arr[1..1] -> std_output;
+    arr || str[1..1] -> std_output;
+    arr || arr[1..1] -> std_output;
+
+    "\na[1..1] || b[1..1]\n" -> std_output;
+    // aa or [a a]
+
+    str[1..1] || str[1..1] -> std_output;
+    str[1..1] || arr[1..1] -> std_output;
+    arr[1..1] || str[1..1] -> std_output;
+    arr[1..1] || arr[1..1] -> std_output;
+
+    return 0;
+}
