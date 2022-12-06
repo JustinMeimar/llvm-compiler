@@ -1,0 +1,7 @@
+procedure hello() {
+    "this is hello" -> std_output;
+}
+
+#split_token
+#split_token
+compile_error

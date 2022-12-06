@@ -1,0 +1,8 @@
+procedure main() returns integer {
+    tuple(integer, integer[*]) T = (2, [2]);
+    T.2 = [];  // incorrect size
+    return 0;
+}
+#split_token
+#split_token
+runtime_error

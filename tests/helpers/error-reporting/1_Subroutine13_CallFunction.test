@@ -1,0 +1,10 @@
+function one() returns integer = 1;
+
+procedure main() returns integer {
+    call one();
+    return 0;
+}
+
+#split_token
+#split_token
+compile_error
