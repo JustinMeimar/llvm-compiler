@@ -253,7 +253,6 @@ namespace gazprea
         
         subroutineSymbol->stackPtr = llvmFunction.call("runtimeStackSave", {getStack()});
         
-        std::cout << "init here" << subroutineSymbol->stackPtr << std::endl;
         visit(t->children[3]);  // Visit body
 
         if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EXPRESSION_BODY_TOKEN) {
@@ -335,10 +334,11 @@ namespace gazprea
                 freeAllVariablesDeclaredInBlockScope(std::dynamic_pointer_cast<LocalScope>(temp));
                 temp = temp->getEnclosingScope();
             }
-
-            freeGlobalVariables();
+            
             llvmFunction.call("variableDestructThenFree", runtimeVariableObject);
-            llvmFunction.call("runtimeStackRestore", {getStack(), subroutineSymbol->stackPtr});
+            llvmFunction.call("runtimeStackRestore", {getStack(), subroutineSymbol->stackPtr}); 
+            freeGlobalVariables();
+            
             ir.CreateRet(returnIntegerValue);
         } else {
             // Non-main subroutine
@@ -935,30 +935,30 @@ namespace gazprea
         std::vector<llvm::Value*> domainVars;
 
         // Constants for all loops
-        auto indexVariableType = llvmFunction.call("typeMalloc", {});
+        auto indexVariableType = llvmFunction.call("typeStackAllocate", {getStack()});
         llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
 
-        auto constOne = llvmFunction.call("variableMalloc", {});
-        // auto constOne = llvmFunction.call("variableStackAllocate", {globalStack});
+        // auto constOne = llvmFunction.call("variableMalloc", {});
+        auto constOne = llvmFunction.call("variableStackAllocate", {getStack()});
         llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)});
  
-        auto constZero = llvmFunction.call("variableMalloc", {});
+        auto constZero = llvmFunction.call("variableStackAllocate", {getStack()});
         llvmFunction.call("variableInitFromIntegerScalar", {constZero, ir.getInt32(0)});
  
         // Create Preheader and necessary vectors
         for (size_t i = 0; i < t->children.size()-1; i++) {
             // create index variable & set to 0
-            auto indexInitialization = llvmFunction.call("variableMalloc", {});
-            auto indexVariable = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(0)});
+            auto indexInitialization = llvmFunction.call("variableStackAllocate", {getStack()}); 
+            auto indexVariable = llvmFunction.call("variableStackAllocate", {getStack()});
+            llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(-1)});
             llvmFunction.call("variableInitFromDeclaration", {indexVariable, indexVariableType, indexInitialization}); 
-            llvmFunction.call("variableDestructThenFree", {indexInitialization});
+            // llvmFunction.call("variableDestructThenFree", {indexInitialization});
             domainIndexVars.push_back(indexVariable);
 
             // Initialize domain expressions & push to vector
             visit(t->children[i]);
             auto domainExpr = t->children[i]->children[1];
-            auto runtimeDomainArray = llvmFunction.call("variableMalloc", {});
+            auto runtimeDomainArray = llvmFunction.call("variableStackAllocate", {getStack()});
             llvmFunction.call("variableInitFromDomainExpression", {runtimeDomainArray, domainExpr->llvmValue});
             if (domainExpr->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { //free is not id
                 freeExpressionIfNecessary(domainExpr); 
@@ -968,7 +968,7 @@ namespace gazprea
             // Calculate size of each domain array and store in vector 
             llvm::Value *length = llvmFunction.call("variableGetLength", {runtimeDomainArray});
             llvm::Value *truncLength = ir.CreateIntCast(length, ir.getInt32Ty(), true);
-            auto lengthVariable = llvmFunction.call("variableMalloc", {});
+            auto lengthVariable = llvmFunction.call("variableStackAllocate", {getStack()});
             llvmFunction.call("variableInitFromIntegerScalar", {lengthVariable, truncLength}); 
             domainExprSizes.push_back(lengthVariable);
 
@@ -1023,6 +1023,7 @@ namespace gazprea
             //create comparisson between index variable and length of domain vector
             auto indexVariable = domainIndexVars[i];
             auto lengthVariable = domainExprSizes[i];
+            incrementIndex(indexVariable, 1); 
             llvm::Value* branchCond = createBranchCondition(indexVariable, lengthVariable);
             ir.CreateCondBr(branchCond, branchTrue, branchFalse);
         }
@@ -1060,9 +1061,6 @@ namespace gazprea
             }
             // close loop if no return statement
             if (!llvmBranch.hitReturnStat){
-                //increment the index variable
-                auto indexVariable = domainIndexVars[i];
-                incrementIndex(indexVariable, 1); 
                 ir.CreateBr(header_i);
             }
             llvmBranch.hitReturnStat = false;
@@ -1077,14 +1075,13 @@ namespace gazprea
             llvmBranch.blockStack.pop_back(); 
         }
         //free memory
-        llvmFunction.call("typeDestructThenFree", {indexVariableType});
-        llvmFunction.call("variableDestructThenFree", {constZero});
-        llvmFunction.call("variableDestructThenFree", {constOne});
+        // llvmFunction.call("typeDestructThenFree", {indexVariableType});
+        // llvmFunction.call("variableDestructThenFree", {constZero});
+        // llvmFunction.call("variableDestructThenFree", {constOne});
         for(size_t i = 0; i < t->children.size()-1; i++) {
-            llvmFunction.call("variableDestructThenFree", {domainExprSizes[i]});
+            // llvmFunction.call("variableDestructThenFree", {domainExprSizes[i]});
             llvmFunction.call("variableDestructThenFree", {domainVars[i]});
-            llvmFunction.call("variableDestructThenFree", {domainIndexVars[i]});
-            llvmFunction.call("variableDestructThenFree", {domainExprs[i]});
+            // llvmFunction.call("variableDestructThenFree", {domainExprs[i]});
         }
 
         llvmFunction.call("runtimeStackRestore", {getStack(), sp});
