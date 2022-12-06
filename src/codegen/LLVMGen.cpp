@@ -215,7 +215,6 @@ namespace gazprea
     
     void LLVMGen::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->symbol);
-        std::cout << subroutineSymbol->stackPtr << std::endl;
         std::vector<llvm::Type *> parameterTypes = std::vector<llvm::Type *>(
             subroutineSymbol->orderedArgs.size(), runtimeVariableTy->getPointerTo());
 
@@ -2277,8 +2276,8 @@ namespace gazprea
 
     void LLVMGen::initializeGlobalVariables() {
         // Initialize global variables (should only call in the beginning of main())
-        // auto globalStackObj = llvmFunction.call("runtimeStackMallocThenInit", {});
-        // ir.CreateStore(globalStackObj, globalStack);
+        auto globalStackObj = llvmFunction.call("runtimeStackMallocThenInit", {});
+        ir.CreateStore(globalStackObj, globalStack);
 
         for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
             auto globalVar = mod.getNamedGlobal(variableSymbol->name);
@@ -2295,7 +2294,7 @@ namespace gazprea
             auto globalVar = ir.CreateLoad(runtimeVariableTy->getPointerTo(), globalVarAddress);
             llvmFunction.call("variableDestructThenFree", globalVar);
         }
-        llvmFunction.call("runtimeStackDestructThenFree", {globalStack});
+        llvmFunction.call("runtimeStackDestructThenFree", {getStack()});
     }
 
     void LLVMGen::freeAllVariablesDeclaredInBlockScope(std::shared_ptr<LocalScope> scope) {
