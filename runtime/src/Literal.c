@@ -190,21 +190,28 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
     if (isMatrix) {
         // one more pass to find out the longest vector among all rows
         for (int64_t i = 0; i < nVars; i++) {
-            int64_t size = variableGetLength(vars[i]);
-            longestLen = longestLen > size ? longestLen : size;
+            if (!typeIsScalar(vars[i]->m_type)) {
+                int64_t size = variableGetLength(vars[i]);
+                longestLen = longestLen > size ? longestLen : size;
+            }
         }
     }
 
     Variable **modifiedVars = malloc(nVars * sizeof(Variable *));
     for (int64_t i = 0; i < nVars; i++) {
         if (isMatrix && typeIsScalar(vars[i]->m_type)) {
+            modifiedVars[i] = variableMalloc();
             int64_t dims[1] = {longestLen};
             variableInitFromScalarToConcreteArray(modifiedVars[i], vars[i], 1, dims, false);
         } else if (variableGetIndexRefTypeID(vars[i]) != NDARRAY_INDEX_REF_NOT_A_REF) {
 #ifdef DEBUG_PRINT
             fprintf(stderr, "calling refToValue from vector literal\n");
 #endif
+            modifiedVars[i] = variableMalloc();
             variableInitFromNDArrayIndexRefToValue(modifiedVars[i], vars[i]);
+        } else if (typeIsIntegerInterval(vars[i]->m_type)) {
+            modifiedVars[i] = variableMalloc();
+            variableInitFromPCADPToIntegerVector(modifiedVars[i], vars[i], &pcadpCastConfig);
         } else {  // do not modify
             modifiedVars[i] = vars[i];
         }

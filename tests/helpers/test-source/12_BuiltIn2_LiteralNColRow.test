@@ -34,6 +34,7 @@ procedure main() returns integer {
   '\n' -> std_output;
   call printDims(getDims([1..5, A, 3..6]));
   call printDims(getDims([1..4, A, 3..6]));
+  call printDims(getDims([1..3, A[1..2]]));
   call printDims(getDims([[1, 2, 2, 1, 1, 2], 1..5, [3]]));
   call printDims(getDims([A, null, 1..7]));
 
@@ -42,7 +43,7 @@ procedure main() returns integer {
 
 #split_token
 #split_token
-Dims:0 by 0
+Dims:1 by 0
 Dims:1 by 3
 Dims:2 by 2
 Dims:10 by 3
@@ -54,5 +55,6 @@ Dims:3 by 0
 
 Dims:3 by 5
 Dims:3 by 5
+Dims:2 by 3
 Dims:3 by 6
 Dims:3 by 7
