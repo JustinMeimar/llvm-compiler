@@ -649,6 +649,7 @@ bool arrayBinopResultType(ElementTypeID id, BinOpCode opcode, ElementTypeID *res
             case BINARY_DOT_PRODUCT:
                 *resultType = id;
                 *resultCollapseToScalar = true;
+                return true;
             default: break;
         }
     }
@@ -682,7 +683,7 @@ void arrayMallocFromBinOp(ElementTypeID id, BinOpCode opcode, void *op1, int64_t
         resultArraySize = 1;
 
         void *sum = arrayMallocFromNull(resultEID, 1);
-        for (int64_t i = 0; i < resultArraySize; i++) {
+        for (int64_t i = 0; i < op1Size; i++) {
             // sum += op1[i] * op2[i]
             void *temp;
             void *tempSum;

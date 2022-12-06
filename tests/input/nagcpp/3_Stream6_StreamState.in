@@ -1,0 +1,87 @@
+procedure readAndPrintIntegerState(integer b) returns integer {
+    b <- std_input;
+    {
+        integer state = stream_state(std_input);
+        state -> std_output;
+    }
+    ": " -> std_output;
+    b -> std_output;
+    '\n' -> std_output;
+    {
+        integer state = stream_state(std_input);
+        return state;
+    }
+}
+
+procedure readAndPrintRealState(real b) returns integer {
+    b <- std_input;
+    {
+        integer state = stream_state(std_input);
+        state -> std_output;
+    }
+    ": " -> std_output;
+    b -> std_output;
+    '\n' -> std_output;
+    {
+        integer state = stream_state(std_input);
+        return state;
+    }
+}
+
+procedure readAndPrintBooleanState(boolean b) returns integer {
+    b <- std_input;
+    {
+        integer state = stream_state(std_input);
+        state -> std_output;
+    }
+    ": " -> std_output;
+    b -> std_output;
+    '\n' -> std_output;
+    {
+        integer state = stream_state(std_input);
+        return state;
+    }
+}
+
+procedure readAndPrintCharacterState(character b) returns integer {
+    b <- std_input;
+    {
+        integer state = stream_state(std_input);
+        state -> std_output;
+    }
+    ": " -> std_output;
+    b -> std_output;
+    '\n' -> std_output;
+    {
+        integer state = stream_state(std_input);
+        return state;
+    }
+}
+
+procedure main() returns integer {
+    integer a;
+    boolean[1, 1] b;
+    real c;
+    character d;
+    integer currentState = stream_state(std_input);
+
+    loop i in as<integer[*]>([1.0, 2, 3, 4, 5, 1, 1, 2, 2, 3, 3, 4, 1, 2, 3, 4, 4, 4, 4]) {
+        if (i == 1) {
+            currentState = readAndPrintIntegerState(a);
+        } else if (i == 2) {
+            currentState = readAndPrintBooleanState(b[identity..identity, identity..identity][1, 1]);
+        } else if (i == 3) {
+            currentState = readAndPrintRealState(c);
+        } else {
+            currentState = readAndPrintCharacterState(d);
+        }
+    }
+    a -> std_output;
+    b -> std_output;
+    c -> std_output;
+    d -> std_output;
+    "Current state: " -> std_output;
+    currentState -> std_output;
+
+    return 0;
+}
