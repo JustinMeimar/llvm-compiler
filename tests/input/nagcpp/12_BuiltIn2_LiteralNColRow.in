@@ -1,0 +1,42 @@
+typedef tuple(integer nCol, integer nRow) Dims;
+
+function getDims(const integer[*, *] mat) returns Dims {
+  return (rows(mat), columns(mat));
+}
+
+function getDimsFromCharacterArray(const character[*, *] mat) returns Dims {
+  return (rows(mat), columns(mat));
+}
+
+procedure printDims(Dims dims) {
+  "Dims:" -> std_output;
+  dims.nCol -> std_output;
+  " by " -> std_output;
+  dims.nRow -> std_output;
+  "\n" -> std_output;
+}
+
+procedure main() returns integer {
+  const integer[5] A = [];
+  var integer[0] Z = [];
+
+  call printDims(getDims([[]]));
+  call printDims(getDims([[0, 0, 0]]));
+  call printDims(getDims([[0], [0, 0]]));
+  call printDims(getDims([[0], [0, 0], [], [0, 0, 0], [], [], [], [], [], []]));  // 10 by 3
+  call printDims(getDims([Z, null]));
+  call printDims(getDims([identity, Z]));
+  call printDims(getDims([Z, [], [], Z]));
+  call printDims(getDims([30..30, [], []]));
+  call printDims(getDimsFromCharacterArray(["", [], []]));
+
+  // length comparison
+  '\n' -> std_output;
+  call printDims(getDims([1..5, A, 3..6]));
+  call printDims(getDims([1..4, A, 3..6]));
+  call printDims(getDims([[1, 2, 2, 1, 1, 2], 1..5, [3]]));
+  call printDims(getDims([A, null, 1..7]));
+
+  return 0;
+}
+

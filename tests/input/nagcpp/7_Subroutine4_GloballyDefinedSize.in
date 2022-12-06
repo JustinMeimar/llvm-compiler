@@ -1,0 +1,13 @@
+const integer size = 1;
+
+function func(integer n) returns integer[size] {
+  return null;
+}
+
+procedure main() returns integer {
+  integer[size, size] B = identity;
+  func(size) -> std_output;
+  B -> std_output;
+  return 0;
+}
+

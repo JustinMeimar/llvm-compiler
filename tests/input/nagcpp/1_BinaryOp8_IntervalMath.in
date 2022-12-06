@@ -1,0 +1,88 @@
+typedef integer interval ivl;
+
+function intToString(integer val) returns string {
+    string[11] str;
+    integer ptr = 11;
+    boolean isNegative = val < 0;
+
+    if (val == 0) {
+        return "0";
+    }
+
+    integer temp = val;
+    
+    loop while (temp != 0) {
+        integer mod = temp % 10;
+        if (mod < 0) {
+            mod = -mod;
+        }
+        temp = temp / 10;
+        str[ptr] = as<character>(mod + as<integer>('0'));
+        ptr = ptr - 1;
+    }
+
+    if (isNegative) {
+        str[ptr] = '-';
+        ptr = ptr - 1;
+    }
+    return str[(ptr + 1)..11];
+}
+
+function toString(ivl i) returns string {
+    string str1 = intToString(i[1]);
+    string[2] str2 = "..";
+    string str3 = intToString(i[length(i)]);
+    return str1 || str2 || str3;
+}
+
+procedure print(ivl i) {
+    toString(i) -> std_output;
+    '\n' -> std_output;
+}
+
+procedure main() returns integer {
+    integer interval A = 1..100;
+    integer interval B = 1..4;
+    integer interval C = 0..0;
+    call print(-1..1);  // = (-1)..(-1)
+    call print(A);
+    call print(null + A);
+    call print(identity + A);
+    call print(null * A);
+    call print(identity * A);
+    call print(null - A);
+    call print(identity - A);
+    call print(+A);
+    call print(-A);
+
+    '\n' -> std_output;
+    call print(A + A);
+    call print(A - A);
+    call print(A * A);
+    call print(A + B);
+    call print(A - B);
+    call print(A * B);
+    call print(A * B - A * B);
+    
+    '\n' -> std_output;
+    A == A -> std_output;
+    C == null -> std_output;
+    C != identity -> std_output;
+    A != B -> std_output;
+    A != A -> std_output;
+    C != -C -> std_output;
+    A by 10 -> std_output;
+    A by 9 -> std_output;
+
+    {
+        integer a;
+        a <- std_input;
+        {
+            integer ss = stream_state(std_input);
+            ss -> std_output;
+        }
+    }
+
+    return 0;
+}
+

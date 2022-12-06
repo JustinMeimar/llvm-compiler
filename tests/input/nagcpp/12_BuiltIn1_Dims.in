@@ -1,0 +1,11 @@
+typedef tuple(integer nCol, integer nRow) Dims;
+
+procedure dimsArg(Dims dims) {}
+
+procedure main() returns integer {
+  Dims d;
+  call dimsArg(d);
+
+  return 0;
+}
+
