@@ -30,8 +30,28 @@ namespace gazprea
                 ir.getInt8PtrTy() // llvm does not have void*, the equivalent is int8*
             },
             "RuntimeVariable");
+        
+        runtimeStackItemTy = llvm::StructType::create(
+            globalCtx, {
+                ir.getInt32Ty(),
+                ir.getInt8PtrTy()
+            },
+            "RuntimeStackItemTy"
+        );
+
+        runtimeStackTy = llvm::StructType::create(
+            globalCtx, {
+                ir.getInt64Ty(),
+                ir.getInt64Ty(),
+                runtimeStackItemTy->getPointerTo()
+            },
+            "RuntimeStackTy"
+        );
+
         llvmFunction.runtimeTypeTy = runtimeTypeTy;
         llvmFunction.runtimeVariableTy = runtimeVariableTy;
+        llvmFunction.runtimeStackTy = runtimeStackTy;
+        llvmFunction.runtimeStackItemTy = runtimeStackItemTy;
         llvmFunction.declareAllFunctions();
 
         // Declare Global Variables
@@ -302,6 +322,7 @@ namespace gazprea
 
             freeGlobalVariables();
             llvmFunction.call("variableDestructThenFree", runtimeVariableObject);
+            llvmFunction.call("runtimeStackDestructThenFree", {globalStack});
             ir.CreateRet(returnIntegerValue);
         } else {
             // Non-main subroutine
@@ -882,7 +903,9 @@ namespace gazprea
     }
  
     void LLVMGen::visitIteratorLoop(std::shared_ptr<AST> t) { 
-        // do with one domain first then generalize
+        // stave stack
+        auto sp = llvmFunction.call("runtimeStackSave", {globalStack});
+
         llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
         llvm::BasicBlock *preHeader = llvm::BasicBlock::Create(globalCtx, "IteratorLoopPreHeader", parentFunc);
         ir.CreateBr(preHeader);
@@ -1042,6 +1065,8 @@ namespace gazprea
             llvmFunction.call("variableDestructThenFree", {domainIndexVars[i]});
             llvmFunction.call("variableDestructThenFree", {domainExprs[i]});
         }
+
+        llvmFunction.call("runtimeStackRestore", {globalStack, sp});
     }
 
     void LLVMGen::visitBooleanAtom(std::shared_ptr<AST> t) {
@@ -1141,7 +1166,7 @@ namespace gazprea
         }
     }
 
-    void LLVMGen::visitGenerator(std::shared_ptr<AST> t) {         
+    void LLVMGen::visitGenerator(std::shared_ptr<AST> t) {  
         if (t->children[0]->children.size() ==  1) { 
             // create basic blocks            
             llvm::Function* parentFunc = ir.GetInsertBlock()->getParent();
@@ -2230,6 +2255,7 @@ namespace gazprea
 
     void LLVMGen::initializeGlobalVariables() {
         // Initialize global variables (should only call in the beginning of main())
+        globalStack = llvmFunction.call("runtimeStackMallocThenInit", {});
         for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
             auto globalVar = mod.getNamedGlobal(variableSymbol->name);
             visit(variableSymbol->def->children[2]);

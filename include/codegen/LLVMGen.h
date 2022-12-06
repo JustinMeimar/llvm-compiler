@@ -33,6 +33,10 @@ class LLVMGen {
 
         llvm::StructType *runtimeTypeTy;
         llvm::StructType *runtimeVariableTy;
+        llvm::StructType *runtimeStackTy;
+        llvm::StructType *runtimeStackItemTy;
+        llvm::Value* globalStack; //initialized in initializeGlobalVariables 
+
         llvm::Function* currentSubroutine;
 
         LLVMIRFunction llvmFunction;
