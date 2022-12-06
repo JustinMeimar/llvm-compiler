@@ -938,7 +938,6 @@ namespace gazprea
         auto indexVariableType = llvmFunction.call("typeStackAllocate", {getStack()});
         llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
 
-        // auto constOne = llvmFunction.call("variableMalloc", {});
         auto constOne = llvmFunction.call("variableStackAllocate", {getStack()});
         llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)});
  
@@ -952,7 +951,6 @@ namespace gazprea
             auto indexVariable = llvmFunction.call("variableStackAllocate", {getStack()});
             llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(-1)});
             llvmFunction.call("variableInitFromDeclaration", {indexVariable, indexVariableType, indexInitialization}); 
-            // llvmFunction.call("variableDestructThenFree", {indexInitialization});
             domainIndexVars.push_back(indexVariable);
 
             // Initialize domain expressions & push to vector
@@ -1074,14 +1072,8 @@ namespace gazprea
         for (size_t i = 0; i < 3; i++) {  
             llvmBranch.blockStack.pop_back(); 
         }
-        //free memory
-        // llvmFunction.call("typeDestructThenFree", {indexVariableType});
-        // llvmFunction.call("variableDestructThenFree", {constZero});
-        // llvmFunction.call("variableDestructThenFree", {constOne});
         for(size_t i = 0; i < t->children.size()-1; i++) {
-            // llvmFunction.call("variableDestructThenFree", {domainExprSizes[i]});
             llvmFunction.call("variableDestructThenFree", {domainVars[i]});
-            // llvmFunction.call("variableDestructThenFree", {domainExprs[i]});
         }
 
         llvmFunction.call("runtimeStackRestore", {getStack(), sp});
