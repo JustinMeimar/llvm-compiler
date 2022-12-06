@@ -1,8 +1,8 @@
 procedure main() returns integer {
     string str = "ab";
-    char[*] arr = "ab";
+    character[*] arr = "ab";
     string str2 = ['a', 'b'];
-    char[*] arr2 = ['a', 'b'];
+    character[*] arr2 = ['a', 'b'];
 
     "a || b\n" -> std_output;
     // two possible outcomes: abab or [a b a b]
