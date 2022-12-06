@@ -62,6 +62,11 @@ namespace gazprea
             globalVar->setInitializer(llvm::ConstantPointerNull::get(runtimeVariableTy->getPointerTo()));
             variableSymbol->llvmPointerToVariableObject = globalVar;
         }
+        mod.getOrInsertGlobal("globalStack", runtimeStackTy->getPointerTo() );
+        auto globalVar = mod.getNamedGlobal("globalStack");
+        globalVar->setLinkage(llvm::GlobalValue::InternalLinkage);
+        globalVar->setInitializer(llvm::ConstantPointerNull::get(runtimeStackTy->getPointerTo()));
+        globalStack = globalVar;
     }
 
     LLVMGen::~LLVMGen() {
@@ -241,8 +246,9 @@ namespace gazprea
         }
         visit(t->children[1]);  // Populate Argument Symbol's llvmValue
         initializeSubroutineParameters(subroutineSymbol);
+        subroutineSymbol->stackPtr = llvmFunction.call("runtimeStackSave", {globalStack});
         visit(t->children[3]);  // Visit body
-        
+
         if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EXPRESSION_BODY_TOKEN) {
             // Subroutine with Expression Body
             if (t->children[2]->isNil()) {
@@ -261,8 +267,10 @@ namespace gazprea
                 auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", runtimeVariableObject);
                 llvmFunction.call("variableDestructThenFree", runtimeVariableObject);
                 freeGlobalVariables();
+                llvmFunction.call("runtimeStackRestore", {globalStack, subroutineSymbol->stackPtr});
                 ir.CreateRet(returnIntegerValue);
             } else {
+                llvmFunction.call("runtimeStackRestore", {globalStack, subroutineSymbol->stackPtr});
                 ir.CreateRet(runtimeVariableObject);
             }
         }
@@ -288,6 +296,7 @@ namespace gazprea
                 freeAllVariablesDeclaredInBlockScope(std::dynamic_pointer_cast<LocalScope>(temp));
                 temp = temp->getEnclosingScope();
             }
+            llvmFunction.call("runtimeStackRestore", {globalStack, subroutineSymbol->stackPtr});
             ir.CreateRetVoid();
             return;
         }
@@ -322,7 +331,7 @@ namespace gazprea
 
             freeGlobalVariables();
             llvmFunction.call("variableDestructThenFree", runtimeVariableObject);
-            llvmFunction.call("runtimeStackDestructThenFree", {globalStack});
+            llvmFunction.call("runtimeStackRestore", {globalStack, subroutineSymbol->stackPtr});
             ir.CreateRet(returnIntegerValue);
         } else {
             // Non-main subroutine
@@ -334,6 +343,7 @@ namespace gazprea
                 freeAllVariablesDeclaredInBlockScope(std::dynamic_pointer_cast<LocalScope>(temp));
                 temp = temp->getEnclosingScope();
             }
+            llvmFunction.call("runtimeStackRestore", {globalStack, subroutineSymbol->stackPtr});
             ir.CreateRet(runtimeVariableObject);
         }
     }
@@ -904,13 +914,14 @@ namespace gazprea
  
     void LLVMGen::visitIteratorLoop(std::shared_ptr<AST> t) { 
         // stave stack
-        auto sp = llvmFunction.call("runtimeStackSave", {globalStack});
 
         llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
         llvm::BasicBlock *preHeader = llvm::BasicBlock::Create(globalCtx, "IteratorLoopPreHeader", parentFunc);
         ir.CreateBr(preHeader);
         ir.SetInsertPoint(preHeader);
 
+        auto sp = llvmFunction.call("runtimeStackSave", {globalStack});
+        
         std::vector<llvm::Value*> domainIndexVars;
         std::vector<llvm::Value*> domainExprs;
         std::vector<llvm::Value*> domainExprSizes;
@@ -919,8 +930,11 @@ namespace gazprea
         // Constants for all loops
         auto indexVariableType = llvmFunction.call("typeMalloc", {});
         llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
+
         auto constOne = llvmFunction.call("variableMalloc", {});
+        // auto constOne = llvmFunction.call("variableStackAllocate", {globalStack});
         llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)});
+ 
         auto constZero = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromIntegerScalar", {constZero, ir.getInt32(0)});
  
@@ -2270,6 +2284,7 @@ namespace gazprea
             auto globalVar = ir.CreateLoad(runtimeVariableTy->getPointerTo(), globalVarAddress);
             llvmFunction.call("variableDestructThenFree", globalVar);
         }
+        llvmFunction.call("runtimeStackDestructThenFree", {globalStack});
     }
 
     void LLVMGen::freeAllVariablesDeclaredInBlockScope(std::shared_ptr<LocalScope> scope) {
