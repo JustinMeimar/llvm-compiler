@@ -311,19 +311,19 @@ void LLVMIRFunction::declareAllFunctions() {
         "runtimeStackMallocThenInit"
     );
     declareFunction(
-        llvm::FunctionType::get(voidTy, {runtimeStackTy->getPointerTo()}), 
+        llvm::FunctionType::get(voidTy, {runtimeStackTy->getPointerTo()}, false), 
         "runtimeStackDestructThenFree"
     );
     declareFunction(
-        llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), {runtimeStackTy->getPointerTo()}),
+        llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), {runtimeStackTy->getPointerTo()}, false),
         "variableStackAllocate"
     );
     declareFunction(
-        llvm::FunctionType::get(runtimeTypeTy->getPointerTo(), {runtimeStackTy->getPointerTo()}),
+        llvm::FunctionType::get(runtimeTypeTy->getPointerTo(), {runtimeStackTy->getPointerTo()}, false),
         "typeStackAllocate"
     );
     declareFunction(
-        llvm::FunctionType::get(int64Ty, {runtimeStackTy->getPointerTo()}),
+        llvm::FunctionType::get(int64Ty, {runtimeStackTy->getPointerTo()}, false),
         "runtimeStackSave"
     );
     declareFunction(
