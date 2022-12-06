@@ -304,6 +304,33 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), int8Ty}, false),
         "variableSetIsBlockScoped"
     );
+
+    // Runtime Stack 
+    declareFunction(
+        llvm::FunctionType::get(runtimeStackTy->getPointerTo(), {}, false),
+        "runtimeStackMallocThenInit"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeStackTy->getPointerTo()}, false), 
+        "runtimeStackDestructThenFree"
+    );
+    declareFunction(
+        llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), {runtimeStackTy->getPointerTo()}, false),
+        "variableStackAllocate"
+    );
+    declareFunction(
+        llvm::FunctionType::get(runtimeTypeTy->getPointerTo(), {runtimeStackTy->getPointerTo()}, false),
+        "typeStackAllocate"
+    );
+    declareFunction(
+        llvm::FunctionType::get(int64Ty, {runtimeStackTy->getPointerTo()}, false),
+        "runtimeStackSave"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeStackTy->getPointerTo(), int64Ty}, false),
+        "runtimeStackRestore"
+    );
+
     // Built-in functions
     declareFunction(
         llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), {}, false),

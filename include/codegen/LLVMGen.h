@@ -33,6 +33,11 @@ class LLVMGen {
 
         llvm::StructType *runtimeTypeTy;
         llvm::StructType *runtimeVariableTy;
+        llvm::StructType *runtimeStackTy;
+        llvm::StructType *runtimeStackItemTy;
+        
+        llvm::Value* globalStack; //initialized in initializeGlobalVariables 
+
         llvm::Function* currentSubroutine;
 
         LLVMIRFunction llvmFunction;
@@ -113,6 +118,7 @@ class LLVMGen {
         void freeSubroutineParameters(std::shared_ptr<SubroutineSymbol> subroutineSymbol);
         void freeExpressionIfNecessary(std::shared_ptr<AST> t);
         void freeExprAtomIfNecessary(std::shared_ptr<AST> t);
+        llvm::Value* getStack();
         std::string unescapeString(const std::string &s);
 
         //Iterator loop Generator & Filter Helper Methods

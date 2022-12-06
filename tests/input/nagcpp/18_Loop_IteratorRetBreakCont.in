@@ -1,0 +1,54 @@
+procedure main() returns integer {
+
+    loop i in 1..10 continue;
+    loop i in 1..10 break;
+
+    loop i in [3.14, 3.15, 3.16] {
+        i -> std_output;
+    } 
+
+    loop i in 1..10 {
+        continue;
+    } 
+
+    loop i in 1..10 {
+        break;
+    }
+    
+    loop i in [3.14, 3.15, 3.16] {
+        i -> std_output;
+    }
+
+    loop char in ['a', 'b', 'c', 'd'] {
+        char -> std_output;
+    } 
+
+    loop bool in [true, true, true, false] {
+        if (bool) {
+            bool -> std_output;
+        }
+    }
+    
+    loop i in 1..10, j in 1..10, k in 1..10 {
+        return 0;
+    }
+
+    loop i in 1..10 {
+        integer x = 44;
+        if (i > 3) {
+            loop j in 3..i {
+                j -> std_output;
+                continue;
+                j -> std_output;
+            }
+            continue;
+        }
+        if (i < 5) {
+            continue;
+        } else {
+            break;
+        }
+    } 
+
+    return 0;
+}

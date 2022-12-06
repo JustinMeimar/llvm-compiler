@@ -27,6 +27,8 @@ public:
     llvm::Value *call(const std::string& funcName, llvm::ArrayRef<llvm::Value *> args);
     llvm::StructType *runtimeTypeTy;
     llvm::StructType *runtimeVariableTy;
+    llvm::StructType *runtimeStackTy;
+    llvm::StructType *runtimeStackItemTy;
 
 private:
     // access to the context and module
