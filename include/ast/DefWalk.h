@@ -19,6 +19,8 @@ class DefWalk {
         std::shared_ptr<SubroutineSymbol> currentSubroutineScope;
     public:
         bool hasMainProcedure;
+        int numLoopAncestors;
+        int numSubroutineAncestors;
         DefWalk(std::shared_ptr<SymbolTable> symtab);
         ~DefWalk();
 
