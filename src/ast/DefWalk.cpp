@@ -301,16 +301,16 @@ namespace gazprea {
                 blockScope->parentIsConditional = true;
             } 
             else if (child->getNodeType() == GazpreaParser::ELSEIF_TOKEN) {
-                if (child->children[1]->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
+                // if (child->children[1]->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
                     auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->children[1]->scope);
                     blockScope->parentIsConditional = true;
-                }
+                // }
             } 
             else if (child->getNodeType() == GazpreaParser::ELSE_TOKEN) {
-                if (child->children[0]->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
+                // if (child->children[0]->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
                     auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->children[0]->scope);
                     blockScope->parentIsConditional = true;
-                }
+                // }
             }
         }  
         return;
