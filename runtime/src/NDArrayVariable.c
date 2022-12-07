@@ -581,25 +581,23 @@ void variableInitFromArrayIndexingHelper(Variable *this, Variable *arr, Variable
                 ArrayType *pop2CTI = pop2->m_type->m_compoundTypeInfo;
                 ArrayType *pop3CTI = pop3->m_type->m_compoundTypeInfo;
                 int8_t resultNDim = 0;
-                int64_t *resultDims = NULL;
                 int64_t tempDims[2] = {0, 0};
                 if (rowNDim == 1) {
                     resultNDim = 1;
-                    resultDims = pop2CTI->m_dims;
+                    tempDims[0] = pop2CTI->m_dims[0];
                 }
                 if (colNDim == 1) {
                     resultNDim += 1;
                     if (resultNDim == 1)
-                        resultDims = pop3CTI->m_dims;
+                        tempDims[0] = pop3CTI->m_dims[0];
                     else {  // matrix
-                        tempDims[0] = pop2CTI->m_dims[0];
                         tempDims[1] = pop3CTI->m_dims[0];
                     }
                 }
 
                 Variable *newSelf = variableMalloc();
                 variableInitFromNDArrayCopyByRef(newSelf, pop1);
-                typeInitFromNDArray(this->m_type, pop1CTI->m_elementTypeID, resultNDim, resultDims,
+                typeInitFromNDArray(this->m_type, pop1CTI->m_elementTypeID, resultNDim, tempDims,
                                     false, NULL, true, false);
                 vars = malloc(sizeof(Variable *) * 3);
                 vars[0] = newSelf;

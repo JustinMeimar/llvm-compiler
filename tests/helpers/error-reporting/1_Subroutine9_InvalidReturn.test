@@ -1,0 +1,11 @@
+procedure one() {  // !! missing "returns integer"
+    return 1;
+}
+
+procedure main() returns integer {
+    return 0;
+}
+
+#split_token
+#split_token
+compile_error
