@@ -281,15 +281,56 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), int64Ty}, false),
         "variableInitFromIntegerArrayElementAtIndex"
     );
+    
+    // Filter functions
     declareFunction(
-        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo(), runtimeVariableTy->getPointerTo()}, false),
-        "variableInitFromVariableArrayElementAtIndex"
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), int64Ty, runtimeVariableTy->getPointerTo(), int32Ty->getPointerTo()}, false),
+        "variableInitFromFilterArray"
+    );
+    declareFunction(
+        llvm::FunctionType::get(int32Ty->getPointerTo(), {int64Ty, int64Ty}, false),
+        "acceptMatrixMalloc"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {int32Ty->getPointerTo(), int64Ty, int64Ty, int64Ty, int32Ty}, false),
+        "acceptArraySet"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {int32Ty->getPointerTo()}, false),
+        "acceptMatrixFree"
     );
 
     declareFunction(
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), int8Ty}, false),
         "variableSetIsBlockScoped"
     );
+
+    // Runtime Stack 
+    declareFunction(
+        llvm::FunctionType::get(runtimeStackTy->getPointerTo(), {}, false),
+        "runtimeStackMallocThenInit"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeStackTy->getPointerTo()}, false), 
+        "runtimeStackDestructThenFree"
+    );
+    declareFunction(
+        llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), {runtimeStackTy->getPointerTo()}, false),
+        "variableStackAllocate"
+    );
+    declareFunction(
+        llvm::FunctionType::get(runtimeTypeTy->getPointerTo(), {runtimeStackTy->getPointerTo()}, false),
+        "typeStackAllocate"
+    );
+    declareFunction(
+        llvm::FunctionType::get(int64Ty, {runtimeStackTy->getPointerTo()}, false),
+        "runtimeStackSave"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeStackTy->getPointerTo(), int64Ty}, false),
+        "runtimeStackRestore"
+    );
+
     // Built-in functions
     declareFunction(
         llvm::FunctionType::get(runtimeVariableTy->getPointerTo(), {}, false),

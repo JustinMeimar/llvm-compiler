@@ -88,4 +88,4 @@ void variableInitFromGeneratorArray(Variable *this, int64_t nVars, Variable **va
  * @param domainExpr the single domain expression that this filter loops on
  * @param accept a (flattened) matrix, an element accept[i][j] gives whether the result of evaluating the jth expression on ith domain variable is true
  */
-void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *domainExpr, const bool *accept);
+void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *domainExpr, bool *accept);

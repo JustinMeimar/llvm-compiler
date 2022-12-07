@@ -1,0 +1,22 @@
+procedure main() returns integer {
+    integer[*] b = [2, 3, 1];
+    integer[*, *] A = [[1, 2], [3, 0]];
+    A[[2, 1], 1] ** A[1, 1..2] -> std_output;  // [3 1] ** [1 2] -> 5
+    as<real[*]>([]) ** as<real[0]>([]) -> std_output;  // 0
+    A[2, 2] = [1, 1] ** [1, 1];  // A[2, 2] = 2
+    as<real[*]>(A[2, 1..2]) ** [3.1, 5] -> std_output;  // [3 2] ** [3.1 5.0] -> 19.3
+
+    '\n' -> std_output;
+    b[b] ** b[b] -> std_output;  // [3 1 2] ** [3 1 2] -> 14
+    b[b] ** [2, 3, 1] -> std_output;  // [3 1 2] ** [2 3 1] -> 11
+    b[b] ** [2, 3, 1] == [2, 3, 1] ** b[b] -> std_output;  // T
+    b[b] ** b -> std_output;
+    b[b] ** b == b ** b[b] ->std_output;
+    b ** 1..3 -> std_output;  // [2 3 1] ** [1 2 3]
+
+    return 0;
+}
+#split_token
+#split_token
+5019.3
+1411T11T11

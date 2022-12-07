@@ -30,8 +30,28 @@ namespace gazprea
                 ir.getInt8PtrTy() // llvm does not have void*, the equivalent is int8*
             },
             "RuntimeVariable");
+        
+        runtimeStackItemTy = llvm::StructType::create(
+            globalCtx, {
+                ir.getInt32Ty(),
+                ir.getInt8PtrTy()
+            },
+            "RuntimeStackItemTy"
+        );
+
+        runtimeStackTy = llvm::StructType::create(
+            globalCtx, {
+                ir.getInt64Ty(),
+                ir.getInt64Ty(),
+                runtimeStackItemTy->getPointerTo()
+            },
+            "RuntimeStackTy"
+        );
+
         llvmFunction.runtimeTypeTy = runtimeTypeTy;
         llvmFunction.runtimeVariableTy = runtimeVariableTy;
+        llvmFunction.runtimeStackTy = runtimeStackTy;
+        llvmFunction.runtimeStackItemTy = runtimeStackItemTy;
         llvmFunction.declareAllFunctions();
 
         // Declare Global Variables
@@ -42,6 +62,11 @@ namespace gazprea
             globalVar->setInitializer(llvm::ConstantPointerNull::get(runtimeVariableTy->getPointerTo()));
             variableSymbol->llvmPointerToVariableObject = globalVar;
         }
+        mod.getOrInsertGlobal("globalStack", runtimeStackTy->getPointerTo() );
+        auto globalVar = mod.getNamedGlobal("globalStack");
+        globalVar->setLinkage(llvm::GlobalValue::InternalLinkage);
+        globalVar->setInitializer(llvm::ConstantPointerNull::get(runtimeStackTy->getPointerTo()));
+        globalStack = globalVar;
     }
 
     LLVMGen::~LLVMGen() {
@@ -184,6 +209,10 @@ namespace gazprea
         for (auto child : t->children) visit(child);
     }
 
+    llvm::Value* LLVMGen::getStack() { 
+        return ir.CreateLoad(runtimeStackTy->getPointerTo(), globalStack);
+    }
+    
     void LLVMGen::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->symbol);
         std::vector<llvm::Type *> parameterTypes = std::vector<llvm::Type *>(
@@ -220,9 +249,12 @@ namespace gazprea
             initializeGlobalVariables();
         }
         visit(t->children[1]);  // Populate Argument Symbol's llvmValue
-        initializeSubroutineParameters(subroutineSymbol);
-        visit(t->children[3]);  // Visit body
+        initializeSubroutineParameters(subroutineSymbol); 
         
+        subroutineSymbol->stackPtr = llvmFunction.call("runtimeStackSave", {getStack()});
+        
+        visit(t->children[3]);  // Visit body
+
         if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EXPRESSION_BODY_TOKEN) {
             // Subroutine with Expression Body
             if (t->children[2]->isNil()) {
@@ -241,8 +273,10 @@ namespace gazprea
                 auto returnIntegerValue = llvmFunction.call("variableGetIntegerValue", runtimeVariableObject);
                 llvmFunction.call("variableDestructThenFree", runtimeVariableObject);
                 freeGlobalVariables();
+                llvmFunction.call("runtimeStackRestore", {getStack(), subroutineSymbol->stackPtr});
                 ir.CreateRet(returnIntegerValue);
             } else {
+                llvmFunction.call("runtimeStackRestore", {getStack(), subroutineSymbol->stackPtr});
                 ir.CreateRet(runtimeVariableObject);
             }
         }
@@ -268,6 +302,7 @@ namespace gazprea
                 freeAllVariablesDeclaredInBlockScope(std::dynamic_pointer_cast<LocalScope>(temp));
                 temp = temp->getEnclosingScope();
             }
+            llvmFunction.call("runtimeStackRestore", {getStack(), subroutineSymbol->stackPtr});
             ir.CreateRetVoid();
             return;
         }
@@ -299,9 +334,11 @@ namespace gazprea
                 freeAllVariablesDeclaredInBlockScope(std::dynamic_pointer_cast<LocalScope>(temp));
                 temp = temp->getEnclosingScope();
             }
-
-            freeGlobalVariables();
+            
             llvmFunction.call("variableDestructThenFree", runtimeVariableObject);
+            llvmFunction.call("runtimeStackRestore", {getStack(), subroutineSymbol->stackPtr}); 
+            freeGlobalVariables();
+            
             ir.CreateRet(returnIntegerValue);
         } else {
             // Non-main subroutine
@@ -313,6 +350,7 @@ namespace gazprea
                 freeAllVariablesDeclaredInBlockScope(std::dynamic_pointer_cast<LocalScope>(temp));
                 temp = temp->getEnclosingScope();
             }
+            llvmFunction.call("runtimeStackRestore", {getStack(), subroutineSymbol->stackPtr});
             ir.CreateRet(runtimeVariableObject);
         }
     }
@@ -882,39 +920,43 @@ namespace gazprea
     }
  
     void LLVMGen::visitIteratorLoop(std::shared_ptr<AST> t) { 
-        // do with one domain first then generalize
+        // stave stack
+
         llvm::Function *parentFunc = ir.GetInsertBlock()->getParent();
         llvm::BasicBlock *preHeader = llvm::BasicBlock::Create(globalCtx, "IteratorLoopPreHeader", parentFunc);
         ir.CreateBr(preHeader);
         ir.SetInsertPoint(preHeader);
 
+        auto sp = llvmFunction.call("runtimeStackSave", {getStack()});
+        
         std::vector<llvm::Value*> domainIndexVars;
         std::vector<llvm::Value*> domainExprs;
         std::vector<llvm::Value*> domainExprSizes;
         std::vector<llvm::Value*> domainVars;
 
         // Constants for all loops
-        auto indexVariableType = llvmFunction.call("typeMalloc", {});
+        auto indexVariableType = llvmFunction.call("typeStackAllocate", {getStack()});
         llvmFunction.call("typeInitFromIntegerScalar", {indexVariableType});
-        auto constOne = llvmFunction.call("variableMalloc", {});
+
+        auto constOne = llvmFunction.call("variableStackAllocate", {getStack()});
         llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)});
-        auto constZero = llvmFunction.call("variableMalloc", {});
+ 
+        auto constZero = llvmFunction.call("variableStackAllocate", {getStack()});
         llvmFunction.call("variableInitFromIntegerScalar", {constZero, ir.getInt32(0)});
  
         // Create Preheader and necessary vectors
         for (size_t i = 0; i < t->children.size()-1; i++) {
             // create index variable & set to 0
-            auto indexInitialization = llvmFunction.call("variableMalloc", {});
-            auto indexVariable = llvmFunction.call("variableMalloc", {});
-            llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(0)});
+            auto indexInitialization = llvmFunction.call("variableStackAllocate", {getStack()}); 
+            auto indexVariable = llvmFunction.call("variableStackAllocate", {getStack()});
+            llvmFunction.call("variableInitFromIntegerScalar", {indexInitialization, ir.getInt32(-1)});
             llvmFunction.call("variableInitFromDeclaration", {indexVariable, indexVariableType, indexInitialization}); 
-            llvmFunction.call("variableDestructThenFree", {indexInitialization});
             domainIndexVars.push_back(indexVariable);
 
             // Initialize domain expressions & push to vector
             visit(t->children[i]);
             auto domainExpr = t->children[i]->children[1];
-            auto runtimeDomainArray = llvmFunction.call("variableMalloc", {});
+            auto runtimeDomainArray = llvmFunction.call("variableStackAllocate", {getStack()});
             llvmFunction.call("variableInitFromDomainExpression", {runtimeDomainArray, domainExpr->llvmValue});
             if (domainExpr->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { //free is not id
                 freeExpressionIfNecessary(domainExpr); 
@@ -924,7 +966,7 @@ namespace gazprea
             // Calculate size of each domain array and store in vector 
             llvm::Value *length = llvmFunction.call("variableGetLength", {runtimeDomainArray});
             llvm::Value *truncLength = ir.CreateIntCast(length, ir.getInt32Ty(), true);
-            auto lengthVariable = llvmFunction.call("variableMalloc", {});
+            auto lengthVariable = llvmFunction.call("variableStackAllocate", {getStack()});
             llvmFunction.call("variableInitFromIntegerScalar", {lengthVariable, truncLength}); 
             domainExprSizes.push_back(lengthVariable);
 
@@ -979,6 +1021,7 @@ namespace gazprea
             //create comparisson between index variable and length of domain vector
             auto indexVariable = domainIndexVars[i];
             auto lengthVariable = domainExprSizes[i];
+            incrementIndex(indexVariable, 1); 
             llvm::Value* branchCond = createBranchCondition(indexVariable, lengthVariable);
             ir.CreateCondBr(branchCond, branchTrue, branchFalse);
         }
@@ -1016,9 +1059,6 @@ namespace gazprea
             }
             // close loop if no return statement
             if (!llvmBranch.hitReturnStat){
-                //increment the index variable
-                auto indexVariable = domainIndexVars[i];
-                incrementIndex(indexVariable, 1); 
                 ir.CreateBr(header_i);
             }
             llvmBranch.hitReturnStat = false;
@@ -1032,16 +1072,11 @@ namespace gazprea
         for (size_t i = 0; i < 3; i++) {  
             llvmBranch.blockStack.pop_back(); 
         }
-        //free memory
-        llvmFunction.call("typeDestructThenFree", {indexVariableType});
-        llvmFunction.call("variableDestructThenFree", {constZero});
-        llvmFunction.call("variableDestructThenFree", {constOne});
         for(size_t i = 0; i < t->children.size()-1; i++) {
-            llvmFunction.call("variableDestructThenFree", {domainExprSizes[i]});
             llvmFunction.call("variableDestructThenFree", {domainVars[i]});
-            llvmFunction.call("variableDestructThenFree", {domainIndexVars[i]});
-            llvmFunction.call("variableDestructThenFree", {domainExprs[i]});
         }
+
+        llvmFunction.call("runtimeStackRestore", {getStack(), sp});
     }
 
     void LLVMGen::visitBooleanAtom(std::shared_ptr<AST> t) {
@@ -1120,7 +1155,7 @@ namespace gazprea
     void LLVMGen::visitStringLiteral(std::shared_ptr<AST> t) {
         visitChildren(t);
         std::string stringChars = unescapeString(t->parseTree->getText().substr(1, t->parseTree->getText().length() - 2));
-        auto stringLength = t->parseTree->getText().length() - 2;
+        auto stringLength = stringChars.length();
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvm::StringRef string = llvm::StringRef(stringChars.c_str());
         llvm::Value* myStr = ir.CreateGlobalStringPtr(string);
@@ -1141,7 +1176,7 @@ namespace gazprea
         }
     }
 
-    void LLVMGen::visitGenerator(std::shared_ptr<AST> t) {         
+    void LLVMGen::visitGenerator(std::shared_ptr<AST> t) {  
         if (t->children[0]->children.size() ==  1) { 
             // create basic blocks            
             llvm::Function* parentFunc = ir.GetInsertBlock()->getParent();
@@ -1188,7 +1223,7 @@ namespace gazprea
             // get integer values of current index because some runtime functions require i64 type 
             llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {indexVariable});
             llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false);
-            
+
             auto runtimeDomainVar = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromIntegerScalar", {runtimeDomainVar, ir.getInt32(0)});
             initializeDomainVariable(runtimeDomainVar, runtimeDomainArray, index_i64); 
@@ -1397,8 +1432,104 @@ namespace gazprea
     }
 
     void LLVMGen::visitFilter(std::shared_ptr<AST> t) {
-        visitChildren(t);
-        // TODO
+
+        llvm::Function* parentFunc = ir.GetInsertBlock()->getParent();
+        llvm::BasicBlock* filterSetup = llvm::BasicBlock::Create(globalCtx, "filterSetup", parentFunc);
+        ir.CreateBr(filterSetup);
+        ir.SetInsertPoint(filterSetup);
+
+        auto constZero = llvmFunction.call("variableMalloc", {});
+        auto indexVarType = llvmFunction.call("typeMalloc", {});
+        auto domainIndexVar = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("typeInitFromIntegerScalar", {indexVarType}); 
+        llvmFunction.call("variableInitFromIntegerScalar", {constZero, ir.getInt32(0)}); 
+        llvmFunction.call("variableInitFromDeclaration", {domainIndexVar, indexVarType, constZero});
+ 
+        visit(t->children[0]); // domain expression
+        auto domainArray = t->children[0]->children[1]; //expr pass up domain var 
+        auto domainArrayVar = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromDomainExpression", {domainArrayVar, domainArray->llvmValue}); 
+        if (domainArray->getNodeType() == GazpreaParser::EXPRESSION_TOKEN) { //free is not id
+            freeExpressionIfNecessary(domainArray); 
+        }
+
+        llvm::Value *domainArrayLength_i64 = llvmFunction.call("variableGetLength", {domainArrayVar});
+        llvm::Value *domainArrayLength_i32 = ir.CreateIntCast(domainArrayLength_i64, ir.getInt32Ty(), false); 
+        size_t numFilters = t->children[1]->children.size();
+
+        auto domainArrayLengthVar = llvmFunction.call("variableMalloc", {});
+        auto numFiltersVar = llvmFunction.call("variableMalloc", {});
+        auto numFiltersIndexVar = llvmFunction.call("variableMalloc", {}); 
+
+        llvmFunction.call("variableInitFromIntegerScalar", {domainArrayLengthVar, domainArrayLength_i32});
+        llvmFunction.call("variableInitFromIntegerScalar", {numFiltersVar, ir.getInt32(numFilters)});
+        llvmFunction.call("variableInitFromDeclaration", {numFiltersIndexVar, indexVarType, constZero});
+
+        auto acceptMatrix = llvmFunction.call("acceptMatrixMalloc", {ir.getInt64(numFilters), domainArrayLength_i64}); 
+        
+        for (size_t i = 0; i < numFilters; i++) {
+            //create basic blocks
+            llvm::BasicBlock* preHeader = llvm::BasicBlock::Create(globalCtx, "filterPreHeader", parentFunc);
+            llvm::BasicBlock* header = llvm::BasicBlock::Create(globalCtx, "fitlerHeader", parentFunc);
+            llvm::BasicBlock* body = llvm::BasicBlock::Create(globalCtx, "fitlerBody", parentFunc);
+            llvm::BasicBlock* merge = llvm::BasicBlock::Create(globalCtx, "filterMerge", parentFunc);
+
+            //start inserting 
+            ir.CreateBr(preHeader);
+            ir.SetInsertPoint(preHeader);
+            llvmFunction.call("variableAssignment", {domainIndexVar, constZero});
+            
+            //set in header
+            ir.CreateBr(header);
+            ir.SetInsertPoint(header);
+            
+            // create condition when domain variable index < domainSize 
+            llvm::Value* condition = createBranchCondition(domainIndexVar, domainArrayLengthVar);
+            ir.CreateCondBr(condition, body, merge);
+            ir.SetInsertPoint(body);          
+            
+            //initialize the domain variable
+            auto domainVar = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromIntegerScalar", {domainVar, ir.getInt32(0)}); //need to do this or else crash
+            llvm::Value* index_i32 = llvmFunction.call("variableGetIntegerValue", {domainIndexVar});
+            llvm::Value* index_i64 = ir.CreateIntCast(index_i32, ir.getInt64Ty(), false); 
+            initializeDomainVariable(domainVar, domainArrayVar, index_i64);
+            
+            //initialize variable symbol with durrent domain variable
+            auto variableAST = t->children[0]->children[0];
+            initializeVariableSymbol(variableAST, domainVar);
+            visit(t->children[1]->children[i]);
+            
+            //get boolean value from ast
+            auto exprVar = llvmFunction.call("variableMalloc", {});
+            llvmFunction.call("variableInitFromMemcpy", {exprVar, t->children[1]->children[i]->llvmValue});
+            llvm::Value *boolValue = llvmFunction.call("variableGetBooleanValue", {exprVar});
+            auto filterIdx = ir.getInt64(i);
+            auto domainIdx = ir.CreateIntCast(llvmFunction.call("variableGetIntegerValue", {domainIndexVar}), ir.getInt64Ty(),false);
+            freeExpressionIfNecessary(t->children[1]->children[i]);
+            llvmFunction.call("variableDestructThenFree", {exprVar});
+
+            //set the accept matrix
+            llvmFunction.call("acceptArraySet", {acceptMatrix, domainArrayLength_i64, filterIdx, domainIdx, boolValue});
+            incrementIndex(domainIndexVar, 1);
+
+            //free domain var 
+            llvmFunction.call("variableDestructThenFree", {domainVar});
+            ir.CreateBr(header);    
+            ir.SetInsertPoint(merge);
+        }
+        auto resultTuple = llvmFunction.call("variableMalloc", {});
+        llvmFunction.call("variableInitFromFilterArray", {resultTuple, ir.getInt64(numFilters), domainArrayVar, acceptMatrix}); 
+        t->llvmValue = resultTuple;
+
+        llvmFunction.call("typeDestructThenFree", {indexVarType});
+        llvmFunction.call("variableDestructThenFree", {constZero});
+        llvmFunction.call("variableDestructThenFree", {domainIndexVar});
+        llvmFunction.call("variableDestructThenFree", {domainArrayVar});
+        llvmFunction.call("variableDestructThenFree", {domainArrayLengthVar});
+        llvmFunction.call("variableDestructThenFree", {numFiltersVar});
+        llvmFunction.call("variableDestructThenFree", {numFiltersIndexVar});
+        llvmFunction.call("acceptMatrixFree", {acceptMatrix});
     }
 
     void LLVMGen::visitExpression(std::shared_ptr<AST> t) {
@@ -2116,8 +2247,21 @@ namespace gazprea
     }
 
     void LLVMGen::visitBlock(std::shared_ptr<AST> t) {
+        llvmBranch.hitReturnStat = false; 
+        auto parentFunc = ir.GetInsertBlock()->getParent();
+
+        //visit the body
         visitChildren(t);
+        
         auto localScope = std::dynamic_pointer_cast<LocalScope>(t->scope);
+        //handle returns in empty blocks 
+        if (!localScope->parentIsSubroutineSymbol && !localScope->parentIsLoop && !localScope->parentIsConditional) {
+            if (llvmBranch.hitReturnStat) {
+                llvm::BasicBlock* exitBlock = llvm::BasicBlock::Create(globalCtx, "exitBlock", parentFunc);
+                ir.SetInsertPoint(exitBlock);
+                llvmBranch.hitReturnStat = false;
+            }
+        } 
         if (!localScope->containReturn) {
             freeAllVariablesDeclaredInBlockScope(localScope);
             if (localScope->parentIsSubroutineSymbol) {
@@ -2134,11 +2278,15 @@ namespace gazprea
 
     void LLVMGen::initializeGlobalVariables() {
         // Initialize global variables (should only call in the beginning of main())
+        auto globalStackObj = llvmFunction.call("runtimeStackMallocThenInit", {});
+        ir.CreateStore(globalStackObj, globalStack);
+
         for (auto variableSymbol : symtab->globals->globalVariableSymbols) {
             auto globalVar = mod.getNamedGlobal(variableSymbol->name);
             visit(variableSymbol->def->children[2]);
             ir.CreateStore(variableSymbol->def->children[2]->llvmValue, globalVar);
         }
+
     }
 
     void LLVMGen::freeGlobalVariables() {
@@ -2148,6 +2296,7 @@ namespace gazprea
             auto globalVar = ir.CreateLoad(runtimeVariableTy->getPointerTo(), globalVarAddress);
             llvmFunction.call("variableDestructThenFree", globalVar);
         }
+        llvmFunction.call("runtimeStackDestructThenFree", {getStack()});
     }
 
     void LLVMGen::freeAllVariablesDeclaredInBlockScope(std::shared_ptr<LocalScope> scope) {

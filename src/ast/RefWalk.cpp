@@ -197,7 +197,6 @@ namespace gazprea {
         auto text = t->parseTree->getText();
         t->type = std::dynamic_pointer_cast<Type>(symtab->globals->resolveTypeSymbol(text));
         if (t->type == nullptr) {
-            // TODO: Throw an error
             return;
         }
         if (t->type->isTypedefType()) {
@@ -227,6 +226,17 @@ namespace gazprea {
         t->children[0]->symbol = symtab->globals->resolveSubroutineSymbol(
             "gazprea.subroutine." + t->children[0]->parseTree->getText()
         );
+        if (t->children[0]->symbol == nullptr) {
+            if (t->getNodeType() == GazpreaParser::CALL_PROCEDURE_FUNCTION_IN_EXPRESSION) {
+                // TODO: Throw an appropriate exception
+                auto *ctx = dynamic_cast<GazpreaParser::CallProcedureFunctionInExpressionContext*>(t->parseTree);
+                throw UndefinedIdError(t->children[0]->parseTree->getText(), t->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+            } else {
+                // TODO: Throw an appropriate exception
+                auto *ctx = dynamic_cast<GazpreaParser::CallProcedureContext*>(t->parseTree);
+                throw UndefinedIdError(t->children[0]->parseTree->getText(), t->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+            }
+        }
         visit(t->children[1]);
     }
 } // namespace gazprea

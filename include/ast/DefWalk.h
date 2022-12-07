@@ -19,6 +19,8 @@ class DefWalk {
         std::shared_ptr<SubroutineSymbol> currentSubroutineScope;
     public:
         bool hasMainProcedure;
+        int numLoopAncestors;
+        int numSubroutineAncestors;
         DefWalk(std::shared_ptr<SymbolTable> symtab);
         ~DefWalk();
 
@@ -57,7 +59,11 @@ class DefWalk {
         
         void visitPostPredicatedLoop(std::shared_ptr<AST> t);
 
+        void visitConditionalStatement(std::shared_ptr<AST> t);
+
         void visitGenerator(std::shared_ptr<AST> t);
+
+        void visitFilter(std::shared_ptr<AST> t);
 };
 
 } // namespace gazrepa

@@ -1,0 +1,91 @@
+procedure readAndPrintIntegerState(var integer b) returns integer {
+    b <- std_input;
+    {
+        integer state = stream_state(std_input);
+        state -> std_output;
+    }
+    ": " -> std_output;
+    b -> std_output;
+    '\n' -> std_output;
+    {
+        integer state = stream_state(std_input);
+        return state;
+    }
+}
+
+procedure readAndPrintRealState(var real b) returns integer {
+    b <- std_input;
+    {
+        integer state = stream_state(std_input);
+        state -> std_output;
+    }
+    ": " -> std_output;
+    b -> std_output;
+    '\n' -> std_output;
+    {
+        integer state = stream_state(std_input);
+        return state;
+    }
+}
+
+procedure readAndPrintBooleanState(var boolean b) returns integer {
+    b <- std_input;
+    {
+        integer state = stream_state(std_input);
+        state -> std_output;
+    }
+    ": " -> std_output;
+    b -> std_output;
+    '\n' -> std_output;
+    {
+        integer state = stream_state(std_input);
+        return state;
+    }
+}
+
+procedure readAndPrintCharacterState(var character b) returns integer {
+    b <- std_input;
+    {
+        integer state = stream_state(std_input);
+        state -> std_output;
+    }
+    ": " -> std_output;
+    as<integer>(b) -> std_output;
+    '\n' -> std_output;
+    {
+        integer state = stream_state(std_input);
+        return state;
+    }
+}
+
+procedure main() returns integer {
+    integer a;
+    boolean[1, 1] b;
+    real c;
+    character d;
+    integer currentState = stream_state(std_input);
+
+    loop i in as<integer[*]>([1.0, 2, 3, 4, 1, 1, 2, 2, 3, 3, 4, 1, 2, 3, 4, 4, 4, 4]) {
+        if (i == 1) {
+            "int-" -> std_output;
+            currentState = readAndPrintIntegerState(a);
+        } else if (i == 2) {
+            "bin-" -> std_output;
+            currentState = readAndPrintBooleanState(b[identity..identity, identity..identity][1, 1]);
+        } else if (i == 3) {
+            "flt-" -> std_output;
+            currentState = readAndPrintRealState(c);
+        } else {
+            "chr-" -> std_output;
+            currentState = readAndPrintCharacterState(d);
+        }
+    }
+    a -> std_output;
+    b -> std_output;
+    c -> std_output;
+    as<integer>(d) -> std_output;
+    "\nCurrent state: " -> std_output;
+    currentState -> std_output;
+
+    return 0;
+}

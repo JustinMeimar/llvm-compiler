@@ -21,6 +21,7 @@ namespace gazprea {
         bool isBuiltIn;  // True if this subroutine is built-in, false otherwise
         std::shared_ptr<AST> declaration;
         std::shared_ptr<AST> definition;
+        llvm::Value* stackPtr = nullptr; 
         int numTimesDeclare = 0;  // If forward declaration, this value is 2, otherwise 1
         std::vector<std::shared_ptr<Symbol>> orderedArgs;
         llvm::Function *llvmFunction;

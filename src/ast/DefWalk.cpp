@@ -2,7 +2,7 @@
 
 namespace gazprea {
 
-    DefWalk::DefWalk(std::shared_ptr<SymbolTable> symtab) : symtab(symtab), currentScope(symtab->globals) {
+    DefWalk::DefWalk(std::shared_ptr<SymbolTable> symtab) : symtab(symtab), currentScope(symtab->globals), numLoopAncestors(0), numSubroutineAncestors(0) {
         // Define built-in subroutine symbols
         bool isBuiltIn = true;
         symtab->globals->define(std::make_shared<SubroutineSymbol>("gazprea.subroutine.length", symtab->getType(Type::INTEGER), symtab->globals, false, isBuiltIn));
@@ -21,7 +21,9 @@ namespace gazprea {
                 //Statements & Intermediate Tokens
                 case GazpreaParser::PROCEDURE:
                 case GazpreaParser::FUNCTION:
+                    numSubroutineAncestors++;
                     visitSubroutineDeclDef(t);
+                    numSubroutineAncestors--;
                     break;
                 case GazpreaParser::TYPEDEF:
                     visitTypedefStatement(t);
@@ -54,19 +56,33 @@ namespace gazprea {
                     visitTupleAccess(t);
                     break;
                 case GazpreaParser::INFINITE_LOOP_TOKEN:
+                    numLoopAncestors++;
                     vistInfiniteLoop(t);
+                    numLoopAncestors--;
                     break;
                 case GazpreaParser::PRE_PREDICATE_LOOP_TOKEN:
+                    numLoopAncestors++;
                     visitPrePredicatedLoop(t);
+                    numLoopAncestors--;
                     break;
                 case GazpreaParser::POST_PREDICATE_LOOP_TOKEN:
+                    numLoopAncestors++;
                     visitPostPredicatedLoop(t);
+                    numLoopAncestors--;
                     break;
                 case GazpreaParser::ITERATOR_LOOP_TOKEN:
+                    numLoopAncestors++;
                     visitIteratorLoop(t);
+                    numLoopAncestors--;
+                    break;
+                case GazpreaParser::CONDITIONAL_STATEMENT_TOKEN:
+                    visitConditionalStatement(t);
                     break;
                 case GazpreaParser::GENERATOR_TOKEN:
                     visitGenerator(t);
+                    break;
+                case GazpreaParser::FILTER_TOKEN:
+                    visitFilter(t);
                     break;
                 case GazpreaParser::DOMAIN_EXPRESSION_TOKEN:
                     visitDomainExpression(t);
@@ -202,14 +218,26 @@ namespace gazprea {
     }
 
     void DefWalk::visitBreak(std::shared_ptr<AST> t) {
+        if (numLoopAncestors == 0) {
+            // TODO: Use different type of exception
+            throw SyntaxError("Break statement must be in a loop");
+        }
         t->scope = currentScope;
     }
 
     void DefWalk::visitContinue(std::shared_ptr<AST> t) {
+        if (numLoopAncestors == 0) {
+            // TODO: Use different type of exception
+            throw SyntaxError("Continue statement must be in a loop");
+        }
         t->scope = currentScope;
     }
 
     void DefWalk::visitReturn(std::shared_ptr<AST> t) {
+        if (numSubroutineAncestors == 0) {
+            // TODO: Use different type of exception
+            throw SyntaxError("Return statement must be in a function or a procedure");
+        }
         t->scope = currentScope;
         t->scope->containReturn = true;
         t->subroutineSymbol = currentSubroutineScope;
@@ -265,6 +293,29 @@ namespace gazprea {
         return;
     }
 
+    void DefWalk::visitConditionalStatement(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        for (auto child: t->children ) {
+            if (child->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
+                auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->scope);
+                blockScope->parentIsConditional = true;
+            } 
+            else if (child->getNodeType() == GazpreaParser::ELSEIF_TOKEN) {
+                // if (child->children[1]->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
+                    auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->children[1]->scope);
+                    blockScope->parentIsConditional = true;
+                // }
+            } 
+            else if (child->getNodeType() == GazpreaParser::ELSE_TOKEN) {
+                // if (child->children[0]->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
+                    auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->children[0]->scope);
+                    blockScope->parentIsConditional = true;
+                // }
+            }
+        }  
+        return;
+    }
+
     void DefWalk::visitGenerator(std::shared_ptr<AST> t) {  
         auto generatorScope = std::make_shared<LocalScope>(currentScope);
         currentScope = generatorScope; // push scope 
@@ -274,6 +325,22 @@ namespace gazprea {
         }
         visit(t->children[t->children.size()-1]); //visit expression
         currentScope = currentScope->getEnclosingScope(); // pop scope  
+        return;
+    }
+
+    void DefWalk::visitFilter(std::shared_ptr<AST> t) {
+        auto filterScope = std::make_shared<LocalScope>(currentScope);
+        currentScope = filterScope;
+        t->scope = filterScope; 
+        visitChildren(t);  
+        //manually define the identifier in filter scope
+        // std::shared_ptr<AST> identifierAST = t->children[0];
+        // auto vs = std::make_shared<VariableSymbol>(identifierAST->parseTree->getText(), nullptr);
+        // vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
+        // t->symbol = vs;   // track in AST
+        // currentScope->define(vs); 
+        //pop scope
+        currentScope = currentScope->getEnclosingScope();
         return;
     }
 

@@ -1,0 +1,28 @@
+function transpose(integer[*, *] I) returns integer[*, *] {
+    integer ncol = columns(I);
+    integer nrow = rows(I);
+    integer[ncol, nrow] T;
+    loop i in 1..ncol {
+        T[i, 1..nrow] = I[1..nrow, i];
+    }
+    return T;
+}
+
+procedure main() returns integer {
+    integer r = as<integer[*]>([]) ** as<integer[*]>([]);
+    integer[*, *] A = [[1, 0], [0, 1], [1, 1]];
+    integer[*, *] B = [[1, 2], [3, 4]];
+    integer[*, *] AT = transpose(A);
+    real[1, 1] C = [[identity]];
+    real[1, 1] D = identity;
+
+    A ** B -> std_output;
+    '\n' -> std_output;
+    A[1..2, 1..2] ** B -> std_output;
+    '\n' -> std_output;
+    AT ** A -> std_output;
+    '\n' -> std_output;
+    C ** D -> std_output;
+
+    return 0;
+}
