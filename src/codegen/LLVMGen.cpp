@@ -1155,7 +1155,7 @@ namespace gazprea
     void LLVMGen::visitStringLiteral(std::shared_ptr<AST> t) {
         visitChildren(t);
         std::string stringChars = unescapeString(t->parseTree->getText().substr(1, t->parseTree->getText().length() - 2));
-        auto stringLength = t->parseTree->getText().length() - 2;
+        auto stringLength = stringChars.length();
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvm::StringRef string = llvm::StringRef(stringChars.c_str());
         llvm::Value* myStr = ir.CreateGlobalStringPtr(string);
