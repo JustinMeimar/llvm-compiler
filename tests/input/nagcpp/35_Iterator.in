@@ -105,13 +105,10 @@ procedure test45() {
 
 procedure test5(var int[*] arr) returns int {
     // Referencing arr iterator loop
-
+    loop i in arr {
+        i -> std_out; '\n' -> std_out;
+    }
     return length(arr);
-}
-
-function test6(int[*] arr) returns int {
-
-    return 5;
 }
 
 procedure main() returns integer {
@@ -125,6 +122,7 @@ procedure main() returns integer {
     //call test3();
     yee = test4(); yee -> std_out; '\n' -> std_out; // Should print 22.23
     call test45();
+    call test5(arr2);
 
     return 0;
 }

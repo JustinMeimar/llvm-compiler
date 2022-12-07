@@ -1,0 +1,29 @@
+typedef integer int;
+typedef character char;
+
+procedure main() returns int {
+    char[*] hello = ['h', 'e', 'l', 'l', 'o'];
+    string[5+5] wow = hello || "world";
+    string[10+5] newOne;
+
+    int test = 1;
+
+    string[test] identities = identity;
+    string[test+test] nu = null;
+
+    wow -> std_out; // Should print "helloworld"
+    "\n" -> std_out; // Should make a new line
+
+    //identities -> std_out;
+    //nu -> std_out;
+
+    newOne = wow || [' ', 'y', 'e', 's', '\n'];
+
+    newOne -> std_out;
+
+    return 0;
+}
+#split_token
+#split_token
+helloworld
+helloworld yes
