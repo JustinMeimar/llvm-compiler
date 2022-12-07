@@ -9,6 +9,7 @@ namespace gazprea {
     public:
         bool parentIsSubroutineSymbol = false;
         bool parentIsLoop = false;
+        bool parentIsConditional = false;
         LocalScope(std::shared_ptr<Scope> parent);
         std::string getScopeName() override;
     };

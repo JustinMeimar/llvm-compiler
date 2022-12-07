@@ -2247,8 +2247,24 @@ namespace gazprea
     }
 
     void LLVMGen::visitBlock(std::shared_ptr<AST> t) {
+        llvmBranch.hitReturnStat = false; 
+        auto parentFunc = ir.GetInsertBlock()->getParent();
+        llvm::BasicBlock* enterBlock = llvm::BasicBlock::Create(globalCtx, "enterBlock", parentFunc);
+        ir.CreateBr(enterBlock);
+        ir.SetInsertPoint(enterBlock);
+        
+        //visit the body
         visitChildren(t);
+        
         auto localScope = std::dynamic_pointer_cast<LocalScope>(t->scope);
+        //handle returns in empty blocks 
+        if (!localScope->parentIsSubroutineSymbol && !localScope->parentIsLoop && !localScope->parentIsConditional) {
+            if (llvmBranch.hitReturnStat) {
+                llvm::BasicBlock* exitBlock = llvm::BasicBlock::Create(globalCtx, "exitBlock", parentFunc);
+                ir.SetInsertPoint(exitBlock);
+                llvmBranch.hitReturnStat = false;
+            }
+        } 
         if (!localScope->containReturn) {
             freeAllVariablesDeclaredInBlockScope(localScope);
             if (localScope->parentIsSubroutineSymbol) {

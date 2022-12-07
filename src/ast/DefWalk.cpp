@@ -75,6 +75,9 @@ namespace gazprea {
                     visitIteratorLoop(t);
                     numLoopAncestors--;
                     break;
+                case GazpreaParser::CONDITIONAL_STATEMENT_TOKEN:
+                    visitConditionalStatement(t);
+                    break;
                 case GazpreaParser::GENERATOR_TOKEN:
                     visitGenerator(t);
                     break;
@@ -287,6 +290,29 @@ namespace gazprea {
         auto bodyScope = std::dynamic_pointer_cast<LocalScope>(t->children[t->children.size()-1]->scope);
         bodyScope->parentIsLoop = true;
         currentScope = currentScope->getEnclosingScope(); // pop scope 
+        return;
+    }
+
+    void DefWalk::visitConditionalStatement(std::shared_ptr<AST> t) {
+        visitChildren(t);
+        for (auto child: t->children ) {
+            if (child->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
+                auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->scope);
+                blockScope->parentIsConditional = true;
+            } 
+            else if (child->getNodeType() == GazpreaParser::ELSEIF_TOKEN) {
+                if (child->children[1]->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
+                    auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->children[1]->scope);
+                    blockScope->parentIsConditional = true;
+                }
+            } 
+            else if (child->getNodeType() == GazpreaParser::ELSE_TOKEN) {
+                if (child->children[0]->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
+                    auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->children[0]->scope);
+                    blockScope->parentIsConditional = true;
+                }
+            }
+        }  
         return;
     }
 
