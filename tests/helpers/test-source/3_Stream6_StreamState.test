@@ -1,4 +1,4 @@
-procedure readAndPrintIntegerState(integer b) returns integer {
+procedure readAndPrintIntegerState(var integer b) returns integer {
     b <- std_input;
     {
         integer state = stream_state(std_input);
@@ -13,7 +13,7 @@ procedure readAndPrintIntegerState(integer b) returns integer {
     }
 }
 
-procedure readAndPrintRealState(real b) returns integer {
+procedure readAndPrintRealState(var real b) returns integer {
     b <- std_input;
     {
         integer state = stream_state(std_input);
@@ -28,7 +28,7 @@ procedure readAndPrintRealState(real b) returns integer {
     }
 }
 
-procedure readAndPrintBooleanState(boolean b) returns integer {
+procedure readAndPrintBooleanState(var boolean b) returns integer {
     b <- std_input;
     {
         integer state = stream_state(std_input);
@@ -43,14 +43,14 @@ procedure readAndPrintBooleanState(boolean b) returns integer {
     }
 }
 
-procedure readAndPrintCharacterState(character b) returns integer {
+procedure readAndPrintCharacterState(var character b) returns integer {
     b <- std_input;
     {
         integer state = stream_state(std_input);
         state -> std_output;
     }
     ": " -> std_output;
-    b -> std_output;
+    as<integer>(b) -> std_output;
     '\n' -> std_output;
     {
         integer state = stream_state(std_input);
@@ -65,43 +65,49 @@ procedure main() returns integer {
     character d;
     integer currentState = stream_state(std_input);
 
-    loop i in as<integer[*]>([1.0, 2, 3, 4, 5, 1, 1, 2, 2, 3, 3, 4, 1, 2, 3, 4, 4, 4, 4]) {
+    loop i in as<integer[*]>([1.0, 2, 3, 4, 1, 1, 2, 2, 3, 3, 4, 1, 2, 3, 4, 4, 4, 4]) {
         if (i == 1) {
+            "int-" -> std_output;
             currentState = readAndPrintIntegerState(a);
         } else if (i == 2) {
+            "bin-" -> std_output;
             currentState = readAndPrintBooleanState(b[identity..identity, identity..identity][1, 1]);
         } else if (i == 3) {
+            "flt-" -> std_output;
             currentState = readAndPrintRealState(c);
         } else {
+            "chr-" -> std_output;
             currentState = readAndPrintCharacterState(d);
         }
     }
     a -> std_output;
     b -> std_output;
     c -> std_output;
-    d -> std_output;
-    "Current state: " -> std_output;
+    as<integer>(d) -> std_output;
+    "\nCurrent state: " -> std_output;
     currentState -> std_output;
 
     return 0;
 }
 #split_token
 1 T 1 f  #split_token
-0: 1
-0: T
-0: 1
-0:  
-1: 0
-1: 0
-1: F
-1: F
-1: 0
-1: 0
-0: f
-2: 0
-2: F
-2: 0
-0:  
-0:  
-0: 
-0: 
+int-0: 1
+bin-0: T
+flt-0: 1
+chr-0: 32
+int-1: 0
+int-1: 0
+bin-1: F
+bin-1: F
+flt-1: 0
+flt-1: 0
+chr-0: 102
+int-2: 0
+bin-2: F
+flt-2: 0
+chr-0: 32
+chr-0: 32
+chr-0: 255
+chr-0: 255
+0[[F]]0255
+Current state: 0

@@ -3,10 +3,10 @@ procedure main() returns integer {
     integer i = 5;
     var y = [i in 1..3 & i == 2, i == 3, i == 5];   
 
-    y.1 -> std_outpuk;
-    y.2 -> std_outpuk;
-    y.3 -> std_outpuk;
-    y.4 -> std_outpuk;
+    y.1 -> std_output;
+    y.2 -> std_output;
+    y.3 -> std_output;
+    y.4 -> std_output;
 
     var f = [j in 1..10 & j < 4, j > 7]; 
     f.1 -> std_output;
@@ -21,4 +21,4 @@ procedure main() returns integer {
 } 
 #split_token
 #split_token
-[2][3][][3]
+[2][3][][1][1 2 3][8 9 10][4 5 6 7][10 20 30][40 50 60 70 80 90 100]

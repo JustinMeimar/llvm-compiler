@@ -1,0 +1,31 @@
+procedure main() returns integer { 
+    {
+        {
+            return 0;
+        }
+        {
+            return 0;
+        }
+        {
+            return 0;
+        }
+        loop i in 1..10 {
+            if (true) {
+                return 0;
+            } else if (true) {
+                return 0;
+            } else {
+                return 0;
+            }
+        }
+        {
+            {
+                return 0; 
+            }
+        }
+    } 
+    
+    return 0;
+}
+#split_token
+#split_token
