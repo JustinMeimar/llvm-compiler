@@ -7,23 +7,23 @@ procedure nl() {
 
 procedure test1() {
     int i = null + identity;
-    char j = identity + null;
+    //char j = as<char>(identity + null);
     real w = null + identity;
-    tuple(int, char, real) tp = (null + identity, null + identity, null + identity);
+    tuple(int, real) tp = (null + identity, null + identity);
 
     i -> std_out; // Should print 1
     call nl();
-    as<int>(j) -> std_out; // Should print 1
+    //as<int>(j) -> std_out; // Should print 1
     call nl();
     w -> std_out; // Should print 1.0
     call nl();
     call nl();
-    tp.1 -> std_out; // Should print 1
+    /*tp.1 -> std_out; // Should print 1
     call nl();
-    as<int>(tp.2) -> std_out; // Should print 1
-    call nl();
-    tp.3 -> std_out; // Should print 1.0
-    call nl();
+    //as<int>(tp.2) -> std_out; // Should print 1
+    //call nl();
+    //tp.2 -> std_out; // Should print 1.0
+    call nl();*/
 }
 
 procedure test2() {
@@ -44,14 +44,3 @@ procedure main() returns int {
     call test2();
     return 0;
 }
-#split_token
-#split_token
-1
-1
-1.0
-
-1
-1
-1.0
-4
-

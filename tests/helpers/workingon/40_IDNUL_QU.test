@@ -8,7 +8,7 @@ procedure test() returns int {
 
 procedure main() returns int {
     int i = vecGen();
-
+    
     i -> std_out; // Should print 1
 
     return 0;

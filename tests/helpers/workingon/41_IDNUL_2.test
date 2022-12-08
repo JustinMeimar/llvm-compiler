@@ -14,6 +14,11 @@ procedure test1() {
 }
 
 procedure main() returns int {
-    call test1();
+    //call test1();
+    
+    integer x = identity + null + identity;
+
+    x -> std_out;
+
     return 0;
 }

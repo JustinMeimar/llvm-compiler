@@ -1,0 +1,6 @@
+typedef integer int;
+
+procedure main() returns int {
+    tuple(int, real) tp = (null + identity, null + identity);
+    return 0;
+}
