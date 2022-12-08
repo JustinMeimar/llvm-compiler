@@ -2,6 +2,18 @@
 
 namespace gazprea {
 
+GazpreaError::GazpreaError(std::string descr, std::string errorText, std::string fullText, int line, int charPos){
+    std::stringstream sstream;
+    sstream <<  descr
+        << "\033[36m" << errorText << "\033[0m" << 
+        " " << line << "\033[0m"<< ":" << charPos << "\n"
+        << "\t|\n"
+        << line << "\t|" << " '" << fullText << "'\n"
+        << "\t|\n"; 
+
+    msg = sstream.str();
+}
+
 //Binary op between incompatible Types Error
 BinaryOpTypeError::BinaryOpTypeError(std::string lhs, std::string rhs, std::string fullText, int line, int charPos) {
     std::stringstream sstream;
