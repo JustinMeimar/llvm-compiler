@@ -1,0 +1,9 @@
+integer globalVar = 0;  // ERROR
+
+procedure main() returns integer {
+
+    return 0;
+}
+#split_token
+#split_token
+compile_error

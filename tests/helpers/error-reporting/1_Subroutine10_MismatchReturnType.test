@@ -1,0 +1,13 @@
+procedure one() returns real;
+
+procedure one() returns integer {
+    return 1;
+}
+
+procedure main() returns integer {
+    return 0;
+}
+
+#split_token
+#split_token
+compile_error

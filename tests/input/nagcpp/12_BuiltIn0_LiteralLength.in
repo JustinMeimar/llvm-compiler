@@ -1,0 +1,16 @@
+procedure main() returns integer {
+  length([]) -> std_output;
+  length(['a']) -> std_output;
+  length("") -> std_output;
+  length("\t") -> std_output;
+  length(0..0) -> std_output;
+  '\n' -> std_output;
+  length(1..100) -> std_output;
+  '\n' -> std_output;
+  length([1, 5, 3, 3, 3]) -> std_output;
+  length([1] || [2]) -> std_output;
+  length([null, null, 'l']) -> std_output;
+
+  return 0;
+}
+

@@ -1,0 +1,27 @@
+procedure main() returns integer {
+    as<integer[1]>([]) -> std_output;
+    as<integer[1]>([1, 2]) -> std_output;
+    as<integer[2]>(as<real[*]>([])) -> std_output;
+    as<integer[2, 1]>([[1, 2]]) -> std_output;
+    as<integer[2, 2]>([[]]) -> std_output;
+    as<integer[1, 1]>([[2, 3], [4, 5]]) -> std_output;
+    '\n' -> std_output;
+    as<real[2]>(identity) -> std_output;
+    as<real[0]>([7]) -> std_output;
+    as<real[*, 1]>(as<boolean[0, *]>([[]])) -> std_output;
+    '\n' -> std_output;
+    as<string>(['a', 'b']) -> std_output;
+    as<string[0]>([]) -> std_output;
+    as<string[0]>(['a', 'b']) -> std_output;
+    as<string[1]>("") -> std_output;
+    '\n' -> std_output;
+    as<character[2, 3]>(["hello", "world", "!    "]) -> std_output;
+    as<character[4, 1]>(["hello", "world", "!    "]) -> std_output;
+    '\n' -> std_output;
+    as<boolean[3]>(1..5) -> std_output;
+    as<boolean[3]>(1..1) -> std_output;
+    as<boolean[0]>(1..1) -> std_output;
+
+    return 0;
+}
+

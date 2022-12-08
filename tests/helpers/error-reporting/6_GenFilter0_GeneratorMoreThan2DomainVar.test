@@ -1,0 +1,7 @@
+procedure main() returns integer {
+    [i in 1..2, j in 1..2, k in i..2 | i + j + k] -> std_output;
+    return 0;
+}
+#split_token
+#split_token
+compile_error

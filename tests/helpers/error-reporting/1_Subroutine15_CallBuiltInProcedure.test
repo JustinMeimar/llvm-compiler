@@ -1,0 +1,8 @@
+procedure main() returns integer {
+    call stream_state(std_output);
+    return 0;
+}
+
+#split_token
+#split_token
+no_error

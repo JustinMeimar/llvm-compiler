@@ -1,0 +1,11 @@
+function h1(integer b) returns real = 2.0;
+
+function h1() returns character = 'c';
+
+procedure main() returns integer {
+    return 0;
+}
+
+#split_token
+#split_token
+compile_error

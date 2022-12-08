@@ -1,4 +1,4 @@
-procedure test(var a, var b) {
+procedure test(var integer a, var integer b) {
     a = b;
 }
 

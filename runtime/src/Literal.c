@@ -190,21 +190,28 @@ void variableInitFromVectorLiteral(Variable *this, int64_t nVars, Variable **var
     if (isMatrix) {
         // one more pass to find out the longest vector among all rows
         for (int64_t i = 0; i < nVars; i++) {
-            int64_t size = variableGetLength(vars[i]);
-            longestLen = longestLen > size ? longestLen : size;
+            if (!typeIsScalar(vars[i]->m_type)) {
+                int64_t size = variableGetLength(vars[i]);
+                longestLen = longestLen > size ? longestLen : size;
+            }
         }
     }
 
     Variable **modifiedVars = malloc(nVars * sizeof(Variable *));
     for (int64_t i = 0; i < nVars; i++) {
         if (isMatrix && typeIsScalar(vars[i]->m_type)) {
+            modifiedVars[i] = variableMalloc();
             int64_t dims[1] = {longestLen};
             variableInitFromScalarToConcreteArray(modifiedVars[i], vars[i], 1, dims, false);
         } else if (variableGetIndexRefTypeID(vars[i]) != NDARRAY_INDEX_REF_NOT_A_REF) {
 #ifdef DEBUG_PRINT
             fprintf(stderr, "calling refToValue from vector literal\n");
 #endif
+            modifiedVars[i] = variableMalloc();
             variableInitFromNDArrayIndexRefToValue(modifiedVars[i], vars[i]);
+        } else if (typeIsIntegerInterval(vars[i]->m_type)) {
+            modifiedVars[i] = variableMalloc();
+            variableInitFromPCADPToIntegerVector(modifiedVars[i], vars[i], &pcadpCastConfig);
         } else {  // do not modify
             modifiedVars[i] = vars[i];
         }
@@ -343,21 +350,24 @@ void variableInitFromGeneratorArray(Variable *this, int64_t nVars, Variable **va
 
 void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *domainExpr, bool *accept) {
     int64_t domainSize = variableGetLength(domainExpr);
-    int32_t *data = domainExpr->m_data;
-    int32_t resultBuffer[domainSize];
+    ArrayType *domainCTI = domainExpr->m_type->m_compoundTypeInfo;
+    ElementTypeID eid = domainCTI->m_elementTypeID;
+    int64_t elementSize = elementGetSize(eid);
+    char *resultBuffer = arrayMallocFromNull(eid, domainSize);
 
     Variable **vars = variableArrayMalloc(nFilter + 1);
     for (int64_t i = 0; i < nFilter; i++) {
         int64_t k = 0;
         for (int64_t j = 0; j < domainSize; j++) {
             if (accept[i * domainSize + j]) {
-                resultBuffer[k] = data[j];
+                void *ptr = variableNDArrayGet(domainExpr, j);
+                elementAssign(eid, resultBuffer + k * elementSize, ptr);
                 k += 1;
             }
         }
         int64_t dims[1] = {k};
         vars[i] = variableMalloc();
-        variableInitFromNDArray(vars[i], false, ELEMENT_INTEGER, 1, dims, resultBuffer, false);
+        variableInitFromNDArray(vars[i], false, eid, 1, dims, resultBuffer, false);
     }
     {  // the last variable
         int64_t k = 0;
@@ -370,14 +380,17 @@ void variableInitFromFilterArray(Variable *this, int64_t nFilter, Variable *doma
                 }
             }
             if (!hasBeenAccepted) {
-                resultBuffer[k] = data[i];
+                void *ptr = variableNDArrayGet(domainExpr, i);
+                elementAssign(eid, resultBuffer + k * elementSize, ptr);
                 k += 1;
             }
         }
         int64_t dims[1] = {k};
         vars[nFilter] = variableMalloc();
-        variableInitFromNDArray(vars[nFilter], false, ELEMENT_INTEGER, 1, dims, resultBuffer, false);
+        variableInitFromNDArray(vars[nFilter], false, eid, 1, dims, resultBuffer, false);
     }
+
+    arrayFree(eid, resultBuffer, domainSize);
 
     variableInitFromTupleLiteral(this, nFilter + 1, vars);
     for (int64_t i = 0; i <= nFilter; i++)

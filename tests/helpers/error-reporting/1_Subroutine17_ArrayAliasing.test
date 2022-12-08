@@ -1,0 +1,13 @@
+procedure test(var integer[*] a, var integer[*] b) {
+    a = b;
+}
+
+procedure main() returns integer {
+    integer[3] a = 1;
+    call test(a[1..1], a[2..2]);
+    return 0;
+}
+
+#split_token
+#split_token
+runtime_error

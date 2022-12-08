@@ -98,6 +98,9 @@ namespace gazprea {
                 case GazpreaParser::FUNCTION:
                     visitSubroutineDeclDef(t);
                     break;
+                case GazpreaParser::RETURN:
+                    visitReturn(t);
+                    break;
                 default:
                     visitChildren(t);
             };
@@ -112,8 +115,14 @@ namespace gazprea {
     }
     
     void TypeWalk::visitVariableDeclaration(std::shared_ptr<AST> t) {
-        visitChildren(t);
         if (t->children[2]->isNil()) { return; } // Decl w/ no def 
+        visit(t->children[0]);
+        visit(t->children[1]);
+        
+        isExpressionToReplaceIdentityNull = true;
+        visit(t->children[2]);
+        t->isExpressionToReplaceIdentityNull = isExpressionToReplaceIdentityNull;
+        
         if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
             auto variableDeclarationSymbol = std::dynamic_pointer_cast<VariableSymbol>(t->symbol);
             variableDeclarationSymbol->type = t->children[2]->evalType;
@@ -245,6 +254,7 @@ namespace gazprea {
     }
     
     void TypeWalk::visitIndex(std::shared_ptr<AST> t) {
+        isExpressionToReplaceIdentityNull = false;
         visitChildren(t);
         auto numRHSExpressions = t->children[1]->children.size();
         t->promoteToType = nullptr;
@@ -357,24 +367,28 @@ namespace gazprea {
     }
 
     void TypeWalk::visitFilter(std::shared_ptr<AST> t) {
+        isExpressionToReplaceIdentityNull = false;
         visitChildren(t);
         t->evalType = symtab->getType(Type::INTEGER_1);
         t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitGenerator(std::shared_ptr<AST> t) {
+        isExpressionToReplaceIdentityNull = false;
         visitChildren(t);
         t->evalType = symtab->getType(Type::INTEGER_1);
         t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitCast(std::shared_ptr<AST> t) {
+        isExpressionToReplaceIdentityNull = false;
         visitChildren(t);
         t->evalType = t->children[0]->type;
         t->promoteToType = nullptr;
     }
     
     void TypeWalk::visitTupleAccess(std::shared_ptr<AST> t) {
+        isExpressionToReplaceIdentityNull = false;
         visit(t->children[0]);
         auto tupleType = std::dynamic_pointer_cast<TupleType>(t->children[0]->evalType);
         if (t->children[1]->getNodeType() == GazpreaParser::IDENTIFIER_TOKEN) {
@@ -394,20 +408,28 @@ namespace gazprea {
     void TypeWalk::visitExpression(std::shared_ptr<AST> t) {
         visitChildren(t);
         t->evalType = t->children[0]->evalType;
-        t->promoteToType = nullptr; 
+        t->promoteToType = nullptr;
         if (t->evalType != nullptr && t->evalType->getTypeId() == Type::TUPLE) {
-            auto tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
+            std::shared_ptr<TupleType> tupleType = nullptr;
+            if (t->evalType->isTypedefType()) {
+                auto typedefType = std::dynamic_pointer_cast<TypedefTypeSymbol>(t->evalType);
+                tupleType = std::dynamic_pointer_cast<TupleType>(typedefType->type);
+            } else {
+                tupleType = std::dynamic_pointer_cast<TupleType>(t->evalType);
+            }
             t->tuplePromoteTypeList = std::vector<std::shared_ptr<Type>>(tupleType->orderedArgs.size());
         }
     } 
 
     void TypeWalk::visitStringConcat(std::shared_ptr<AST> t) {
+        isExpressionToReplaceIdentityNull = false;
         visitChildren(t);
         t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("string"));
         t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitCallInExpr(std::shared_ptr<AST> t) {
+        isExpressionToReplaceIdentityNull = false;
         visit(t->children[1]);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
         if (subroutineSymbol->isBuiltIn && subroutineSymbol->name == "gazprea.subroutine.reverse") {
@@ -424,12 +446,15 @@ namespace gazprea {
         auto node2 = t->children[1];
         
         //getResultType automatically populates promotType of children
-        switch(t->children[2]->getNodeType()){ 
+        switch(t->children[2]->getNodeType()){
+            // case GazpreaParser::NOT:
+            //     isExpressionToReplaceIdentityNull = false;
+            //     t->evalType = tp->getResultType(tp->logicalResultType, node1, node2, t);
+            //     break;
             case GazpreaParser::XOR:
-            case GazpreaParser::AND: 
-            case GazpreaParser::OR: 
-            case GazpreaParser::NOT:  
-                t->evalType = tp->getResultType(tp->logicalResultType, node1, node2, t); 
+            case GazpreaParser::AND:
+            case GazpreaParser::OR:
+                t->evalType = tp->getResultType(tp->logicalResultType, node1, node2, t);
                 break;
             case GazpreaParser::MODULO:
             case GazpreaParser::PLUS:
@@ -443,10 +468,12 @@ namespace gazprea {
             case GazpreaParser::GREATERTHAN:
             case GazpreaParser::LESSTHANOREQUAL:
             case GazpreaParser::GREATERTHANOREQUAL:
+                isExpressionToReplaceIdentityNull = false;
                 t->evalType = tp->getResultType(tp->relationalResultType, node1, node2, t);
                 break;
             case GazpreaParser::ISEQUAL:
             case GazpreaParser::ISNOTEQUAL:
+                isExpressionToReplaceIdentityNull = false;
                 t->evalType = tp->getResultType(tp->equalityResultType, node1, node2, t);
                 break; 
         }
@@ -460,6 +487,7 @@ namespace gazprea {
 
     //Compound Types
     void TypeWalk::visitVectorLiteral(std::shared_ptr<AST> t) {
+        isExpressionToReplaceIdentityNull = false;
         visitChildren(t);
         if (t->children[0]->children.size() == 0) { return; } //null vector
         if (t->children[0]->children[0]->children[0]->getNodeType() == GazpreaParser::VECTOR_LITERAL_TOKEN) {
@@ -475,12 +503,25 @@ namespace gazprea {
                     auto promoteIdResult = tp->promotionFromTo[matrixBaseTypeId][expressionAST->evalType->getTypeId()];
                     if (promoteIdResult != 0) {
                         matrixBaseTypeId = promoteIdResult;
-                    }
+                    }      
                 }
             }
-
             if (matrixBaseTypeId == -1) {
                 return;
+            }
+            switch(matrixBaseTypeId) {
+                case Type::INTEGER_1: 
+                    matrixBaseTypeId = Type::INTEGER;
+                    break;
+                case Type::CHARACTER_1: 
+                    matrixBaseTypeId = Type::CHARACTER;
+                    break;
+                case Type::REAL_1: 
+                    matrixBaseTypeId = Type::REAL;
+                    break;
+                case Type::BOOLEAN_1: 
+                    matrixBaseTypeId = Type::BOOLEAN;
+                    break;
             }
             std::shared_ptr<Type> baseType = symtab->getType(matrixBaseTypeId);
             t->evalType = std::make_shared<MatrixType>(MatrixType(baseType, 2, t));
@@ -505,11 +546,13 @@ namespace gazprea {
             }
             std::shared_ptr<Type> baseType = symtab->getType(vectorBaseTypeId);
             t->evalType = std::make_shared<MatrixType>(MatrixType(baseType, 1, t));
+            // std::cout << t->evalType->getTypeId() << std::endl;
         }
         t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitTupleLiteral(std::shared_ptr<AST> t) {
+        isExpressionToReplaceIdentityNull = false;
         visitChildren(t);
         size_t tupleSize = t->children[0]->children.size();
         auto tupleType = std::make_shared<TupleType>(currentScope, t, tupleSize);
@@ -524,6 +567,7 @@ namespace gazprea {
     }
 
     void TypeWalk::visitIntervalLiteral(std::shared_ptr<AST> t) {
+        isExpressionToReplaceIdentityNull = false;
         t->evalType = symtab->getType(Type::INTEGER_INTERVAL);
         t->promoteToType = nullptr;
     }
@@ -594,6 +638,12 @@ namespace gazprea {
 
     void TypeWalk::visitCallStatement(std::shared_ptr<AST> t) {
         visit(t->children[1]);
+    }
+
+    void TypeWalk::visitReturn(std::shared_ptr<AST> t) {
+        isExpressionToReplaceIdentityNull = true;
+        visitChildren(t);
+        t->isExpressionToReplaceIdentityNull = isExpressionToReplaceIdentityNull;
     }
     
 } // namespace gazprea

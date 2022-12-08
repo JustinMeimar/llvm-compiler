@@ -762,6 +762,8 @@ void *ndarrayRefElementPtrGetter(Variable *this, int64_t pos) {
             int64_t colIndexArrayLen = arrayTypeGetTotalLength(vars[2]->m_type->m_compoundTypeInfo);
             int32_t selfRowIndex = variableGetIntegerElementAtIndex(vars[1], pos / colIndexArrayLen);
             int32_t selfColIndex = variableGetIntegerElementAtIndex(vars[2], pos % colIndexArrayLen);
+            if (selfColIndex < 1 || selfColIndex > nCol)
+                errorAndExit("Matrix col index out of range!");
             int32_t selfIndex = (selfRowIndex - 1) * (int32_t)nCol + (selfColIndex - 1);
             return variableNDArrayGet(self, selfIndex);
         } else {
