@@ -1,0 +1,138 @@
+typedef integer interval ivl;
+
+function intToString(integer val) returns string {
+    string[11] str;
+    integer ptr = 11;
+    boolean isNegative = val < 0;
+
+    if (val == 0) {
+        return "0";
+    }
+
+    integer temp = val;
+    
+    loop while (temp != 0) {
+        integer mod = temp % 10;
+        if (mod < 0) {
+            mod = -mod;
+        }
+        temp = temp / 10;
+        str[ptr] = as<character>(mod + as<integer>('0'));
+        ptr = ptr - 1;
+    }
+
+    if (isNegative) {
+        str[ptr] = '-';
+        ptr = ptr - 1;
+    }
+    return str[(ptr + 1)..11];
+}
+
+function toString(ivl i) returns string {
+    string str1 = intToString(i[1]);
+    string[2] str2 = "..";
+    string str3 = intToString(i[length(i)]);
+    return str1 || str2 || str3;
+}
+
+procedure print(ivl i) {
+    toString(i) -> std_output;
+    '\n' -> std_output;
+}
+
+procedure main() returns integer {
+    ivl nn = (-1)..-1;
+    ivl nz = (-2)..0;
+    ivl np = (-3)..3;
+    ivl zz = null;
+    ivl zp = 0..4;
+    ivl pp = 5..6;
+
+    call print(nn * nn);
+    call print(nn * nz);
+    call print(nn * np);
+    call print(nn * zz);
+    call print(nn * zp);
+    call print(nn * pp);
+    call print(nz * nn);
+    call print(np * nn);
+    call print(zz * nn);
+    call print(zp * nn);
+    call print(pp * nn);
+    '\n' -> std_output;
+    call print(nz * nz);
+    call print(nz * np);
+    call print(nz * zz);
+    call print(nz * zp);
+    call print(nz * pp);
+    call print(np * nz);
+    call print(zz * nz);
+    call print(zp * nz);
+    call print(pp * nz);
+    '\n' -> std_output;
+    call print(np * np);
+    call print(np * zz);
+    call print(np * zp);
+    call print(np * pp);
+    call print(zz * np);
+    call print(zp * np);
+    call print(pp * np);
+    '\n' -> std_output;
+    call print(zz * zz);
+    call print(zz * zp);
+    call print(zz * pp);
+    call print(zp * zz);
+    call print(pp * zz);
+    '\n' -> std_output;
+    call print(zp * zp);
+    call print(zp * pp);
+    call print(pp * zp);
+    '\n' -> std_output;
+    call print(pp * pp);
+
+    return 0;
+}
+
+#split_token
+#split_token
+1..1
+0..2
+-3..3
+0..0
+-4..0
+-6..-5
+0..2
+-3..3
+0..0
+-4..0
+-6..-5
+
+0..4
+-6..6
+0..0
+-8..0
+-12..0
+-6..6
+0..0
+-8..0
+-12..0
+
+-9..9
+0..0
+-12..12
+-18..18
+0..0
+-12..12
+-18..18
+
+0..0
+0..0
+0..0
+0..0
+0..0
+
+0..16
+0..24
+0..24
+
+25..36

@@ -185,31 +185,33 @@ void variableInitFromPCADP(Variable *this, Type *targetType, Variable *rhs, PCAD
             ArrayType *CTI = targetType->m_compoundTypeInfo;
             ElementTypeID eid = CTI->m_elementTypeID;
             if (CTI->m_nDim != 1)
-                singleTypeError(targetType, "Attempt to convert interval to:");
+                singleTypeError(targetType, "Attempt to convert interval to type with dimension != 1:");
+            else if (!config->m_isCast && !(eid == ELEMENT_INTEGER || eid == ELEMENT_REAL))
+                singleTypeError(targetType, "Attempt to promote interval to non-integer/real array:");
             int64_t arrayLength = CTI->m_dims[0];
 
             int32_t *interval = rhs->m_data;
             int64_t size = interval[1] - interval[0] + 1;
             if (arrayLength < 0)
                 arrayLength = size;  // for unspecified/unknown size we just assume it is the same size
-            if (config->m_rhsSizeRestriction == vectovec_rhs_must_be_same_size && arrayLength != size
-            || config->m_rhsSizeRestriction == vectovec_rhs_size_must_not_be_greater && size > arrayLength) {
-                singleTypeError(targetType, "Attempt to convert interval to:");
+            if ((config->m_rhsSizeRestriction == vectovec_rhs_must_be_same_size && arrayLength != size)
+            || (config->m_rhsSizeRestriction == vectovec_rhs_size_must_not_be_greater && size > arrayLength)) {
+                singleTypeError(targetType, "Attempt to convert interval to an incompatible sized type:");
             }
             int32_t *vec = arrayMallocFromNull(ELEMENT_INTEGER, arrayLength);
 
-            int64_t resultSize = size < arrayLength ? size : arrayLength;
-            for (int64_t i = 0; i < resultSize; i++) {
+            int64_t copySize = size < arrayLength ? size : arrayLength;
+            for (int64_t i = 0; i < copySize; i++) {
                 vec[i] = interval[0] + (int32_t)i;
             }
-            int64_t dims[1] = {resultSize};
+            int64_t dims[1] = {arrayLength};
             typeInitFromArrayType(this->m_type, false, eid, 1, dims);
             if (eid == ELEMENT_INTEGER) {
                 this->m_data = vec;
-            } else if (eid != ELEMENT_REAL) {
-                singleTypeError(targetType, "Attempt to convert interval to:");
+            } else if (!elementIsBasicType(eid)) {
+                singleTypeError(targetType, "Attempt to convert interval to non basic type array:");
             } else {
-                arrayMallocFromCast(eid, ELEMENT_INTEGER, resultSize, vec, &this->m_data);
+                arrayMallocFromCast(eid, ELEMENT_INTEGER, arrayLength, vec, &this->m_data);
                 free(vec);
             }
         } else {
