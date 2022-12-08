@@ -103,6 +103,7 @@ namespace gazprea {
             subroutineSymbol->numTimesDeclare--;  // We will eliminate duplicated parameter once (i.e., this else-block will only run once)
         }
         auto ctx = dynamic_cast<GazpreaParser::SubroutineDeclDefContext*>(t->parseTree);
+        
         if (subroutineSymbol->getName() == "main" && subroutineSymbol->type->getTypeId() != Type::INTEGER) {
             throw MainReturnIntegerError(
                 (ctx->children[0]->getText() + " " + ctx->children[2]->getText() + ctx->children[3]->getText() + ctx->children[4]->getText()),
@@ -112,6 +113,10 @@ namespace gazprea {
         if (subroutineSymbol->getName() == "main" && subroutineSymbol->orderedArgs.size() != 0){
             throw MainArgumentsPresentError("procedure main(...)", 
                 ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        }
+        if (subroutineSymbol->numTimesDeclare > 0 && subroutineSymbol->numTimesDefined == 0) {
+            std::string desc = "Subroutine declared with no definition ";
+            throw GazpreaError(desc, subroutineSymbol->getName(), t->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
         }
     }
 

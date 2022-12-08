@@ -19,10 +19,12 @@ namespace gazprea {
     public:
         bool isProcedure;  // True if the subroutine is a procedure, False if the subroutine is a function
         bool isBuiltIn;  // True if this subroutine is built-in, false otherwise
+        bool hasReturn; 
         std::shared_ptr<AST> declaration;
         std::shared_ptr<AST> definition;
         llvm::Value* stackPtr = nullptr; 
         int numTimesDeclare = 0;  // If forward declaration, this value is 2, otherwise 1
+        int numTimesDefined = 0;  // If 0 then undecalred subroutine error
         std::vector<std::shared_ptr<Symbol>> orderedArgs;
         llvm::Function *llvmFunction;
         std::shared_ptr<LocalScope> subroutineDirectChildScope;

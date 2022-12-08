@@ -19,6 +19,17 @@ public:
     }
 };
 
+/* General  Error Messages */
+class GazpreaError : public std::exception {
+    private:
+        std::string msg;
+    public: 
+        GazpreaError(std::string descr = "", std::string errorText = "", std::string fullText = "", int line=0, int charPos=0); 
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+};
+
 // Binary Operator Type Error
 class BinaryOpTypeError : public std::exception {
     private:

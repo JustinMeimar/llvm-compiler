@@ -298,12 +298,7 @@ namespace gazprea
         auto *ctx = dynamic_cast<GazpreaParser::ReturnStatementContext*>(t->parseTree);
         llvmBranch.hitReturnStat = true;
         
-        if (t->children[0]->isNil()) {
-            // return; statement (without expression)
-            if (subroutineSymbol->type != nullptr) {
-                throw BadReturnTypeError("void", ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
-            }
-            
+        if (t->children[0]->isNil()) { 
             // Recursively free the current scope of return Statement and all of its enclosing scope (traverse up until subroutineSymbol)
             std::shared_ptr<Scope> temp = t->scope;
             freeSubroutineParameters(subroutineSymbol);
@@ -317,19 +312,7 @@ namespace gazprea
             return;
         }
 
-        // return expression; statement
-        //throw incompatible return type exception
-        if(t->children[0]->evalType != nullptr 
-            && subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
-            if (tp->promotionFromTo[t->children[0]->evalType->getTypeId()][subroutineSymbol->type->getTypeId()] == 0) {
-                throw BadReturnTypeError(
-                    subroutineSymbol->type->getName(),ctx->getText(), 
-                    ctx->getStart()->getLine(), 
-                    ctx->getStart()->getCharPositionInLine()
-                );
-            }
-        }
-        
+        // return expression; statement  
         visit(subroutineSymbol->declaration->children[2]);  // Visit Type
         llvmSubroutineReturnType = subroutineSymbol->declaration->children[2]->llvmValue;
         
