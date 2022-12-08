@@ -4,8 +4,6 @@
 #include <string>
 #include <memory>
 
-#include "Scope.h"
-#include "Symbol.h"
 #include "GlobalScope.h"
 #include "BuiltInScalarTypeSymbol.h"
 #include "Type.h"
