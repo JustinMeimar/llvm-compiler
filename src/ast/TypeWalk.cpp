@@ -475,12 +475,25 @@ namespace gazprea {
                     auto promoteIdResult = tp->promotionFromTo[matrixBaseTypeId][expressionAST->evalType->getTypeId()];
                     if (promoteIdResult != 0) {
                         matrixBaseTypeId = promoteIdResult;
-                    }
+                    }      
                 }
             }
-
             if (matrixBaseTypeId == -1) {
                 return;
+            }
+            switch(matrixBaseTypeId) {
+                case Type::INTEGER_1: 
+                    matrixBaseTypeId = Type::INTEGER;
+                    break;
+                case Type::CHARACTER_1: 
+                    matrixBaseTypeId = Type::CHARACTER;
+                    break;
+                case Type::REAL_1: 
+                    matrixBaseTypeId = Type::REAL;
+                    break;
+                case Type::BOOLEAN_1: 
+                    matrixBaseTypeId = Type::BOOLEAN;
+                    break;
             }
             std::shared_ptr<Type> baseType = symtab->getType(matrixBaseTypeId);
             t->evalType = std::make_shared<MatrixType>(MatrixType(baseType, 2, t));
@@ -505,6 +518,7 @@ namespace gazprea {
             }
             std::shared_ptr<Type> baseType = symtab->getType(vectorBaseTypeId);
             t->evalType = std::make_shared<MatrixType>(MatrixType(baseType, 1, t));
+            // std::cout << t->evalType->getTypeId() << std::endl;
         }
         t->promoteToType = nullptr;
     }
