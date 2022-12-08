@@ -35,7 +35,7 @@ procedure main() returns int {
     return 0;
 }
 
-function signature(int one, int two, int three, float five, char nine) returns int {
+function signature(int one, int two, int three, float five, char nine) returns real {
     const int sum = one + two + three + as<int>(five) + as<int>(nine);
     return sum;
 }

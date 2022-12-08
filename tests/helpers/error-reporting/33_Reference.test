@@ -1,0 +1,16 @@
+// COMPILE TIME ERROR
+
+typedef integer int;
+
+procedure reference2(var int a) {
+    a -> std_out; // Should print 10
+    '\n' -> std_out;
+    a = 50;
+}
+
+procedure main() returns int {
+    const int a = 10;
+    call reference2(a); // This should cause compile time error
+
+    return 0;
+}

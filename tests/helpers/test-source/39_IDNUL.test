@@ -1,0 +1,57 @@
+typedef integer int;
+typedef character char;
+
+procedure nl() {
+    '\n' -> std_out;
+}
+
+procedure test1() {
+    int i = null + identity;
+    char j = identity + null;
+    real w = null + identity;
+    tuple(int, char, real) tp = (null + identity, null + identity, null + identity);
+
+    i -> std_out; // Should print 1
+    call nl();
+    as<int>(j) -> std_out; // Should print 1
+    call nl();
+    w -> std_out; // Should print 1.0
+    call nl();
+    call nl();
+    tp.1 -> std_out; // Should print 1
+    call nl();
+    as<int>(tp.2) -> std_out; // Should print 1
+    call nl();
+    tp.3 -> std_out; // Should print 1.0
+    call nl();
+}
+
+procedure test2() {
+    int i = 0; 
+    int sum = 0;
+    
+    loop while i < 4 {
+        sum = sum + identity;
+        i = i + 1;
+    } 
+
+    sum -> std_out; // 4
+    call nl();
+}
+
+procedure main() returns int {
+    call test1();
+    call test2();
+    return 0;
+}
+#split_token
+#split_token
+1
+1
+1.0
+
+1
+1
+1.0
+4
+

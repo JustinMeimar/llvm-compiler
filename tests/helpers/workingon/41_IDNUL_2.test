@@ -1,0 +1,19 @@
+typedef integer int;
+
+procedure test1() {
+    int i = null + null + 1;
+    int j = identity + 2 * 10;
+    int m = null * null * null;
+
+    i -> std_out; // Should print 1
+    '\n' -> std_out; 
+    j -> std_out; // Should print 21
+    '\n' -> std_out;
+    m -> std_out; // Should print 0
+    '\n' -> std_out;
+}
+
+procedure main() returns int {
+    call test1();
+    return 0;
+}
