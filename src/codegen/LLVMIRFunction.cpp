@@ -50,6 +50,14 @@ void LLVMIRFunction::declareAllFunctions() {
         llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo()}, false),
         "variableInitFromIdentityScalar"
     );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeTypeTy->getPointerTo()}, false),
+        "variableInitFromNull"
+    );
+    declareFunction(
+        llvm::FunctionType::get(voidTy, {runtimeVariableTy->getPointerTo(), runtimeTypeTy->getPointerTo()}, false),
+        "variableInitFromIdentity"
+    );
     
     // Other Expression
     declareFunction(

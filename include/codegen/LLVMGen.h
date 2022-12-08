@@ -43,7 +43,12 @@ class LLVMGen {
         LLVMIRFunction llvmFunction;
         LLVMIRBranch llvmBranch;
         int numExprAncestors;
+        int numVariableDeclarationAncestors;
+        int numReturnStatementAncestors;
         std::shared_ptr<TypePromote> tp;
+
+        llvm::Value *varDeclarationLHSType = nullptr;
+        llvm::Value *subroutineReturnType = nullptr;
 
         LLVMGen(std::shared_ptr<SymbolTable> symtab, std::shared_ptr<TypePromote> tp, std::string& outfile);
         ~LLVMGen();
