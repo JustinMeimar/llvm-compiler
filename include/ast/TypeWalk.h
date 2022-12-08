@@ -21,6 +21,7 @@ class TypeWalk {
         std::shared_ptr<SymbolTable> symtab;
         std::shared_ptr<Scope> currentScope;
         std::shared_ptr<TypePromote> tp;
+        bool isExpressionToReplaceIdentityNull = true;
 
     public:
         TypeWalk(std::shared_ptr<SymbolTable> symtab, std::shared_ptr<TypePromote> tp);
@@ -64,6 +65,7 @@ class TypeWalk {
         void visitTypedefStatement(std::shared_ptr<AST> t);
         void visitSubroutineDeclDef(std::shared_ptr<AST> t);
         void visitCallStatement(std::shared_ptr<AST> t);
+        void visitReturn(std::shared_ptr<AST> t);
 };
 
 } // namespace gazprea

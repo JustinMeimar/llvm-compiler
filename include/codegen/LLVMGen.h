@@ -47,8 +47,10 @@ class LLVMGen {
         int numReturnStatementAncestors;
         std::shared_ptr<TypePromote> tp;
 
-        llvm::Value *varDeclarationLHSType = nullptr;
-        llvm::Value *subroutineReturnType = nullptr;
+        llvm::Value *llvmVarDeclarationLHSType = nullptr;
+        llvm::Value *llvmSubroutineReturnType = nullptr;
+
+        bool isExpressionToReplaceIdentityNull = false;
 
         LLVMGen(std::shared_ptr<SymbolTable> symtab, std::shared_ptr<TypePromote> tp, std::string& outfile);
         ~LLVMGen();

@@ -258,8 +258,6 @@ namespace gazprea
         initializeSubroutineParameters(subroutineSymbol); 
         
         subroutineSymbol->stackPtr = llvmFunction.call("runtimeStackSave", {getStack()});
-        
-        visit(t->children[3]);  // Visit body
 
         if (t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EXPRESSION_BODY_TOKEN) {
             // Subroutine with Expression Body
@@ -268,7 +266,11 @@ namespace gazprea
                 ir.CreateRetVoid();
                 return;
             }
-            visit(t->children[2]);
+
+            visit(t->children[2]);  // Return Type
+            llvmSubroutineReturnType = t->children[2]->llvmValue;
+            visit(t->children[3]);  // Visit Body
+
             auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
             llvmFunction.call("variableInitFromDeclaration", { runtimeVariableObject, t->children[2]->llvmValue, t->children[3]->children[0]->llvmValue });
             llvmFunction.call("typeDestructThenFree", t->children[2]->llvmValue);
@@ -286,11 +288,12 @@ namespace gazprea
                 llvmFunction.call("runtimeStackRestore", {getStack(), subroutineSymbol->stackPtr});
                 ir.CreateRet(runtimeVariableObject);
             }
+            return;
         }
+        visit(t->children[3]);  // Visit body
     }
 
     void LLVMGen::visitReturn(std::shared_ptr<AST> t) {
-        visitChildren(t);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->subroutineSymbol);
         auto *ctx = dynamic_cast<GazpreaParser::ReturnStatementContext*>(t->parseTree);
         llvmBranch.hitReturnStat = true;
@@ -327,8 +330,14 @@ namespace gazprea
             }
         }
         
+        visit(subroutineSymbol->declaration->children[2]);  // Visit Type
+        llvmSubroutineReturnType = subroutineSymbol->declaration->children[2]->llvmValue;
+        
+        isExpressionToReplaceIdentityNull = t->isExpressionToReplaceIdentityNull;
+        visitChildren(t);  // Visit Expression
+        isExpressionToReplaceIdentityNull = false;
+
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
-        visit(subroutineSymbol->declaration->children[2]);
         llvmFunction.call("variableInitFromDeclaration", { runtimeVariableObject, subroutineSymbol->declaration->children[2]->llvmValue, t->children[0]->llvmValue });
         llvmFunction.call("typeDestructThenFree", subroutineSymbol->declaration->children[2]->llvmValue);
         
@@ -369,15 +378,14 @@ namespace gazprea
         if (variableSymbol->isGlobalVariable) {
             return;
         }
-        // visitChildren(t);
 
         // Handle identity/null in expression in vector/matrix declaration
         auto runtimeIntegerType = llvmFunction.call("typeMalloc", {});
         llvmFunction.call("typeInitFromIntegerScalar", { runtimeIntegerType });
-        varDeclarationLHSType = runtimeIntegerType;
+        llvmVarDeclarationLHSType = runtimeIntegerType;
         visit(t->children[0]);
         llvmFunction.call("typeDestructThenFree", runtimeIntegerType);
-        varDeclarationLHSType = nullptr;
+        llvmVarDeclarationLHSType = nullptr;
 
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         if (t->children[2]->isNil()) {
@@ -389,7 +397,7 @@ namespace gazprea
             llvmFunction.call("typeDestructThenFree", runtimeTypeObject);
             llvmFunction.call("variableDestructThenFree", rhs);
         } else if (t->children[0]->getNodeType() == GazpreaParser::INFERRED_TYPE_TOKEN) {
-            varDeclarationLHSType = nullptr;
+            llvmVarDeclarationLHSType = nullptr;
             visit(t->children[2]);
             auto runtimeTypeObject = llvmFunction.call("typeMalloc", {});
             llvmFunction.call("typeInitFromUnknownType", { runtimeTypeObject });
@@ -400,9 +408,11 @@ namespace gazprea
             llvmFunction.call("typeDestructThenFree", runtimeTypeObject);
         } else {
             auto runtimeTypeObject = t->children[0]->children[1]->llvmValue;
-            // varDeclarationLHSType = runtimeTypeObject;
-            varDeclarationLHSType = nullptr;
+            llvmVarDeclarationLHSType = runtimeTypeObject;
+
+            isExpressionToReplaceIdentityNull = t->isExpressionToReplaceIdentityNull;
             visit(t->children[2]);
+            isExpressionToReplaceIdentityNull = false;
 
             llvmFunction.call("variableInitFromDeclaration", {runtimeVariableObject, runtimeTypeObject, t->children[2]->llvmValue});
             variableSymbol->llvmPointerToTypeObject = runtimeTypeObject;
@@ -1167,13 +1177,18 @@ namespace gazprea
     void LLVMGen::visitIdentityAtom(std::shared_ptr<AST> t) {
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         if (numVariableDeclarationAncestors > 0) {
-            if (varDeclarationLHSType != nullptr) {
-                llvmFunction.call("variableInitFromIdentity", { runtimeVariableObject, varDeclarationLHSType });
+            if (llvmVarDeclarationLHSType != nullptr && isExpressionToReplaceIdentityNull) {
+                llvmFunction.call("variableInitFromIdentity", { runtimeVariableObject, llvmVarDeclarationLHSType });
             } else {
                 llvmFunction.call("variableInitFromIdentityScalar", {runtimeVariableObject});
             }
         } else if (numReturnStatementAncestors > 0) {
-            llvmFunction.call("variableInitFromIdentityScalar", {runtimeVariableObject});
+            if (isExpressionToReplaceIdentityNull) {
+                llvmFunction.call("variableInitFromIdentity", { runtimeVariableObject, llvmSubroutineReturnType });
+            } else {
+                llvmFunction.call("variableInitFromIdentityScalar", {runtimeVariableObject});
+            }
+            
         } else {
             llvmFunction.call("variableInitFromIdentityScalar", {runtimeVariableObject});
         }
@@ -1183,13 +1198,17 @@ namespace gazprea
     void LLVMGen::visitNullAtom(std::shared_ptr<AST> t) {
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         if (numVariableDeclarationAncestors > 0) {
-            if (varDeclarationLHSType != nullptr) {
-                llvmFunction.call("variableInitFromNull", { runtimeVariableObject, varDeclarationLHSType });
+            if (llvmVarDeclarationLHSType != nullptr && isExpressionToReplaceIdentityNull) {
+                llvmFunction.call("variableInitFromNull", { runtimeVariableObject, llvmVarDeclarationLHSType });
             } else {
                 llvmFunction.call("variableInitFromNullScalar", {runtimeVariableObject});
             }
         } else if (numReturnStatementAncestors > 0) {
-            llvmFunction.call("variableInitFromNullScalar", {runtimeVariableObject});
+            if (isExpressionToReplaceIdentityNull) {
+                llvmFunction.call("variableInitFromNull", { runtimeVariableObject, llvmSubroutineReturnType });
+            } else {
+                llvmFunction.call("variableInitFromNullScalar", {runtimeVariableObject});
+            }
         } else {
             llvmFunction.call("variableInitFromNullScalar", {runtimeVariableObject});
         }

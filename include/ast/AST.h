@@ -39,6 +39,8 @@ namespace gazprea {
         std::shared_ptr<Scope> scope = nullptr;  // Populate by Def pass
 		std::shared_ptr<Scope> subroutineSymbol = nullptr;  // Populate by Def Pass, only use in visitReturn()
 
+		bool isExpressionToReplaceIdentityNull = false;
+
 		//Methods	
 		virtual ~AST();	
     	static std::shared_ptr<AST> NewNilNode(); /** create a node with NIL_TYPE and no parse tree node */
