@@ -21,6 +21,13 @@ class DefWalk {
         bool hasMainProcedure;
         int numLoopAncestors;
         int numSubroutineAncestors;
+        std::vector<std::string> reservedSbrtNames = {
+            "length",
+            "columns",
+            "rows", 
+            "reverse",
+            "stream_state"
+        };
         DefWalk(std::shared_ptr<SymbolTable> symtab);
         ~DefWalk();
 

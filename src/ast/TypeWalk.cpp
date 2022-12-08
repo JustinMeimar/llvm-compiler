@@ -430,8 +430,19 @@ namespace gazprea {
 
     void TypeWalk::visitCallInExpr(std::shared_ptr<AST> t) {
         isExpressionToReplaceIdentityNull = false;
+        auto *ctx = dynamic_cast<GazpreaParser::CallProcedureFunctionInExpressionContext*>(t->parseTree); 
         visit(t->children[1]);
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->children[0]->symbol);
+        
+        // //Exception for misaligned argument pass  
+        if (subroutineSymbol->isBuiltIn) {
+            int numArgsRecieved = t->children[1]->children.size();   
+            if (numArgsRecieved != 1) {
+                throw InvalidArgumentError(subroutineSymbol->name, t->getText(),
+                    ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+                );
+            }  
+        } 
         if (subroutineSymbol->isBuiltIn && subroutineSymbol->name == "gazprea.subroutine.reverse") {
             t->evalType = t->children[1]->children[0]->evalType;
         } else {
@@ -644,6 +655,29 @@ namespace gazprea {
         isExpressionToReplaceIdentityNull = true;
         visitChildren(t);
         t->isExpressionToReplaceIdentityNull = isExpressionToReplaceIdentityNull;
+        
+        auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->subroutineSymbol);
+        auto *ctx = dynamic_cast<GazpreaParser::ReturnStatementContext*>(t->parseTree);
+        if (t->children[0]->isNil()) {
+            if (subroutineSymbol->type != nullptr) {
+                throw BadReturnTypeError("void", ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+            }
+            return;
+        }
+        if (!subroutineSymbol->hasReturn) {
+            std::string desc = "Return statement found in subroutine with no specified return type ";
+            throw GazpreaError(desc, subroutineSymbol->getName(), t->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        } 
+        if(t->children[0]->evalType != nullptr 
+            && subroutineSymbol->type->getTypeId() != t->children[0]->evalType->getTypeId()) {
+            if (tp->promotionFromTo[t->children[0]->evalType->getTypeId()][subroutineSymbol->type->getTypeId()] == 0) {
+                throw BadReturnTypeError(
+                    subroutineSymbol->type->getName(),ctx->getText(), 
+                    ctx->getStart()->getLine(), 
+                    ctx->getStart()->getCharPositionInLine()
+                );
+            }
+        }
     }
     
 } // namespace gazprea

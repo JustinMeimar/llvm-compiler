@@ -125,6 +125,13 @@ namespace gazprea {
     void DefWalk::visitSubroutineDeclDef(std::shared_ptr<AST> t) {
         bool isProcedure;
         bool isBuiltIn = false;
+        auto *ctx = dynamic_cast<GazpreaParser::SubroutineDeclDefContext*>(t->parseTree);
+        std::string sbrtName = t->children[0]->parseTree->getText(); 
+        for (auto reservedName : this->reservedSbrtNames) {
+            if (sbrtName == reservedName) {
+                throw RedefineIdError(sbrtName, t->children[0]->getText() + "(...", ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+            }
+        }
         if (t->getNodeType() == GazpreaParser::PROCEDURE) {
             isProcedure = true;
         } else {
@@ -156,6 +163,17 @@ namespace gazprea {
             subroutineSymbol->definition = t;
             subroutineSymbol->numTimesDeclare++;
         }
+        if (!t->children[2]->isNil()) {
+            subroutineSymbol->hasReturn = true;
+        }
+        if ( t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_BLOCK_BODY_TOKEN 
+            || t->children[3]->getNodeType() == GazpreaParser::SUBROUTINE_EXPRESSION_BODY_TOKEN )  {
+                subroutineSymbol->numTimesDefined++;
+        }
+        if (subroutineSymbol->numTimesDeclare > 2) {
+            std::string descr = "Subroutine has been defined/declared more than two times: ";
+            throw GazpreaError(descr, t->children[0]->getText() + "(...", t->children[0]->getText(),  ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()); 
+        } 
 
         t->symbol = subroutineSymbol;  // track in AST
         currentSubroutineScope = subroutineSymbol;  // Track Subroutine Scope for visitReturn()
@@ -301,16 +319,12 @@ namespace gazprea {
                 blockScope->parentIsConditional = true;
             } 
             else if (child->getNodeType() == GazpreaParser::ELSEIF_TOKEN) {
-                // if (child->children[1]->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
-                    auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->children[1]->scope);
-                    blockScope->parentIsConditional = true;
-                // }
+                auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->children[1]->scope);
+                blockScope->parentIsConditional = true;
             } 
             else if (child->getNodeType() == GazpreaParser::ELSE_TOKEN) {
-                // if (child->children[0]->getNodeType() == GazpreaParser::BLOCK_TOKEN) {
-                    auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->children[0]->scope);
-                    blockScope->parentIsConditional = true;
-                // }
+                auto blockScope = std::dynamic_pointer_cast<LocalScope>(child->children[0]->scope);
+                blockScope->parentIsConditional = true;
             }
         }  
         return;
@@ -333,13 +347,6 @@ namespace gazprea {
         currentScope = filterScope;
         t->scope = filterScope; 
         visitChildren(t);  
-        //manually define the identifier in filter scope
-        // std::shared_ptr<AST> identifierAST = t->children[0];
-        // auto vs = std::make_shared<VariableSymbol>(identifierAST->parseTree->getText(), nullptr);
-        // vs->def = t;  // track AST location of def's ID (i.e., where in AST does this symbol defined)
-        // t->symbol = vs;   // track in AST
-        // currentScope->define(vs); 
-        //pop scope
         currentScope = currentScope->getEnclosingScope();
         return;
     }
