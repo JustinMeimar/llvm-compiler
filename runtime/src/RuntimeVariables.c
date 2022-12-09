@@ -504,7 +504,8 @@ void computeSameTypeSameSizeArrayArrayBinop(Variable *this, Variable *op1, Varia
     ElementTypeID resultEID;
     bool resultCollapseToScalar;
     if (!arrayBinopResultType(op1CTI->m_elementTypeID, opcode, &resultEID, &resultCollapseToScalar)) {
-        errorAndExit("Cannot perform binop between two array variables!");
+        fprintf(stderr, "binop type: %d\n", opcode);
+        doubleTypeError(op1->m_type, op2->m_type, "Cannot perform binop between two array variables!");
     }
 
     // init type
@@ -679,7 +680,10 @@ void variableInitFromBinaryOpWithSpecTypes(Variable *this, Variable *op1, Variab
                     variableDestructThenFreeImpl(target2);
                 } else {
                     Type *targetType = typeMalloc();
-                    typeInitFromCopy(targetType, op1Type);
+                    if (variableGetNDim(op1) > variableGetNDim(op2))
+                        typeInitFromCopy(targetType, op1Type);
+                    else
+                        typeInitFromCopy(targetType, op2Type);
                     ArrayType *CTI = targetType->m_compoundTypeInfo;
                     if (!elementCanBePromotedBetween(op1CTI->m_elementTypeID, op2CTI->m_elementTypeID,
                                                      &CTI->m_elementTypeID)) {

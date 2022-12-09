@@ -1,0 +1,8 @@
+procedure main() returns integer {
+    var real[1, 1] mat;
+    var real[1] vec;
+    vec + mat[1, 1] -> std_output;
+
+    return 0;
+}
+

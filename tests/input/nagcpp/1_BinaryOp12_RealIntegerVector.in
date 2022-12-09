@@ -1,0 +1,7 @@
+procedure main() returns integer {
+    var b = [2.2, 4.3];
+    2 + b -> std_output;
+    b + 2 -> std_output;
+
+    return 0;
+}
