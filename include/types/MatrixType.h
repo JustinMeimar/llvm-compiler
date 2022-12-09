@@ -29,12 +29,7 @@ namespace gazprea {
         bool isIdentityType() {
             return false;
         }
-        std::string getName() {
-            if (dimension == 1) {
-                return "vector";
-            }
-            return "matrix";
-        }
+        std::string getName(); 
         int getTypeId();
     };
 }

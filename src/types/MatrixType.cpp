@@ -42,4 +42,31 @@ namespace gazprea {
         }
         return -1;
     }
+    
+    std::string MatrixType::getName() {
+        std::string strBaseType = "";
+            switch(baseType->getTypeId()) {
+                case Type::BOOLEAN:
+                case Type::BOOLEAN_1:
+                    strBaseType = "boolean"; 
+                    break;
+                case Type::CHARACTER:
+                case Type::CHARACTER_1:
+                    strBaseType = "character"; 
+                    break;
+                case Type::INTEGER:
+                case Type::INTEGER_1:
+                    strBaseType = "integer"; 
+                    break;
+                case Type::REAL:
+                case Type::REAL_1:
+                    strBaseType = "real"; 
+                    break;
+        } 
+        if (dimension == 1) { 
+            return strBaseType + " vector";
+        }
+        return strBaseType + " matrix";
+    }
+
 }
