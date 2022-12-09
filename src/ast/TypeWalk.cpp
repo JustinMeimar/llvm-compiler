@@ -140,6 +140,8 @@ namespace gazprea {
             auto *ctx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext*>(t->parseTree);
             throw InvalidDeclarationError(t->children[1]->getText(), ctx->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
         } 
+        // for exception throwing down below
+        auto *ctx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext*>(t->parseTree);   
         if (exprTy->getTypeId() == Type::IDENTITYNULL) {
             t->children[2]->promoteToType = varTy;
 
@@ -148,7 +150,6 @@ namespace gazprea {
             auto tupleTypeInExpression = std::dynamic_pointer_cast<TupleType>(exprTy);
             if (tupleTypeInTypeSpecifier->orderedArgs.size() != tupleTypeInExpression->orderedArgs.size()) {
                 //throw exception
-                auto *ctx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext*>(t->parseTree);  
                 throw TupleSizeError( t->children[1]->getText(), t->children[2]->getText(), t->parseTree->getText(),
                     ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
                 );
@@ -168,6 +169,11 @@ namespace gazprea {
             int promote = tp->promotionFromTo[exprTyEnum][varTyEnum];
             if(promote != 0) {
                 t->children[2]->promoteToType = t->children[1]->evalType;
+            } else if (varTyEnum != exprTyEnum ){ 
+                throw IncompatibleTypeError(
+                    symtab->getType(varTyEnum)->getName(), symtab->getType(exprTyEnum)->getName(), 
+                    t->parseTree->getText(),ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()
+                );
             }
         }
     }
@@ -369,14 +375,21 @@ namespace gazprea {
     void TypeWalk::visitFilter(std::shared_ptr<AST> t) {
         isExpressionToReplaceIdentityNull = false;
         visitChildren(t);
-        t->evalType = symtab->getType(Type::INTEGER_1);
+        t->evalType = symtab->getType(Type::TUPLE);
         t->promoteToType = nullptr;
     }
 
     void TypeWalk::visitGenerator(std::shared_ptr<AST> t) {
         isExpressionToReplaceIdentityNull = false;
         visitChildren(t);
-        t->evalType = symtab->getType(Type::INTEGER_1);
+        t->evalType = nullptr; 
+        
+        if (t->children[0]->children.size() > 2 ) {
+            std::string msg = "Generators may have either 1 or 2 domain variables";
+            auto *ctx = dynamic_cast<GazpreaParser::GeneratorContext*>(t->parseTree);
+            throw GazpreaError(msg, t->getText(), t->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
+        }
+
         t->promoteToType = nullptr;
     }
 

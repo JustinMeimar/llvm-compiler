@@ -167,5 +167,20 @@ InvalidDeclarationError::InvalidDeclarationError(std::string nodeText, std::stri
     msg = sstream.str();
 }
 
+IncompatibleTypeError::IncompatibleTypeError(std::string varType, std::string exprType, std::string fullText, int line, int charPos) {
+    std::stringstream sstream;
+    sstream << "Cannot assign value of type "
+        << "\033[36m" << exprType << "\033[0m" << 
+            " to variable of type " 
+        << "\033[36m" << varType << "\033[0m" << 
+        " " << line << "\033[0m"<< ":" << charPos << "\n"
+        << "\t|\n"
+        << line << "\t|" << " '" << fullText << "'\n"
+        << "\t|\n"; 
+
+    msg = sstream.str();
+}
+
+
 } // namespace gazprea
 
