@@ -295,7 +295,6 @@ namespace gazprea
 
     void LLVMGen::visitReturn(std::shared_ptr<AST> t) {
         auto subroutineSymbol = std::dynamic_pointer_cast<SubroutineSymbol>(t->subroutineSymbol);
-        auto *ctx = dynamic_cast<GazpreaParser::ReturnStatementContext*>(t->parseTree);
         llvmBranch.hitReturnStat = true;
         
         if (t->children[0]->isNil()) { 
