@@ -171,6 +171,15 @@ class InvalidDeclarationError : public std::exception {
         }
 };
 
+class IncompatibleTypeError : public std::exception {
+    private:
+    public:
+        std::string msg;
+        IncompatibleTypeError(std::string varType, std::string exprType, std::string fullText, int line, int charPos);
+        virtual const char* what() const throw() {
+            return msg.c_str();
+        }
+    };
 } // namespace gazpreak
 
 

@@ -482,7 +482,8 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitIdentifier(GazpreaParser::IdentifierContext *ctx) {
-        auto t = std::make_shared<AST>(GazpreaParser::IDENTIFIER_TOKEN, ctx->children[0]);
+        // auto t = std::make_shared<AST>(GazpreaParser::IDENTIFIER_TOKEN, ctx->children[0]);
+        auto t = std::make_shared<AST>(GazpreaParser::IDENTIFIER_TOKEN, ctx);
         return t;
     }
 

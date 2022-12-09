@@ -5,14 +5,15 @@ typedef integer int;
 procedure reference(var int i /* Should be referenced*/, const real test /* Should be copied*/) {
     i -> std_out; // Should print 120
     '\n' -> std_out;
+    test -> std_out;
+    '\n' -> std_out;
 
     i = 2120;
 }
 
-procedure reference2(var int a) {
+procedure reference2(const int a) {
     a -> std_out; // Should print 10
     '\n' -> std_out;
-    a = 50;
 }
 
 procedure swap(var int a, var int b) {
@@ -24,21 +25,19 @@ procedure swap(var int a, var int b) {
 procedure main() returns int {
     var int i = 120;
     const real b = 150.5;
+    const int a = 10;
+    var x = 50;
+    var y = 20;
 
     call reference(i, b);
 
     i -> std_out; // Should print 2120
     '\n' -> std_out;
 
-
-    const int a = 10;
     call reference2(a);
 
     a -> std_out; // Should print 10
     '\n' -> std_out;
-
-    var x = 50;
-    var y = 20;
 
     call swap(x, y);
 

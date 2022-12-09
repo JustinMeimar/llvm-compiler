@@ -196,6 +196,22 @@ namespace gazprea {
 
     void RefWalk::visitIdentifier(std::shared_ptr<AST> t) {
         t->symbol = t->scope->resolve(t->parseTree->getText());
+        if (t->symbol != nullptr && t->symbol->def != nullptr) { // variable is being used, not defined
+            // get context for use and def
+            auto *defCtx = dynamic_cast<GazpreaParser::VarDeclarationStatementContext*>(t->symbol->def->parseTree);
+            auto *useCtx = dynamic_cast<GazpreaParser::IdentifierContext*>(t->parseTree);
+
+            if (defCtx != nullptr && useCtx != nullptr) {
+
+                int defLine = defCtx->getStart()->getLine();
+                int useLine = useCtx->getStart()->getLine(); 
+
+                if (defLine > useLine){
+                    std::string msg = "Variable used before it is defined: ";
+                    throw GazpreaError(msg, "\'"+t->getText()+"\'", t->getText(), useLine, useCtx->getStart()->getCharPositionInLine());
+                }
+            } 
+        } 
     }
 
     void RefWalk::visitSingleTokenType(std::shared_ptr<AST> t) {

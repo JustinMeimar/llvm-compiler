@@ -1,0 +1,59 @@
+typedef integer int;
+typedef character char;
+
+procedure nl() {
+    '\n' -> std_out;
+}
+
+procedure test1() {
+    int i = null + identity;
+    real w = null + identity;
+    int[5] j = null + identity;
+
+    i -> std_out; // Should print 1
+    call nl();
+    w -> std_out; // Should print 1.0
+    call nl();
+    j -> std_out;
+    call nl();
+}
+
+procedure test2() {
+    int i = 0; 
+    int sum = 0;
+    
+    loop while i < 4 {
+        sum = sum + identity;
+        i = i + 1;
+    } 
+
+    sum -> std_out; // should print 4
+    call nl();
+}
+
+procedure test3() {
+    int i = 0; 
+    int sum = 0;
+    
+    loop while i <= 10 {
+        sum = sum + null;
+        i = i + 1;
+    } 
+
+    sum -> std_out; // should print 0
+    call nl();
+}
+
+procedure main() returns int {
+    call test1();
+    call test2();
+    call test3();
+    return 0;
+}
+#split_token
+#split_token
+1
+1
+[1 1 1 1 1]
+4
+0

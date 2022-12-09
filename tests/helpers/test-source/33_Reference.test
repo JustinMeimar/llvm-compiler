@@ -1,0 +1,57 @@
+// Tests the reference and copy
+
+typedef integer int;
+
+procedure reference(var int i /* Should be referenced*/, const real test /* Should be copied*/) {
+    i -> std_out; // Should print 120
+    '\n' -> std_out;
+    test -> std_out;
+    '\n' -> std_out;
+
+    i = 2120;
+}
+
+procedure reference2(const int a) {
+    a -> std_out; // Should print 10
+    '\n' -> std_out;
+}
+
+procedure swap(var int a, var int b) {
+    const int temp = a;
+    a = b;
+    b = temp;
+}
+
+procedure main() returns int {
+    var int i = 120;
+    const real b = 150.5;
+    const int a = 10;
+    var x = 50;
+    var y = 20;
+
+    call reference(i, b);
+
+    i -> std_out; // Should print 2120
+    '\n' -> std_out;
+
+    call reference2(a);
+
+    a -> std_out; // Should print 10
+    '\n' -> std_out;
+
+    call swap(x, y);
+
+    x -> std_out; ' ' -> std_out; y -> std_out; // Should print 20 50
+
+    '\n' -> std_out;
+
+    return 0;
+}
+#split_token
+#split_token
+120
+150.5
+2120
+10
+10
+20 50

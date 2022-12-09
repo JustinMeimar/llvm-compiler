@@ -238,7 +238,9 @@ namespace gazprea {
     void DefWalk::visitBreak(std::shared_ptr<AST> t) {
         if (numLoopAncestors == 0) {
             // TODO: Use different type of exception
-            throw SyntaxError("Break statement must be in a loop");
+            auto *ctx = dynamic_cast<GazpreaParser::BreakStatementContext*>(t->parseTree);
+            std::string msg = "Return statement must be inside a subroutine (function or proceedure) ";
+            throw GazpreaError(msg, t->getText(), t->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
         }
         t->scope = currentScope;
     }
@@ -246,15 +248,18 @@ namespace gazprea {
     void DefWalk::visitContinue(std::shared_ptr<AST> t) {
         if (numLoopAncestors == 0) {
             // TODO: Use different type of exception
-            throw SyntaxError("Continue statement must be in a loop");
+            auto *ctx = dynamic_cast<GazpreaParser::ContinueStatementContext*>(t->parseTree);
+            std::string msg = "Return statement must be inside a subroutine (function or proceedure) ";
+            throw GazpreaError(msg, t->getText(), t->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine()); 
         }
         t->scope = currentScope;
     }
 
     void DefWalk::visitReturn(std::shared_ptr<AST> t) {
         if (numSubroutineAncestors == 0) {
-            // TODO: Use different type of exception
-            throw SyntaxError("Return statement must be in a function or a procedure");
+            auto *ctx = dynamic_cast<GazpreaParser::ReturnStatementContext*>(t->parseTree);
+            std::string msg = "Return statement must be inside a subroutine (function or proceedure) ";
+            throw GazpreaError(msg, t->getText(), t->getText(), ctx->getStart()->getLine(), ctx->getStart()->getCharPositionInLine());
         }
         t->scope = currentScope;
         t->scope->containReturn = true;
