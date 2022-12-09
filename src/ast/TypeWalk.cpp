@@ -316,7 +316,26 @@ namespace gazprea {
                         t->evalType = symtab->getType(Type::BOOLEAN_1);
                     }
                 } else {
-                    t->evalType = symtab->getType(Type::BOOLEAN);
+                    if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)
+                    && (t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::BOOLEAN_2);
+                    } else if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::BOOLEAN_1);
+                    } else if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::BOOLEAN_1);
+                    } else {
+                        t->evalType = symtab->getType(Type::BOOLEAN);
+                    }
                 }
                 break;
             case Type::CHARACTER_2:
@@ -329,7 +348,26 @@ namespace gazprea {
                         t->evalType = symtab->getType(Type::CHARACTER_1);
                     }
                 } else {
-                    t->evalType = symtab->getType(Type::CHARACTER);
+                    if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)
+                    && (t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::CHARACTER_2);
+                    } else if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::CHARACTER_1);
+                    } else if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::CHARACTER_1);
+                    } else {
+                        t->evalType = symtab->getType(Type::CHARACTER);
+                    }
                 }
                 break;
             case Type::INTEGER_2:
@@ -342,7 +380,26 @@ namespace gazprea {
                         t->evalType = symtab->getType(Type::INTEGER_1);
                     }
                 } else {
-                    t->evalType = symtab->getType(Type::INTEGER);
+                    if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)
+                    && (t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::INTEGER_2);
+                    } else if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::INTEGER_1);
+                    } else if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::INTEGER_1);
+                    } else {
+                        t->evalType = symtab->getType(Type::INTEGER);
+                    }
                 }
                 break;
             case Type::REAL_2:
@@ -355,7 +412,26 @@ namespace gazprea {
                         t->evalType = symtab->getType(Type::REAL_1);
                     }
                 } else {
-                    t->evalType = symtab->getType(Type::REAL);
+                    if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)
+                    && (t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::REAL_2);
+                    } else if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[0]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::REAL_1);
+                    } else if (t->children[1]->children[0]->evalType != nullptr
+                    && t->children[1]->children[1]->evalType != nullptr
+                    && (t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_INTERVAL
+                    || t->children[1]->children[1]->evalType->getTypeId() == Type::INTEGER_1)) {
+                        t->evalType = symtab->getType(Type::REAL_1);
+                    } else {
+                        t->evalType = symtab->getType(Type::REAL);
+                    }
                 }
                 break;
             case Type::STRING:

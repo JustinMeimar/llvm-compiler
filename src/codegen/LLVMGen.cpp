@@ -957,8 +957,11 @@ namespace gazprea
         auto constOne = llvmFunction.call("variableStackAllocate", {getStack()});
         llvmFunction.call("variableInitFromIntegerScalar", {constOne, ir.getInt32(1)});
  
-        auto constZero = llvmFunction.call("variableStackAllocate", {getStack()});
-        llvmFunction.call("variableInitFromIntegerScalar", {constZero, ir.getInt32(0)});
+        // auto constZero = llvmFunction.call("variableStackAllocate", {getStack()});
+        // llvmFunction.call("variableInitFromIntegerScalar", {constZero, ir.getInt32(0)});
+
+        auto constNegativeOne = llvmFunction.call("variableStackAllocate", {getStack()});
+        llvmFunction.call("variableInitFromIntegerScalar", {constNegativeOne, ir.getInt32(-1)});
  
         // Create Preheader and necessary vectors
         for (size_t i = 0; i < t->children.size()-1; i++) {
@@ -1029,7 +1032,7 @@ namespace gazprea
                 ir.SetInsertPoint(header_i);
                 //reset the next header array index and domain variable to initial values 
                 auto next_loop_index = domainIndexVars[i+1];
-                llvmFunction.call("variableReplace", {next_loop_index, constZero});
+                llvmFunction.call("variableReplace", {next_loop_index, constNegativeOne});
                 branchTrue = next_header;
                 branchFalse = merge_i;
             }
