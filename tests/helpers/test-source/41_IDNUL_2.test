@@ -14,11 +14,16 @@ procedure test1() {
 }
 
 procedure main() returns int {
-    //call test1();
-    
     integer x = identity + null + identity;
+    call test1();
 
     x -> std_out;
 
     return 0;
 }
+#split_token
+#split_token
+1
+21
+0
+2

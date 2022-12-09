@@ -19,7 +19,7 @@ function signature(int one, int two, int three, float five, char nine) returns r
 
 procedure main() returns int {
     // 
-    int feedback = signature(1, 2, 3, 5.0, '9') + as<int>('1');
+    int feedback = as<int>(signature(1, 2, 3, 5.0, '9')) + as<int>('1');
     int y = recursive (0);
     const winners = winner(10);
 

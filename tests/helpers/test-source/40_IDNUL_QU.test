@@ -1,0 +1,64 @@
+// This might be an invalid, testing it still since it could be valid
+
+typedef integer int;
+
+procedure test() returns int {
+    return null + identity;
+}
+
+procedure test1() returns int[*] {
+    int[4] test = null;
+    return test;
+}
+
+procedure test2() returns real[*] {
+    real[5] test = identity;
+    return test;
+}
+
+procedure test3() returns int {
+    return identity;
+}
+
+procedure test4() returns real {
+    return identity;
+}
+
+function test5() returns int = null;
+
+function test6() returns real = null;
+
+//function test7() returns int = identity + null;
+
+//function test8() returns real = identity + null;
+
+procedure main() returns int {
+    int i = test();
+    int j = test5();
+    real z = test6();
+    //int y = test7();
+    //real h = test8();
+    
+    i -> std_out; // Should print 1
+
+    test1() -> std_out;
+
+    test2() -> std_out;
+
+    test3() -> std_out;
+
+    test4() -> std_out;
+
+    j -> std_out;
+
+    z -> std_out;
+
+    //y -> std_out;
+
+    //h -> std_out;
+
+    return 0;
+}
+#split_token
+#split_token
+1[0 0 0 0][1 1 1 1 1]1100
