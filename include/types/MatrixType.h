@@ -30,6 +30,9 @@ namespace gazprea {
             return false;
         }
         std::string getName() {
+            if (dimension == 1) {
+                return "vector";
+            }
             return "matrix";
         }
         int getTypeId();

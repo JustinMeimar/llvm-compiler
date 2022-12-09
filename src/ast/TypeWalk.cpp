@@ -27,8 +27,8 @@ namespace gazprea {
                 case GazpreaParser::TUPLE_ACCESS_TOKEN:
                     visitTupleAccess(t);
                     break;
-                case GazpreaParser::STRING_CONCAT_TOKEN: 
-                    visitStringConcat(t);
+                case GazpreaParser::CONCAT_TOKEN: 
+                    visitConcatenation(t);
                     break;
                 case GazpreaParser::VAR_DECLARATION_TOKEN:
                     visitVariableDeclaration(t);
@@ -510,10 +510,12 @@ namespace gazprea {
         }
     } 
 
-    void TypeWalk::visitStringConcat(std::shared_ptr<AST> t) {
+    void TypeWalk::visitConcatenation(std::shared_ptr<AST> t) {
         isExpressionToReplaceIdentityNull = false;
         visitChildren(t);
-        t->evalType = std::dynamic_pointer_cast<Type>(symtab->globals->resolve("string"));
+        auto node1 = t->children[0];
+        auto node2 = t->children[1];
+        t->evalType = tp->getConcatenationResultType(tp->concatenationResultType, node1, node2, t);
         t->promoteToType = nullptr;
     }
 
@@ -547,10 +549,9 @@ namespace gazprea {
         
         //getResultType automatically populates promotType of children
         switch(t->children[2]->getNodeType()){
-            // case GazpreaParser::NOT:
-            //     isExpressionToReplaceIdentityNull = false;
-            //     t->evalType = tp->getResultType(tp->logicalResultType, node1, node2, t);
-            //     break;
+            case GazpreaParser::BY:
+                t->evalType = symtab->getType(Type::INTEGER_1);
+                break;
             case GazpreaParser::XOR:
             case GazpreaParser::AND:
             case GazpreaParser::OR:

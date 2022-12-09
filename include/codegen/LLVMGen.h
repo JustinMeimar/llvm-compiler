@@ -98,7 +98,7 @@ class LLVMGen {
         void visitUnaryOperation(std::shared_ptr<AST> t);
         void visitIndexing(std::shared_ptr<AST> t);
         void visitInterval(std::shared_ptr<AST> t);
-        void visitStringConcatenation(std::shared_ptr<AST> t);
+        void visitConcatenation(std::shared_ptr<AST> t);
 
         // Call
         void visitCallSubroutineInExpression(std::shared_ptr<AST> t);

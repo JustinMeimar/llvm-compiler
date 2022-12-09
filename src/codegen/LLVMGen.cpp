@@ -160,8 +160,8 @@ namespace gazprea
             case GazpreaParser::INTERVAL:
                 visitInterval(t);
                 break;
-            case GazpreaParser::STRING_CONCAT_TOKEN:
-                visitStringConcatenation(t);
+            case GazpreaParser::CONCAT_TOKEN:
+                visitConcatenation(t);
                 break;
             case GazpreaParser::CALL_PROCEDURE_FUNCTION_IN_EXPRESSION:
                 visitCallSubroutineInExpression(t);
@@ -1615,68 +1615,59 @@ namespace gazprea
         visitChildren(t);
         int opCode;
         switch (t->children[2]->getNodeType()) {
-        // case GazpreaParser::INDEXING_TOKEN:
-        //     opCode = 0;
-        //     break;
-        // case GazpreaParser::INTERVAL:
-        //     opCode = 1;
-        //     break;
-        case GazpreaParser::CARET: // Character '*'
-            opCode = 2;
-            break;
-        case GazpreaParser::ASTERISK:
-            opCode = 3;
-            break;
-        case GazpreaParser::DIV:
-            opCode = 4;
-            break;
-        case GazpreaParser::MODULO:
-            opCode = 5;
-            break;
-        case GazpreaParser::DOTPRODUCT:
-            opCode = 6;
-            break;
-        case GazpreaParser::PLUS:
-            opCode = 7;
-            break;
-        case GazpreaParser::MINUS:
-            opCode = 8;
-            break;
-        case GazpreaParser::BY:
-            opCode = 9;
-            break;
-        case GazpreaParser::LESSTHAN:
-            opCode = 10;
-            break;
-        case GazpreaParser::GREATERTHAN:
-            opCode = 11;
-            break;
-        case GazpreaParser::LESSTHANOREQUAL:
-            opCode = 12;
-            break;
-        case GazpreaParser::GREATERTHANOREQUAL:
-            opCode = 13;
-            break;
-        case GazpreaParser::ISEQUAL:
-            opCode = 14;
-            break;
-        case GazpreaParser::ISNOTEQUAL:
-            opCode = 15;
-            break;
-        case GazpreaParser::AND:
-            opCode = 16;
-            break;
-        case GazpreaParser::OR:
-            opCode = 17;
-            break;
-        case GazpreaParser::XOR:
-            opCode = 18;
-            break;
-        // case GazpreaParser::STRING_CONCAT_TOKEN:
-        //     opCode = 19;
-        //     break;
-        default:
-            opCode = -1;
+            case GazpreaParser::CARET: // Character '*'
+                opCode = 2;
+                break;
+            case GazpreaParser::ASTERISK:
+                opCode = 3;
+                break;
+            case GazpreaParser::DIV:
+                opCode = 4;
+                break;
+            case GazpreaParser::MODULO:
+                opCode = 5;
+                break;
+            case GazpreaParser::DOTPRODUCT:
+                opCode = 6;
+                break;
+            case GazpreaParser::PLUS:
+                opCode = 7;
+                break;
+            case GazpreaParser::MINUS:
+                opCode = 8;
+                break;
+            case GazpreaParser::BY:
+                opCode = 9;
+                break;
+            case GazpreaParser::LESSTHAN:
+                opCode = 10;
+                break;
+            case GazpreaParser::GREATERTHAN:
+                opCode = 11;
+                break;
+            case GazpreaParser::LESSTHANOREQUAL:
+                opCode = 12;
+                break;
+            case GazpreaParser::GREATERTHANOREQUAL:
+                opCode = 13;
+                break;
+            case GazpreaParser::ISEQUAL:
+                opCode = 14;
+                break;
+            case GazpreaParser::ISNOTEQUAL:
+                opCode = 15;
+                break;
+            case GazpreaParser::AND:
+                opCode = 16;
+                break;
+            case GazpreaParser::OR:
+                opCode = 17;
+                break;
+            case GazpreaParser::XOR:
+                opCode = 18;
+                break;
+            default:
+                opCode = -1;
         }
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(opCode)});
@@ -1758,7 +1749,7 @@ namespace gazprea
         freeExprAtomIfNecessary(t->children[1]);
     }
 
-    void LLVMGen::visitStringConcatenation(std::shared_ptr<AST> t) {
+    void LLVMGen::visitConcatenation(std::shared_ptr<AST> t) {
         visitChildren(t);
         auto runtimeVariableObject = llvmFunction.call("variableMalloc", {});
         llvmFunction.call("variableInitFromBinaryOp", {runtimeVariableObject, t->children[0]->llvmValue, t->children[1]->llvmValue, ir.getInt32(19)});

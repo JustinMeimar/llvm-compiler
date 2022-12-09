@@ -359,7 +359,7 @@ namespace gazprea {
     }
 
     std::any ASTBuilder::visitConcatenation(GazpreaParser::ConcatenationContext *ctx) {
-        auto t = std::make_shared<AST>(GazpreaParser::STRING_CONCAT_TOKEN, ctx);
+        auto t = std::make_shared<AST>(GazpreaParser::CONCAT_TOKEN, ctx);
         t->addChild(visit(ctx->expr(0)));
         t->addChild(visit(ctx->expr(1)));
         return t;
