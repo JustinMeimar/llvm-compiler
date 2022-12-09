@@ -1,0 +1,8 @@
+procedure main() returns integer {
+  loop i in 1..1, j in 1..2 {
+    j -> std_output;
+  }
+
+  return 0;
+}
+

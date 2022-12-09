@@ -504,7 +504,8 @@ void computeSameTypeSameSizeArrayArrayBinop(Variable *this, Variable *op1, Varia
     ElementTypeID resultEID;
     bool resultCollapseToScalar;
     if (!arrayBinopResultType(op1CTI->m_elementTypeID, opcode, &resultEID, &resultCollapseToScalar)) {
-        errorAndExit("Cannot perform binop between two array variables!");
+        fprintf(stderr, "binop type: %d\n", opcode);
+        doubleTypeError(op1->m_type, op2->m_type, "Cannot perform binop between two array variables!");
     }
 
     // init type

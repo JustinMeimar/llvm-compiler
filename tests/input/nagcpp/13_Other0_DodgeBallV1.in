@@ -1,0 +1,145 @@
+const real SCREEN_WIDTH = 1.0;
+const real SCREEN_HEIGHT = 0.83;
+const integer SCREEN_PIXEL_WIDTH = 60;
+const integer SCREEN_PIXEL_HEIGHT = 50;
+const integer MAX_ENTITIES = 400;
+const integer SEED_MAX = 65520;
+
+/**
+ * sort of an interactive game, but not in real time
+ * the player needs to dodge entities falling downwards using movements
+ */
+
+function cheq(character a, character b) returns boolean = as<integer>(a) == as<integer>(b);
+
+function isHit(real[2] dpos) returns boolean {
+  return dpos ** dpos <= 0.04 ^ 2;
+}
+
+procedure render(const character[*,*] pixels) {
+  const width = columns(pixels);
+  const height = rows(pixels);
+  loop i in 1..height {
+    string row = pixels[i, 1..width];
+    '\n' || row -> std_output;
+  }
+}
+
+procedure clearPixels(var character[*,*] pixels) {
+  loop i in 1..rows(pixels) {
+    pixels[i, 1..columns(pixels)] = ' ';
+  }
+}
+
+procedure drawEntity(var character[*,*] pixels, real[2] entity, character c) {
+  if (entity[1] < 0 or entity[1] > SCREEN_WIDTH or entity[2] < 0 or entity[2] > SCREEN_HEIGHT)
+    return;
+  {
+    integer x = as<integer>(entity[1] / SCREEN_WIDTH * (SCREEN_PIXEL_WIDTH - 1)) + 1;
+    integer y = SCREEN_PIXEL_HEIGHT - as<integer>(entity[2] / SCREEN_HEIGHT * (SCREEN_PIXEL_HEIGHT - 1));
+    pixels[y, x] = c;
+  }
+}
+
+// return true if the player is hit by one of the entities
+procedure update(var real[*,2] entities, var nEntity, var real[2] player, real dx, real dy) returns boolean {
+  // prune the entities that are out of bound
+  {
+    var tuple(integer[*] remainingIndices, integer[*] prunedIndices) tup = [i in 1..nEntity & entities[i, 2] >= 0];
+    integer[*] indices = tup.remainingIndices;
+    nEntity = length(indices);
+    entities[1..nEntity,1..2] = [i in 1..nEntity, j in 1..2 | entities[indices[i], j]];
+  }
+  entities[1..nEntity,2] = entities[1..nEntity,2] - 4e-2;
+  player = player + [dx, dy];
+
+  if (player[1] < 0) {
+    player[1] = 0e0;
+  } else if (player[1] > SCREEN_WIDTH) {
+    player[1] = SCREEN_WIDTH;
+  } else if (player[2] < 0) {
+    player[2] = 0;
+  } else if (player[2] > SCREEN_HEIGHT) {
+    player[2] = SCREEN_HEIGHT;
+  }
+
+  {
+    var tup = [i in 1..nEntity & not isHit([entities[i, 1], entities[i, 2]] - player)];
+    if (length(tup.2) != 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+procedure drawEntitiesAndPlayer(var character[*, *] pixels, var real[*,2] entities, var nEntity, var real[2] player) {
+  loop i in 1..nEntity {
+    call drawEntity(pixels, entities[i, 1..2], 'O');
+  }
+  call drawEntity(pixels, player, '*');
+}
+
+procedure random(var integer seed, real min, real max) returns real {
+  seed = seed * 91 % (SEED_MAX + 1);  // can be 0 to 65520
+  return min + seed * (max - min) / SEED_MAX;
+}
+
+procedure main() returns integer {
+  var character[SCREEN_PIXEL_HEIGHT, SCREEN_PIXEL_WIDTH] pixels;
+  var real[MAX_ENTITIES, 2] entities;
+  var integer nEntity = 0;
+  var real[2] player = [0.5, 0.5];
+  var seed = 359;
+  integer t = 0;
+
+  call clearPixels(pixels);
+
+  loop {
+    real dx;
+    real dy;
+    real speed = 0.05;
+    boolean hit;
+    character input;
+    input <- std_input;
+
+    if (cheq(input, 'l')) {
+      dx = -speed;
+    } else if (cheq(input, 'r')) {
+      dx = speed;
+    } else if (cheq(input, 'd')) {
+      dy = -speed;
+    } else if (cheq(input, 'u')) {
+      dy = speed;
+    } else if (cheq(input, 's')) {  // stay
+
+    } else {
+      "Input Ends" -> std_output;
+      break;
+    }
+
+    if (t % 2 == 0) { // spawn entity
+      real x;
+      x = random(seed, 0, 1);
+      loop i in (-2)..2 { 
+        nEntity = nEntity + 1;
+        entities[nEntity, 1..2] = [x + i * 0.05, 1]; 
+      }
+    }
+
+    hit = update(entities, nEntity, player, dx, dy);
+
+    if (hit) {
+      "player is hit at time " -> std_output;
+      t -> std_output;
+      "!" -> std_output;
+      break;
+    } else t = t + 1;
+  }
+  "\nSCREEN:" -> std_output;
+  call drawEntitiesAndPlayer(pixels, entities, nEntity, player);
+  call render(pixels);
+
+  return 0;
+}
+

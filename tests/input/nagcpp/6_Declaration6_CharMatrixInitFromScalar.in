@@ -1,0 +1,6 @@
+procedure main() returns integer {
+  var character[2, 2] pixels = ' ';
+
+  return 0;
+}
+

@@ -734,8 +734,10 @@ Variable *variableNDArrayIndexRefGetRootVariable(Variable *indexRef) {
 void *ndarrayNonRefElementPtrGetter(Variable *this, int64_t pos) {
     ArrayType *CTI = this->m_type->m_compoundTypeInfo;
     int64_t len = arrayTypeGetTotalLength(CTI);
-    if (pos < 0 || pos >= len)
+    if (pos < 0 || pos >= len) {
+        fprintf(stderr, "Index: %ld Len: %ld\n", pos, len);
         singleTypeError(this->m_type, "Array access out of range with type:");
+    }
     return arrayGetElementPtrAtIndex(CTI->m_elementTypeID, this->m_data, pos);
 }
 
