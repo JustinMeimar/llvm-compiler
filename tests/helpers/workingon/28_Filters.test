@@ -10,11 +10,29 @@ const int INT_MIN = -2147483648;
 const float INT_MAX_IN_FLOAT = 2.14748e+09;
 const float FLOAT_MAX = 3.40282347e+38;
 
+procedure nl() {
+    "\n" -> std_out;
+}
+
 procedure vecFil() {
+    int i = 5;
+    var x = [i in 1..i & i >= 1+2];
+    var z = [i in [i in [i in INT_MIN..(INT_MIN+20) | i] | i] & i < (INT_MIN-INT_MIN+20)/2];
+    
+    x.1 -> std_out; // Should print 3, 4, 5 
+    call nl();
+    length(x.1) -> std_out;
+    call nl();
+
+    z.1 -> std_out;
 
 }
 
 procedure mtrxFil() {
+    
+}
+
+procedure tupleFil() {
     
 }
 

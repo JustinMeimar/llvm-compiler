@@ -1,7 +1,0 @@
-procedure main() returns integer {
-    integer[*] vec = [1, 2, 3];
-
-    loop vec in vec vec+2 -> std_out; // Should print 345
-
-    return 0;
-}
