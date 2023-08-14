@@ -28,6 +28,7 @@ set(
 
 # Build our executable from the source files.
 add_library(gazrt SHARED ${gazprea_rt_files})
+target_compile_options(gazrt PRIVATE -fPIC)
 target_include_directories(gazc PUBLIC ${RUNTIME_INCLUDE})
 
 # author usr1234567 edited by Sled

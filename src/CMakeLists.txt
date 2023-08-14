@@ -39,6 +39,7 @@ set(
 
 # Build our executable from the source files.
 add_executable(gazc ${gazprea_src_files})
+target_compile_options(gazc PRIVATE -fPIE)
 target_include_directories(gazc PUBLIC ${ANTLR_GEN_DIR})
 
 # Ensure that the antlr4-runtime is available.
