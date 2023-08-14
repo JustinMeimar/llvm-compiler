@@ -8,11 +8,19 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 
 # Ensure we found our own specified version at 10.0.0. We don't want Ohaton's 3.x.x or another local
 # build we don't know.
+<<<<<<< HEAD
 # if(NOT ("${LLVM_VERSION_MAJOR}" EQUAL 10 AND
 #         "${LLVM_VERSION_MINOR}" EQUAL 0 AND
 #         "${LLVM_VERSION_PATCH}" EQUAL 0))
 #   message(FATAL_ERROR "LLVM version incompatible.")
 # endif()
+=======
+#if(NOT ("${LLVM_VERSION_MAJOR}" EQUAL 10 AND
+#        "${LLVM_VERSION_MINOR}" EQUAL 0 AND
+#        "${LLVM_VERSION_PATCH}" EQUAL 0))
+#  message(FATAL_ERROR "LLVM version incompatible.")
+#endif()
+>>>>>>> eaf675b639e8c3a69b56cea9e7760ddd3651b040
 
 # Add llvm specific pieces to our build.
 include_directories("${LLVM_INCLUDE_DIRS}")
